@@ -1,4 +1,5 @@
-XDIR:=/u/cs452/public/xdev
+XDIR:=/Users/darcyliu/bin/xdev
+# /Users/darcyliu/bin/xdev if on local
 ARCH=cortex-a72
 TRIPLE=aarch64-none-elf
 XBINDIR:=$(XDIR)/bin

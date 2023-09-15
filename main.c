@@ -326,6 +326,7 @@ char str_to_int(char *str){
     }
     return ret;
 }
+char expecting_commands = 0; // this is the s_88 the program is going to expect
 // define a function that takes a char array as a parameter
 void parse_char_array(char *arr) {
   
@@ -409,7 +410,7 @@ int kmain() {
 
   
   uint32_t read_time = 0; 
-  char expecting_commands = 0; // this is the s_88 the program is going to expect
+  expecting_commands = 0; // this is the s_88 the program is going to expect
   char expecting_byte = 0;
   while (c != 'q') {
     if(get_timerLO() - read_time >  200000){
