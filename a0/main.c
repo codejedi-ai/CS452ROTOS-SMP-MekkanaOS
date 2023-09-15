@@ -46,9 +46,14 @@ unsigned int sensor_hist_cur_pointer = 0; // the top most sensor trigger aka the
 char sw_states[255];
 int sensor_in_bytes_ind = 0; 
 // the r is the hor offset from the defined window
-void print_byte_in_binary(char b){
+void print_byte_in_binary(unsigned const char b){
   for (int i = 7; i >= 0; i --){
-    uart_putc(CONSOLE, (char)(((1 << i) & b) + '0'));
+    if (((1 << i) & b) == 0){
+      uart_putc(CONSOLE,'0');
+    }else{
+      uart_putc(CONSOLE,'1');
+    }
+    
   }
 }
 void print_line_hor(uint32_t r){
@@ -105,7 +110,7 @@ char streq(const char *str, const char *str_2){
     ret = 1;
     return ret;
 }
-void read_marklin(uint32_t s88_unit, char byte_no){
+void read_marklin(uint32_t s88_unit, short int byte_no){
     sensor_reading_old[byte_no][s88_unit] = sensor_reading[byte_no][s88_unit];
     sensor_reading[byte_no][s88_unit] =  uart_getc_modified(MARKLIN);
 }
@@ -148,9 +153,10 @@ void print_activated(int r, int c){
 
       
 
-      char byte_1_diff = byte_differences(sensor_reading_old[0][i], sensor_reading[0][i]);
-      char byte_2_diff = byte_differences(sensor_reading_old[1][i], sensor_reading[1][i]);
-
+      // char byte_1_diff = byte_differences(sensor_reading_old[0][i], sensor_reading[0][i]);
+      // char byte_2_diff = byte_differences(sensor_reading_old[1][i], sensor_reading[1][i]);
+      char byte_1_diff = sensor_reading_old[0][i];
+      char byte_2_diff = sensor_reading_old[1][i];
       print_byte_in_binary(byte_1_diff);
       uart_putc(CONSOLE, ' ');
       print_byte_in_binary(byte_2_diff);
@@ -394,7 +400,7 @@ int kmain() {
  
   unsigned int row = 2, col = 1, command_len = 0;
   uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = " uart_getc_modified(MARKLIN) read_marklin() every 200 mils; UPDATE, This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  char hello[] = "ASYNCRROUNOUSE INPUT; UPDATE, This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
   uart_puts(CONSOLE, hello);
   
   // initialize both console and marklin uarts
@@ -414,15 +420,31 @@ int kmain() {
   char expecting_byte = 0;
   while (c != 'q') {
     if(get_timerLO() - read_time >  200000){
+      // read_many_s88(S88_NOS);
+      // expecting_commands = 1;
       read_time = get_timerLO();
     }
-    if(expecting_commands > 0){
-      read_marklin(expecting_commands++, expecting_byte);
+    if(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
+      read_marklin(expecting_commands, expecting_byte);
       print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
-      expecting_byte = expecting_byte  ^ 1;
-      if(expecting_commands == S88_NOS){
-        expecting_commands = 0;
+      // the expecting byte can by 0 or 1
+      // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
+      uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, 1, expecting_commands, expecting_byte);
+      expecting_byte++;
+      if (expecting_byte == 2){
+        expecting_commands++;
+        expecting_byte = 0;
       }
+      
+      
+      if(expecting_commands > S88_NOS){
+        expecting_commands = 0;
+        // set cursor location to the bottom of the screen
+      }
+      
+    }
+    if(expecting_commands == 0){
+      char flush = uart_getc_modified(MARKLIN);
     }
     if (sol_is_on > 0 && get_timerLO() - sol_on_time > 200000){
       sol_off();

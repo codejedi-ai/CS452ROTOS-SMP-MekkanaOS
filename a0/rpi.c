@@ -126,6 +126,10 @@ void uart_config_and_enable(size_t line, uint32_t baudrate) {
   // enable both transmit and receive regardless of previous state
   UART_REG(line, UART_CR) = cr_state | UART_CR_UARTEN | UART_CR_TXE | UART_CR_RXE;
 }
+unsigned char uart_getc_queue(size_t line){
+  if (UART_REG(line, UART_FR) & UART_FR_RXFE) return 0;
+  return 1;
+}
 unsigned char uart_getc(size_t line) {
   unsigned char ch;
   /* wait for data if necessary */
