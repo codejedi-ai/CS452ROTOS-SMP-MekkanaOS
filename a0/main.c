@@ -15,7 +15,7 @@ static const size_t COMMANDMAX_LEN = 64;
 #define WINDOW_WIDTH 90
 #define COMMAND_ROW 40
 #define SENSOR_LIST_MAXLEN 100
-#define QUEUE_MAX_LEN 10000
+#define QUEUE_MAX_LEN 100
 // 240 bytes per second
 #define S88_NOS 5
 /*
@@ -30,35 +30,7 @@ Code	Effect
 "\033[36m"	Cyan text.
 "\033[37m"	White text.
 */
-char execution_queue[2][QUEUE_MAX_LEN]; // marklin number and the history
-uint32_t execution_queue_begin = 0;
-uint32_t execution_queue_end = 0;
 
-void enqueue(unsigned char byte_1, unsigned char byte_2 ){
-  execution_queue[0][execution_queue_end] = byte_1;
-  execution_queue[1][execution_queue_end] = byte_2;
-  execution_queue_end = (execution_queue_end + 1) % QUEUE_MAX_LEN;
-}
-void dequeue(){
-  if (execution_queue_begin != execution_queue_end){
-    uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
-    uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
-    execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
-  }
-}
-void read_one_s88(char s88_id){  
-  
-    char byte_1 = (192 + s88_id);
-    char byte_2 = '\r';
-    enqueue(byte_1, byte_2);
-
-}
-// read_many_s88 reads in 
-void read_many_s88(char s88_no){ 
-    char byte_1 = ( 128 + s88_no);
-    char byte_2 = '\r';
-    enqueue(byte_1, byte_2);
-}
 uint32_t sol_on_time= 0;
 char sol_is_on = 0;
 int trains_speed[81];
@@ -84,13 +56,13 @@ void print_byte_in_binary(unsigned const char b){
   }
 }
 void print_line_hor(uint32_t r){
-  uart_printf(CONSOLE,"\033[%u;%uH",r , 1);
+  uart_printf(CONSOLE,"\033[%u;%uH",r , LEFT_COL);
   for (uint32_t i = 0; i < WINDOW_WIDTH; i ++){
     uart_putc(CONSOLE, '-');
   }
 }
 void print_line_numbers_hor(uint32_t r){
-  uart_printf(CONSOLE,"\033[%u;%uH",r,1);
+  uart_printf(CONSOLE,"\033[%u;%uH",r, LEFT_COL);
   for (uint32_t i = 0; i < WINDOW_HEIGHT; i ++){
     uart_printf(CONSOLE,"%u ", i);
   }
@@ -201,13 +173,12 @@ void update_the_triggered_sensors(uint16_t s88_module_no){
 
   // update the triggered sensors
   for (int i = 7; i >= 0; i -- ){
-
     if(((1 << i) & byte_1_diff) > 0){
       recently_triggered_sensors[sensor_hist_cur_pointer] = sensor_no; 
       recently_triggered_s88[sensor_hist_cur_pointer] = s88_module_no;
       sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_LIST_MAXLEN;
-      sensor_no++;
     }
+    sensor_no++;
   }
 
   for (int i = 7; i >= 0; i -- ){
@@ -215,8 +186,8 @@ void update_the_triggered_sensors(uint16_t s88_module_no){
       recently_triggered_sensors[sensor_hist_cur_pointer] = sensor_no; 
       recently_triggered_s88[sensor_hist_cur_pointer] = s88_module_no;
       sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_LIST_MAXLEN;
-      sensor_no++;
     }
+    sensor_no++;
   }
 
 }
@@ -228,6 +199,7 @@ void print_updated_sensors(int r, int c){
     uart_putc(CONSOLE, (char)('A' + recently_triggered_s88[sensor_hist_cur_pointer_old] - 1));
     uart_putc(CONSOLE, ':');
     // do the printf for the sensor number in hexadecimal
+    if (recently_triggered_sensors[sensor_hist_cur_pointer_old] < 10) uart_putc(CONSOLE, '0');
     uart_printf(CONSOLE, "%u", recently_triggered_sensors[sensor_hist_cur_pointer_old]);
     uart_puts(CONSOLE, "\r\n");
   }
@@ -250,7 +222,7 @@ void print_ui_box(){
   print_sw_states(TOP_ROW + 2, LEFT_COL + 1);
   // print the marklin states
   uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 16 + 1);
-  uart_puts(CONSOLE, "MARKLIN SWITCHE STATES");      
+  uart_puts(CONSOLE, "RECENT SENSOR");      
   print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
   // print the activated switches
   uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 8, LEFT_COL + 16 + 1);
@@ -289,16 +261,19 @@ void print_ui_box(){
 // this box prints the command in typing to the prompt
 // Prints the command at COMMAND_ROW
 void print_typing_command(char *command){
-  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW,1);
+  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   uart_printf(CONSOLE,"\033[K");  
   uart_puts(CONSOLE, command);
 }
 
-void print_error(){
-  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 1,1);
+void print_error(char *error_msg){
+  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 1,2);
   uart_printf(CONSOLE,"\033[K");  
   uart_printf(CONSOLE,"\033[31m"); // "\033[31m" Set the shit to white
-  uart_puts(CONSOLE, "ERROR: COMMAND LENGTH EXCEEDED\r\n"); 
+  // print error_msg
+  uart_puts(CONSOLE, error_msg);
+  
+  uart_puts(CONSOLE, "\r\n"); 
   uart_printf(CONSOLE,"\033[37m"); // "\033[37m"
 }
 
@@ -316,6 +291,42 @@ void show_timer(const unsigned int hi, const unsigned int lo){
   }
 
 }
+/*
+THESE ARE THE EXECUTE MARKLIN COMMANDS BEGIN
+
+
+*/
+char execution_queue[2][QUEUE_MAX_LEN]; // marklin number and the history
+uint32_t execution_queue_begin = 0;
+uint32_t execution_queue_end = 0;
+
+void enqueue(unsigned char byte_1, unsigned char byte_2 ){
+  execution_queue[0][execution_queue_end] = byte_1;
+  execution_queue[1][execution_queue_end] = byte_2;
+  execution_queue_end = (execution_queue_end + 1) % QUEUE_MAX_LEN;
+}
+void dequeue(){
+  if (execution_queue_begin != execution_queue_end){
+    uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
+    if (execution_queue[1][execution_queue_begin] != '\r'){
+      uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
+    }
+    execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
+  }
+}
+void read_one_s88(char s88_id){  
+  
+    char byte_1 = (192 + s88_id);
+    char byte_2 = '\r';
+    enqueue(byte_1, byte_2);
+
+}
+// read_many_s88 reads in 
+void read_many_s88(char s88_no){ 
+    char byte_1 = ( 128 + s88_no);
+    char byte_2 = '\r';
+    enqueue(byte_1, byte_2);
+}
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
       enqueue(speed, id);
@@ -331,7 +342,11 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
       char byte_1 = 0;
       char byte_2 = 0;
       if (direction ==  'C')  byte_1 = 34;  
-      if (direction ==  'S')  byte_1 = 33;
+      else if (direction ==  'S')  byte_1 = 33;
+      else{
+        print_error("ERROR: INVALID DIRECTION");
+        return;
+      }
 
       byte_2 = solonoid_id;
       enqueue(byte_1, byte_2);
@@ -349,6 +364,9 @@ void clear_s88(){
 void sol_off(){  // Solonoid ID
     enqueue(32, '\r');
 }
+void press_go(){  // Press the GO button on the MARKLIN
+    enqueue(96, '\r');
+}
 char str_to_int(char *str){
     char ret = 0; 
     while (*str != '\0') { // loop until the end of the array
@@ -358,6 +376,23 @@ char str_to_int(char *str){
     }
     return ret;
 }
+char hexstr_to_int(char *str){
+    char ret = 0; 
+    str++;
+    str++;
+    while (*str != '\0') { // loop until the end of the array
+        ret = 16 * ret;
+        ret += a2d(*str);
+        str++; // move to the next character
+    }
+    return ret;
+}
+/*
+THESE ARE THE EXECUTE MARKLIN COMMANDS END
+
+
+COMMANDS START HERE
+*/
 char expecting_commands = 0; // this is the s_88 the program is going to expect
 // define a function that takes a char array as a parameter
 void parse_char_array(char *arr) {
@@ -366,9 +401,9 @@ void parse_char_array(char *arr) {
   char *num[100]; // array to store the numbers
   int i = 1; // index for the array
   int used_length = 0;
-  num[0] = arr;
-  num[1] = arr;
-  num[2] = arr;
+  num[0] = NULL;
+  num[1] = NULL;
+  num[2] = NULL;
   ptr = arr; // point to the first element of the array
   while (*ptr != '\0') { // loop until the end of the array
     if (*ptr == ' ') { // check if the character is a space
@@ -397,11 +432,51 @@ void parse_char_array(char *arr) {
     execute_reverse_command(train_id);
   }else if (num[0][0] == 's' && num[0][1] == 'w'){
     char *switch_number = num[1];
-    char sol_id = str_to_int(switch_number);
-    char switch_state = num[2][0];
-    solonoid_command(sol_id,  switch_state);
+    if(switch_number[0] == '0' && switch_number[1] == 'x'){
+      // this is a hex number
+      char sol_id = hexstr_to_int(switch_number);
+      char switch_state = num[2][0];
+      // 0x99 and 0x9a cannot be both curved at once
+      // if 0x99 is curved then 0x9a must be straight and vice versa
+      if(sol_id == 0x99){
+        if (switch_state == 'C'){
+          solonoid_command(0x9a, 'S');
+        }else{
+          solonoid_command(0x9a, 'C');
+        }
+      }
+      if (sol_id == 0x9a){
+        if (switch_state == 'C'){
+          solonoid_command(0x99, 'S');
+        }else{
+          solonoid_command(0x99, 'C');
+        }
+      }
+      // 0x9b and 0x9c cannot be curved at once
+      // if 0x9b is curved then 0x9c must be straight and vice versa
+      if (sol_id == 0x9b){
+        if (switch_state == 'C'){
+          solonoid_command(0x9c, 'S');
+        }else{
+          solonoid_command(0x9c, 'C');
+        }
+      }
+      if (sol_id == 0x9c){
+        if (switch_state == 'C'){
+          solonoid_command(0x9b, 'S');
+        }else{
+          solonoid_command(0x9b, 'C');
+        }
+      }
+      solonoid_command(sol_id,  switch_state);
+    } else {
+      char sol_id = str_to_int(switch_number);
+      char switch_state = num[2][0];
+      solonoid_command(sol_id,  switch_state);
+    }
   } else if (streq(num[0], "clear")){
       print_ui_box();
+      clear_s88();
   } else if(streq(num[0], "read")) {
       read_many_s88(S88_NOS);
       expecting_commands = 1;
@@ -426,7 +501,7 @@ int kmain() {
  
   unsigned int row = 2, col = 1, command_len = 0;
   uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = "ENQUEUED: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  char hello[] = "Print sensors with 0x if x is unit number. with numbers: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
   uart_puts(CONSOLE, hello);
   
   // initialize both console and marklin uarts
@@ -444,11 +519,30 @@ int kmain() {
   uint32_t read_time = 0; 
   expecting_commands = 1; // this is the s_88 the program is going to expect
   char expecting_byte = 0;
+  press_go();
+  for (int i = 0; i < 19; i ++){
+    solonoid_command(i, 'C');
+  }
   while (c != 'q') {
     if(get_timerLO() - read_time >  200000){
       // execute from the queue
       dequeue();
       read_time = get_timerLO();
+      // uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
+      if (expecting_commands == 0){
+        // read the next byte
+        expecting_commands = 1;
+        expecting_byte = 0;
+        // read the marklin
+        read_many_s88(S88_NOS);
+        
+      }
+      // print the lft and right pointer of the queue
+      uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
+      uart_printf(CONSOLE,"\033[K");
+      uart_printf(CONSOLE, "queue: %u %u", execution_queue_begin, execution_queue_end);
+      // set coulor to white
+      uart_puts(CONSOLE,"\033[37m");
     }
     if(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
       read_marklin(expecting_commands, expecting_byte);
@@ -460,30 +554,28 @@ int kmain() {
       }
       // the expecting byte can by 0 or 1
       // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
-      uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, 1, expecting_commands, expecting_byte);
+      uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
       expecting_byte++;
       if (expecting_byte == 2){
         expecting_commands++;
         expecting_byte = 0;
       }
       if(expecting_commands > S88_NOS){
-        read_many_s88(S88_NOS);
-        expecting_commands = 1;
+        expecting_commands = 0;
         // set cursor location to the bottom of the screen
       }
-      
     }
     if(expecting_commands == 0){
       char flush = uart_getc_modified(MARKLIN);
       // print flush near the bottom of the window
-      uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 2, 1);
+      uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1);
       uart_printf(CONSOLE,"\033[K");
       // print the flush
       uart_printf(CONSOLE, "flush: %u", flush);
       // set coulor to white
       uart_puts(CONSOLE,"\033[37m");
     }
-    if (sol_is_on > 0 && get_timerLO() - sol_on_time > 200000){
+    if (sol_is_on > 0 && get_timerLO() - sol_on_time > 500000){
       sol_off();
       sol_is_on = 0;
     }
@@ -522,7 +614,7 @@ int kmain() {
             // the command changes
             // this would keep printing the command even though the command does not change`
           } else {
-            print_error();
+            print_error("ERROR:COMMAND LINE EXCEEDED MAX LENGTH");
           }
         }else{
 
