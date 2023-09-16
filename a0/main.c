@@ -591,9 +591,9 @@ int kmain() {
       uart_puts(CONSOLE,"\033[37m");
       read_time = get_timerLO();
     }
-    // Need at least 10 god danm cycles to complete this shit
+    // Now no eed at least 10 god danm cycles to complete this shit
     // TOTALLY UNACCEPTABLE
-    if(expecting_commands > 0){
+    while(expecting_commands > 0){
       if(uart_getc_queue(MARKLIN)){
         read_marklin(expecting_commands, expecting_byte);
         print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
