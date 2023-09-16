@@ -261,7 +261,7 @@ void print_typing_command(char *command){
 }
 
 void print_error(char *error_msg){
-  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 1,2);
+  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 1,LEFT_COL + 1);
   uart_printf(CONSOLE,"\033[K");  
   uart_printf(CONSOLE,"\033[31m"); // "\033[31m" Set the shit to white
   // print error_msg
@@ -314,7 +314,7 @@ void read_one_s88(char s88_id){
     enqueue(byte_1, '\r');
 }
 uint8_t expecting_commands = 0; // this is the s_88 the program is going to expect
-// read_many_s88 reads in 
+//  reads in 
 void read_many_s88(char s88_no){ 
     char byte_1 = ( 128 + s88_no);
     enqueue(byte_1, '\r');
@@ -565,7 +565,7 @@ int kmain() {
     }
   }
   command_len = 0;
-  read_many_s88(S88_NOS);
+  
   expecting_commands = 0; // this is the s_88 the program is going to expect
   char expecting_byte = 0;
   // INITIALIZE THE TURNOUTS
@@ -581,7 +581,7 @@ int kmain() {
         // print flush near the bottom of the window
         //uart_printf(CONSOLE,"\033[%u;%uH READING MANY S88s",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1);
         //uart_puts(CONSOLE,"\033[37m");
-        read_many_s88(S88_NOS);
+        read_many_s88(S88_NOS); 
       }
       // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
@@ -593,7 +593,9 @@ int kmain() {
     }
     // Now no eed at least 10 god danm cycles to complete this shit
     // TOTALLY UNACCEPTABLE
-    while(expecting_commands > 0){
+    uint8_t trys = 0; 
+    while(expecting_commands > 0 && trys < 2){
+      trys++;
       if(uart_getc_queue(MARKLIN)){
         read_marklin(expecting_commands, expecting_byte);
         print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
@@ -604,7 +606,7 @@ int kmain() {
          // }
         // the expecting byte can by 0 or 1
         // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
-        uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
+        // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
         expecting_byte++;
         if (expecting_byte == 2){
           expecting_commands++;
