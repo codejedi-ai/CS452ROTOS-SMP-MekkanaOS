@@ -12,9 +12,11 @@ static const size_t COMMANDMAX_LEN = 64;
 #define TOP_ROW 4
 #define LEFT_COL 1
 #define WINDOW_HEIGHT 45
-#define WINDOW_WIDTH 80
+#define WINDOW_WIDTH 90
 #define COMMAND_ROW 40
-#define SENSOR_HIST_LEN 100
+#define SENSOR_LIST_MAXLEN 100
+#define QUEUE_MAX_LEN 10000
+// 240 bytes per second
 #define S88_NOS 5
 /*
 Code	Effect
@@ -28,20 +30,45 @@ Code	Effect
 "\033[36m"	Cyan text.
 "\033[37m"	White text.
 */
+char execution_queue[2][QUEUE_MAX_LEN]; // marklin number and the history
+uint32_t execution_queue_begin = 0;
+uint32_t execution_queue_end = 0;
+
+void enqueue(unsigned char byte_1, unsigned char byte_2 ){
+  execution_queue[0][execution_queue_end] = byte_1;
+  execution_queue[1][execution_queue_end] = byte_2;
+  execution_queue_end = (execution_queue_end + 1) % QUEUE_MAX_LEN;
+}
+void dequeue(){
+  if (execution_queue_begin != execution_queue_end){
+    uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
+    uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
+    execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
+  }
+}
 void read_one_s88(char s88_id){  
-    uart_putc(MARKLIN, 192 + s88_id);
+  
+    char byte_1 = (192 + s88_id);
+    char byte_2 = '\r';
+    enqueue(byte_1, byte_2);
+
 }
 // read_many_s88 reads in 
 void read_many_s88(char s88_no){ 
-    uart_putc(MARKLIN, 128 + s88_no);
+    char byte_1 = ( 128 + s88_no);
+    char byte_2 = '\r';
+    enqueue(byte_1, byte_2);
 }
 uint32_t sol_on_time= 0;
 char sol_is_on = 0;
 int trains_speed[81];
 char sensor_reading[2][S88_NOS];
 char sensor_reading_old[2][S88_NOS];
-char recently_triggered_sensors[SENSOR_HIST_LEN]; // marklin number and the history
-char recently_triggered_s88[SENSOR_HIST_LEN]; // marklin number and the history
+char recently_triggered_sensors[SENSOR_LIST_MAXLEN]; // marklin number and the history
+char recently_triggered_s88[SENSOR_LIST_MAXLEN]; // marklin number and the history
+
+
+
 unsigned int sensor_hist_cur_pointer = 0; // the top most sensor trigger aka the most recent
 char sw_states[255];
 int sensor_in_bytes_ind = 0; 
@@ -153,10 +180,12 @@ void print_activated(int r, int c){
 
       
 
-      // char byte_1_diff = byte_differences(sensor_reading_old[0][i], sensor_reading[0][i]);
-      // char byte_2_diff = byte_differences(sensor_reading_old[1][i], sensor_reading[1][i]);
+      char byte_1_diff = byte_differences(sensor_reading_old[0][i], sensor_reading[0][i]);
+      char byte_2_diff = byte_differences(sensor_reading_old[1][i], sensor_reading[1][i]);
+      /*
       char byte_1_diff = sensor_reading_old[0][i];
       char byte_2_diff = sensor_reading_old[1][i];
+      */
       print_byte_in_binary(byte_1_diff);
       uart_putc(CONSOLE, ' ');
       print_byte_in_binary(byte_2_diff);
@@ -164,54 +193,46 @@ void print_activated(int r, int c){
     }
 }
 void update_the_triggered_sensors(uint16_t s88_module_no){
-  char byte_1_old = sensor_reading[0][s88_module_no];
-  char byte_2_old = sensor_reading[1][s88_module_no];
-  read_one_s88(s88_module_no);
-  sensor_reading[0][s88_module_no] =  uart_getc_modified(MARKLIN);
-  sensor_reading[1][s88_module_no] =  uart_getc_modified(MARKLIN);
-  char byte_1_diff = byte_differences(byte_1_old, sensor_reading[0][s88_module_no]);
-  char byte_2_diff = byte_differences(byte_2_old, sensor_reading[1][s88_module_no]);
+  char byte_1_diff = byte_differences(sensor_reading_old[0][s88_module_no], sensor_reading[0][s88_module_no]);
+  char byte_2_diff = byte_differences(sensor_reading_old[1][s88_module_no], sensor_reading[1][s88_module_no]);
+  
   char sensor_no = 1;
   // (char)(((1 << i) & b) + '0')
 
   // update the triggered sensors
-  for (int i = 7; i >= 0; i ++ ){
-    if((char)(((1 << i) & byte_1_diff) + '0')){
-      sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_HIST_LEN;
+  for (int i = 7; i >= 0; i -- ){
+
+    if(((1 << i) & byte_1_diff) > 0){
       recently_triggered_sensors[sensor_hist_cur_pointer] = sensor_no; 
       recently_triggered_s88[sensor_hist_cur_pointer] = s88_module_no;
+      sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_LIST_MAXLEN;
       sensor_no++;
     }
   }
 
-  for (int i = 7; i >= 0; i ++ ){
-    if((char)(((1 << i) & byte_2_diff) + '0')){
-      sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_HIST_LEN;
+  for (int i = 7; i >= 0; i -- ){
+    if(((1 << i) & byte_2_diff) > 0){
       recently_triggered_sensors[sensor_hist_cur_pointer] = sensor_no; 
       recently_triggered_s88[sensor_hist_cur_pointer] = s88_module_no;
+      sensor_hist_cur_pointer = (sensor_hist_cur_pointer + 1) % SENSOR_LIST_MAXLEN;
       sensor_no++;
     }
   }
+
 }
-/*
+
 void print_updated_sensors(int r, int c){
-  
-  unsigned int sensor_hist_cur_pointer_old = sensor_hist_cur_pointer + 1;
-  for (char i = 1; i <= S88_NOS; i++){
-    update_the_triggered_sensors(i);
+  for (char i = 0; i < 10; i++){
+    uint32_t sensor_hist_cur_pointer_old = (sensor_hist_cur_pointer - i + SENSOR_LIST_MAXLEN) % SENSOR_LIST_MAXLEN;
+    uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
+    uart_putc(CONSOLE, (char)('A' + recently_triggered_s88[sensor_hist_cur_pointer_old] - 1));
+    uart_putc(CONSOLE, ':');
+    // do the printf for the sensor number in hexadecimal
+    uart_printf(CONSOLE, "%u", recently_triggered_sensors[sensor_hist_cur_pointer_old]);
+    uart_puts(CONSOLE, "\r\n");
   }
-  int row_offset = 0;
-  while (sensor_hist_cur_pointer_old != sensor_hist_cur_pointer){
-      uart_printf(CONSOLE,"\033[%u;%uH",r + row_offset, c);
-      row_offset++;
-      uart_printf(CONSOLE,"%x %x", recently_triggered_s88[sensor_hist_cur_pointer], recently_triggered_sensors[sensor_hist_cur_pointer]);
-      uart_puts(CONSOLE, "\r\n");
-      sensor_hist_cur_pointer_old = (sensor_hist_cur_pointer_old + 1) % SENSOR_HIST_LEN;
-  }
-  
-  read_marklin();
 }
-*/
+
 void print_ui_box(){
   // define the rows and cols
   /*
@@ -227,15 +248,19 @@ void print_ui_box(){
   uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 1);
   uart_puts(CONSOLE, "SW");
   print_sw_states(TOP_ROW + 2, LEFT_COL + 1);
-
+  // print the marklin states
   uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 16 + 1);
   uart_puts(CONSOLE, "MARKLIN SWITCHE STATES");      
   print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
-
-  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 48 + 1);
+  // print the activated switches
+  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 8, LEFT_COL + 16 + 1);
   uart_puts(CONSOLE, "ACTIVATED SWITCHES");
-  print_activated(TOP_ROW + 2, LEFT_COL + 48 + 1);
-  
+  print_activated(TOP_ROW + 9, LEFT_COL + 16 + 1);
+  // print the recentlly activated sensors
+  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 48 + 1);
+  uart_puts(CONSOLE, "RECENTLY ACTIVATED SENSORS");
+  print_updated_sensors(TOP_ROW + 2, LEFT_COL + 48 + 1);
+
   print_line_hor(TOP_ROW );
   print_line_hor(TOP_ROW + WINDOW_HEIGHT);
   
@@ -293,35 +318,36 @@ void show_timer(const unsigned int hi, const unsigned int lo){
 }
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
-      uart_putc(MARKLIN, speed);
-      uart_putc(MARKLIN, id);
+      enqueue(speed, id);
       trains_speed[id] = speed;
 }
 void execute_reverse_command(unsigned char id){  // Binary: 00000001)
-      uart_putc(MARKLIN, 0);
-      uart_putc(MARKLIN, id);
-      uart_putc(MARKLIN, 15);
-      uart_putc(MARKLIN, id);
-      uart_putc(MARKLIN, trains_speed[id]);
-      uart_putc(MARKLIN, id);
+      enqueue(0, id);
+      enqueue(15, id);
+      enqueue(trains_speed[id], id);
 }
 void solonoid_command(unsigned char solonoid_id, // Solonoid ID. . 
                       unsigned char direction){  // S 33 go straight, C 34 go bent
-      
-      if (direction ==  'C')  uart_putc(MARKLIN, 34);
-      if (direction ==  'S')  uart_putc(MARKLIN, 33);
-      uart_putc(MARKLIN, solonoid_id);
+      char byte_1 = 0;
+      char byte_2 = 0;
+      if (direction ==  'C')  byte_1 = 34;  
+      if (direction ==  'S')  byte_1 = 33;
+
+      byte_2 = solonoid_id;
+      enqueue(byte_1, byte_2);
       sol_on_time = get_timerLO();
       sol_is_on = 1;
       sw_states[solonoid_id] = direction;
       print_sw_states(TOP_ROW + 2, LEFT_COL + 1);
+      enqueue(32, '\r');
 }
+// the function clears the read memory on the s88. 
 void clear_s88(){
-    uart_putc(MARKLIN, 192);
+    enqueue(192, '\r');
 }
 // solonoid off
 void sol_off(){  // Solonoid ID
-    uart_putc(MARKLIN, 32);
+    enqueue(32, '\r');
 }
 char str_to_int(char *str){
     char ret = 0; 
@@ -400,7 +426,7 @@ int kmain() {
  
   unsigned int row = 2, col = 1, command_len = 0;
   uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = "ASYNCRROUNOUSE INPUT; UPDATE, This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  char hello[] = "ENQUEUED: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
   uart_puts(CONSOLE, hello);
   
   // initialize both console and marklin uarts
@@ -416,17 +442,22 @@ int kmain() {
 
   
   uint32_t read_time = 0; 
-  expecting_commands = 0; // this is the s_88 the program is going to expect
+  expecting_commands = 1; // this is the s_88 the program is going to expect
   char expecting_byte = 0;
   while (c != 'q') {
     if(get_timerLO() - read_time >  200000){
-      // read_many_s88(S88_NOS);
-      // expecting_commands = 1;
+      // execute from the queue
+      dequeue();
       read_time = get_timerLO();
     }
     if(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
       read_marklin(expecting_commands, expecting_byte);
       print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
+      print_activated(TOP_ROW + 9, LEFT_COL + 16 + 1);
+      for(int i = 1; i <= S88_NOS; i ++){
+        update_the_triggered_sensors(i);
+        print_updated_sensors(TOP_ROW + 2, LEFT_COL + 48 + 1);
+      }
       // the expecting byte can by 0 or 1
       // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
       uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, 1, expecting_commands, expecting_byte);
@@ -435,22 +466,27 @@ int kmain() {
         expecting_commands++;
         expecting_byte = 0;
       }
-      
-      
       if(expecting_commands > S88_NOS){
-        expecting_commands = 0;
+        read_many_s88(S88_NOS);
+        expecting_commands = 1;
         // set cursor location to the bottom of the screen
       }
       
     }
     if(expecting_commands == 0){
       char flush = uart_getc_modified(MARKLIN);
+      // print flush near the bottom of the window
+      uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 2, 1);
+      uart_printf(CONSOLE,"\033[K");
+      // print the flush
+      uart_printf(CONSOLE, "flush: %u", flush);
+      // set coulor to white
+      uart_puts(CONSOLE,"\033[37m");
     }
     if (sol_is_on > 0 && get_timerLO() - sol_on_time > 200000){
       sol_off();
       sol_is_on = 0;
     }
-    // uart_putc(MARKLIN, (unsigned char)32);
     show_timer(get_timerHI(), get_timerLO()); 
 
     c = uart_getc_modified(CONSOLE);
