@@ -533,13 +533,13 @@ int kmain() {
     
   // uart_printf(CONSOLE, "PI[%u]> ", counter++);
   char c = ' ', animation_state = 0;
-  uart_printf(CONSOLE,"\033[%u;%uH INITIALIZING:",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1);
+  
   while (execution_queue_begin != execution_queue_end)
   {
     if(get_timerLO() - read_time >  200000){
       // execute from the queue
       dequeue();
-      uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1);
+      uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
       if (animation_state == 0){
         uart_puts(CONSOLE, "-");
         animation_state = 1;
@@ -564,6 +564,7 @@ int kmain() {
       read_time = get_timerLO();
     }
   }
+  uart_printf(CONSOLE,"\033[%u;%uHFINNISHED!!!!!",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   command_len = 0;
   
   expecting_commands = 0; // this is the s_88 the program is going to expect
