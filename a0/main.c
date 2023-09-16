@@ -199,7 +199,6 @@ void print_updated_sensors(int r, int c){
     uart_putc(CONSOLE, (char)('A' + recently_triggered_s88[sensor_hist_cur_pointer_old] - 1));
     uart_putc(CONSOLE, ':');
     // do the printf for the sensor number in hexadecimal
-    if (recently_triggered_sensors[sensor_hist_cur_pointer_old] < 10) uart_putc(CONSOLE, '0');
     uart_printf(CONSOLE, "%u", recently_triggered_sensors[sensor_hist_cur_pointer_old]);
     uart_puts(CONSOLE, "\r\n");
   }
@@ -501,7 +500,7 @@ int kmain() {
  
   unsigned int row = 2, col = 1, command_len = 0;
   uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = "Print sensors with 0x if x is unit number. with numbers: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  char hello[] = "ENQUEUED with numbers: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
   uart_puts(CONSOLE, hello);
   
   // initialize both console and marklin uarts
@@ -528,14 +527,12 @@ int kmain() {
       // execute from the queue
       dequeue();
       read_time = get_timerLO();
-      // uart_printf(CONSOLE,"\033[%u;%uH expecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
       if (expecting_commands == 0){
         // read the next byte
         expecting_commands = 1;
         expecting_byte = 0;
         // read the marklin
         read_many_s88(S88_NOS);
-        
       }
       // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
