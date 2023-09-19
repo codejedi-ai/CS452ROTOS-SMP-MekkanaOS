@@ -307,7 +307,7 @@ void show_timer(const unsigned int hi, const unsigned int lo){
     uart_printf(CONSOLE,"\033[H");
     uart_printf(CONSOLE,"\033[?25l");
     // clear row
-    uart_puts(CONSOLE, "\033[K");
+    // uart_puts(CONSOLE, "\033[K");
     uart_printf(CONSOLE, "Time:%u:%u:%u", minutes, seconds % 60,tenth_of_second%10);
   }
 
