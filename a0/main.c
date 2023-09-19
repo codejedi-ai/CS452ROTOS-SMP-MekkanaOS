@@ -21,7 +21,7 @@ static const size_t COMMANDMAX_LEN = 64;
 #define SECOND_COL 16
 #define THIRD_COL 48
 #define FOURTH 1
-
+#define POLL_TIME 150000
 #define SENSOR_LIST_MAXLEN 100
 #define QUEUE_MAX_LEN 200
 // 240 bytes per second
@@ -257,8 +257,8 @@ void print_ui_box(){
   print_line_ver(LEFT_COL + WINDOW_WIDTH);
   uart_puts(CONSOLE, "\033[37m");
   
-  print_line_ver(LEFT_COL + 16);
-  print_line_ver(LEFT_COL + 48);
+  print_line_ver(LEFT_COL + SECOND_COL);
+  print_line_ver(LEFT_COL + THIRD_COL);
   
 
 
@@ -301,6 +301,8 @@ void show_timer(const unsigned int hi, const unsigned int lo){
   unsigned int tenth_of_second = lo / (unsigned int)1e5;
 
   if (TENTH_OF_SEC != tenth_of_second%10){
+    // clear row
+    uart_puts(CONSOLE, "\033[K");
     uart_printf(CONSOLE,"\033[H");
     uart_printf(CONSOLE,"\033[?25l");
     uart_printf(CONSOLE, "Time:%u:%u:%u", minutes, seconds % 60,tenth_of_second%10);
@@ -531,7 +533,7 @@ void check_marklin_response(uint8_t r, uint8_t c){
   
   while (execution_queue_begin != execution_queue_end)
   {
-    if(get_timerLO() - read_time >  100000){
+    if(get_timerLO() - read_time >  POLL_TIME){
       // execute from the queue
       dequeue();
       read_time = get_timerLO();
@@ -589,7 +591,7 @@ int kmain() {
   uart_config_and_enable(CONSOLE, 115200);
   uart_config_and_enable(MARKLIN, MARKLIN_BR);
   uart_init();
-  // press_go();
+  
   // the earliest in which you can print
   
   print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
@@ -599,9 +601,11 @@ int kmain() {
   // move the cursor to the head
   uart_printf(CONSOLE,"\033[H");
   // clear the screen
-  
   char* command = NULL;
   memset(command, 0, COMMANDMAX_LEN);
+
+
+  // press_go();
   check_marklin_response(TOP_ROW + SW_ROW, LEFT_COL + SECOND_COL + 1);
 
     // make an int array of trains nubmber 1, 2, 24, 47, 54, 58
@@ -626,7 +630,7 @@ int kmain() {
   
   while (execution_queue_begin != execution_queue_end)
   {
-    if(get_timerLO() - read_time >  100000){
+    if(get_timerLO() - read_time >  POLL_TIME){
       // execute from the queue
       dequeue();
       uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
@@ -666,18 +670,18 @@ int kmain() {
     
     
   // uart_printf(CONSOLE, "PI[%u]> ", counter++);
-
-  uart_printf(CONSOLE,"\033[%u;%uHFINNISHED!!!!!",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
+  uart_printf(CONSOLE,"\033[%u;%uHENTER COMMAND AT BOTTOM:",TOP_ROW + COMMAND_ROW - 1, LEFT_COL + 1);
+  uart_printf(CONSOLE,"\033[%u;%uHFINISHED!!!!!",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   command_len = 0;
   
   expecting_commands = 0; // this is the s_88 the program is going to expect
   
   // INITIALIZE THE TURNOUTS
   
-  uint32_t loop_time = get_timerLO();
+  uint32_t loop_time = get_timerLO(), max_loop_time = 0;
   while (c != 'q') {
     loop_time = get_timerLO();
-    if(get_timerLO() - read_time >  150000){
+    if(get_timerLO() - read_time >  POLL_TIME){
       // execute from the queue
       dequeue();
       
@@ -701,14 +705,15 @@ int kmain() {
     // the program moves on. 
     uint8_t trys = 0; 
     while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
-      trys++;
+      show_timer(get_timerHI(), get_timerLO()); 
+      // trys++;
       if(uart_getc_queue(MARKLIN)){
         read_marklin(expecting_commands, expecting_byte);
-        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + 16 + 1);
-        print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + 16 + 1, expecting_commands);
+        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1);
+        print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
         // for(int i = 1; i <= S88_NOS; i ++){
         update_the_triggered_sensors(expecting_commands, expecting_byte);
-        print_updated_sensors(TOP_ROW + 2, LEFT_COL + THIRD_COL + 1);
+        print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
          // }
         // the expecting byte can by 0 or 1
         // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
@@ -775,6 +780,11 @@ int kmain() {
     uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + WINDOW_HEIGHT - 1, LEFT_COL + 1);
     uart_printf(CONSOLE,"\033[K");
     uart_printf(CONSOLE, "loop time: %u", get_timerLO() - loop_time);
+    if (max_loop_time < get_timerLO() - loop_time){
+      max_loop_time = get_timerLO() - loop_time;
+      uart_printf(CONSOLE, "max time: %u", max_loop_time);
+    }
+    
     // uart_printf(CONSOLE,"\033[2J");
   }
   uart_puts(CONSOLE, "\r\n");
