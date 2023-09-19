@@ -326,6 +326,7 @@ char execution_queue[2][QUEUE_MAX_LEN]; // marklin number and the history
 uint32_t execution_queue_begin = 0;
 uint32_t execution_queue_end = 0;
 uint32_t queue_cur_size = 0;
+uint32_t sensor_querry_time = 0;
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
   execution_queue[0][execution_queue_end] = byte_1;
   execution_queue[1][execution_queue_end] = byte_2;
@@ -333,6 +334,7 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
   queue_cur_size++;
 }
 void dequeue(){
+  if (queue_cur_size <= 0) return;
   if (execution_queue[0][execution_queue_begin] == 33 || execution_queue[0][execution_queue_begin] == 34){
     uint8_t sol_id = execution_queue[1][execution_queue_begin];
     if(execution_queue[0][execution_queue_begin] == 33 ){
@@ -343,18 +345,21 @@ void dequeue(){
     print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1, sol_id);
     // print the switch state
   }
-  if (queue_cur_size != 0){
-    queue_cur_size--;
-    uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
-    if (execution_queue[1][execution_queue_begin] != '\r'){
-      uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
-    }
-    // remove the beginning of the queue
-    execution_queue[0][execution_queue_begin] = 0;
-    execution_queue[1][execution_queue_begin] = 0;
-    // move the begin to the next
-    execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
+  if (execution_queue[0][execution_queue_begin] & 128){
+      sensor_querry_time = get_timerLO();
   }
+  
+  queue_cur_size--;
+  uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
+  if (execution_queue[1][execution_queue_begin] != '\r'){
+    uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
+  }
+  // remove the beginning of the queue
+  execution_queue[0][execution_queue_begin] = 0;
+  execution_queue[1][execution_queue_begin] = 0;
+  // move the begin to the next
+  execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
+
   // If the command is a sononoid command then it is going to be a 2 byte command
   // then update the table
 
@@ -733,7 +738,7 @@ int kmain() {
   
   // INITIALIZE THE TURNOUTS
   
-  uint32_t loop_time_val = 0, loop_time = get_timerLO(), max_loop_time = 0, sensor_querry_time = get_timerLO();
+  uint32_t loop_time_val = 0, loop_time = get_timerLO(), max_loop_time = 0;
   queue_cur_size = 0;
   execution_queue_begin = 0;
   execution_queue_end = 0;
@@ -742,29 +747,29 @@ int kmain() {
     loop_time_val = get_timerLO() - loop_time;
     loop_time = get_timerLO();
     // print the time it takes the loop to finnish at the bottom of the window
-    uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + QUEUE_MAX_ROW, LEFT_COL + THIRD_COL + 1);
-    uart_printf(CONSOLE, "loop time: %u", loop_time_val);
-    if (max_loop_time < loop_time_val){
-      max_loop_time = loop_time_val;
-      uart_printf(CONSOLE, " max time: %u", max_loop_time);
-    }
+    
+
     
     if(get_timerLO() - execution_time >  POLL_TIME){
+      uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + QUEUE_MAX_ROW, LEFT_COL + THIRD_COL + 1);
+      uart_printf(CONSOLE, "loop time: %u", loop_time_val);
+      if (max_loop_time < loop_time_val){
+        max_loop_time = loop_time_val;
+        uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + QUEUE_MAX_ROW + 1, LEFT_COL + THIRD_COL + 1);
+        uart_printf(CONSOLE, " max time: %u", max_loop_time);
+      }
       dequeue();
       if(!uart_getc_queue(MARKLIN) && polling_s88 == 0){
         // not reading anything from the marklin and expecting commands is 6
         if (queue_cur_size == 0) {
           // print the sensor querry time on the row SENSOR_QUERRY
-          uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + SENSOR_QUERRY, LEFT_COL + 1);
-          uart_printf(CONSOLE, "sensor querry time: %u", get_timerLO() - sensor_querry_time);
           read_many_s88(S88_NOS); 
-          sensor_querry_time = get_timerLO();
         }
       }
       // execute from the queue
       
       // print the lft and right pointer of the queue
-            // print the lft and right pointer of the queue
+      // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + QUEUE_MAX_ROW, LEFT_COL + 1);
       //uart_printf(CONSOLE,"\033[K");
       uart_printf(CONSOLE, "queue: %u %u", execution_queue_begin, execution_queue_end);
@@ -801,6 +806,8 @@ int kmain() {
       }
     }
     if (polling_s88 > S88_NOS){
+      uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + SENSOR_QUERRY, LEFT_COL + 1);
+      uart_printf(CONSOLE, "sensor querry time: %u", get_timerLO() - sensor_querry_time);
       polling_s88 = 0;
       polling_s88_byte = 0;
     }
