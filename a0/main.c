@@ -361,22 +361,22 @@ void dequeue(){
 }
 
 // This section is the read in
-uint8_t expecting_commands = 0; // this is the s_88 the program is going to expect
-uint8_t expecting_byte = 0;
+uint8_t polling_s88 = 0; // this is the s_88 the program is going to expect
+uint8_t polling_s88_byte = 0;
 //  reads in 
 void read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
     // uart_putc(MARKLIN, byte_1);
     enqueue(byte_1, '\r');
-    expecting_commands = s88_id;
-    expecting_byte = 0;
+    polling_s88 = s88_id;
+    polling_s88_byte = 0;
 }
 void read_many_s88(char s88_no){ 
     char byte_1 = ( 128 + s88_no);
     enqueue(byte_1, '\r');
     // uart_putc(MARKLIN, byte_1);
-    expecting_commands = 1;
-    expecting_byte = 0;
+    polling_s88 = 1;
+    polling_s88_byte = 0;
 }
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
@@ -558,8 +558,8 @@ void check_marklin_response(uint8_t r, uint8_t c){
   // clear the screen
   uart_printf(CONSOLE,"\033[2J");
   // initialize the expecting command and byte
-  expecting_commands = 1;
-  expecting_byte = 0;
+  polling_s88 = 1;
+  polling_s88_byte = 0;
   // read the marklin
   read_many_s88(S88_NOS);
   // dequeue the marklin
@@ -578,9 +578,9 @@ void check_marklin_response(uint8_t r, uint8_t c){
   // print prompt to check marlin
   uart_printf(CONSOLE,"\033[%u;%uH",r, c);
   uart_puts(CONSOLE, "CHECKING MARKLIN TIME RESPONSE\r\n");
-  while (expecting_commands <= S88_NOS) // the expecting commands is one indexed
+  while (polling_s88 <= S88_NOS) // the expecting commands is one indexed
   {
-    uart_printf(CONSOLE,"\033[%u;%uH", r + (expecting_commands - 1) * 2 + expecting_byte + 1, c);
+    uart_printf(CONSOLE,"\033[%u;%uH", r + (polling_s88 - 1) * 2 + polling_s88_byte + 1, c);
     /* code */
     // increment expecting byte if it equals 2 increment expecting commands and set expecting byte to 0
     // This is to be ran before the ui is printed
@@ -589,28 +589,28 @@ void check_marklin_response(uint8_t r, uint8_t c){
     char c = uart_getc(MARKLIN);
     // print the byte and the time it taken to read the byte
     // print string byte: 
-    // read_marklin(expecting_commands, expecting_byte); 
+    // read_marklin(polling_s88, polling_s88_byte); 
     // read_marklin(uint32_t s88_unit, short int byte_no)
-    sensor_reading_old[expecting_byte][expecting_commands] = sensor_reading[expecting_byte][expecting_commands];
-    sensor_reading[expecting_byte][expecting_commands] =  c;
+    sensor_reading_old[polling_s88_byte][polling_s88] = sensor_reading[polling_s88_byte][polling_s88];
+    sensor_reading[polling_s88_byte][polling_s88] =  c;
 
 
-    update_the_triggered_sensors(expecting_commands, expecting_byte);
+    update_the_triggered_sensors(polling_s88, polling_s88_byte);
     uart_puts(CONSOLE, "byte: ");
     // print the byte in the binary form
     print_byte_in_binary(c);
     // print the expecting command and byte
-    uart_printf(CONSOLE, " expecting: %u %u ", expecting_commands, expecting_byte);
+    uart_printf(CONSOLE, " expecting: %u %u ", polling_s88, polling_s88_byte);
     uart_printf(CONSOLE, " time taken: %u \r\n", get_timerLO() - timer);
     timer = get_timerLO();
-    expecting_byte++;
-    if (expecting_byte == 2){
-      expecting_commands++;
-      expecting_byte = 0;
+    polling_s88_byte++;
+    if (polling_s88_byte == 2){
+      polling_s88++;
+      polling_s88_byte = 0;
     }
   }
   // print total time taken to complete
-  uart_printf(CONSOLE,"\033[%u;%uH", r + (expecting_commands - 1) * 2 + expecting_byte + 2, c);
+  uart_printf(CONSOLE,"\033[%u;%uH", r + (polling_s88 - 1) * 2 + polling_s88_byte + 2, c);
   uart_printf(CONSOLE, "total time: %u", get_timerLO() - timer_old);
 }
 int kmain() {
@@ -728,7 +728,7 @@ int kmain() {
   uart_printf(CONSOLE,"\033[%u;%uHFINISHED!!!!!",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   command_len = 0;
   
-  expecting_commands = 0; // this is the s_88 the program is going to expect
+  polling_s88 = 0; // this is the s_88 the program is going to expect
   
   // INITIALIZE THE TURNOUTS
   
@@ -750,7 +750,7 @@ int kmain() {
     
     if(get_timerLO() - execution_time >  POLL_TIME){
       dequeue();
-      if(!uart_getc_queue(MARKLIN) && expecting_commands == 0){
+      if(!uart_getc_queue(MARKLIN) && polling_s88 == 0){
         // not reading anything from the marklin and expecting commands is 6
         if (queue_cur_size == 0) {
           // print the sensor querry time on the row SENSOR_QUERRY
@@ -782,26 +782,26 @@ int kmain() {
     // the program moves on. 
     uint8_t trys = 0; 
     
-    while(uart_getc_queue(MARKLIN) && 1 <= expecting_commands && expecting_commands <= S88_NOS){
+    while(uart_getc_queue(MARKLIN) && 1 <= polling_s88 && polling_s88 <= S88_NOS){
       // show_timer(get_timerHI(), get_timerLO()); 
       trys++;
-      read_marklin(expecting_commands, expecting_byte); 
-      update_the_triggered_sensors(expecting_commands, expecting_byte);
+      read_marklin(polling_s88, polling_s88_byte); 
+      update_the_triggered_sensors(polling_s88, polling_s88_byte);
       // the expecting byte can by 0 or 1
-      // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
-      // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
-      expecting_byte++;
-      if (expecting_byte == 2){
-        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
-        print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
+      // before incrementing if it is equal to 1 then we need to overflow to the polling_s88
+      // uart_printf(CONSOLE,"\033[%u;%uHpolling_s88: %u polling_s88_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, polling_s88, polling_s88_byte);
+      polling_s88_byte++;
+      if (polling_s88_byte == 2){
+        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, polling_s88);
+        print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, polling_s88);
         
-        expecting_commands++;
-        expecting_byte = 0;
+        polling_s88++;
+        polling_s88_byte = 0;
       }
     }
-    if (expecting_commands > S88_NOS){
-      expecting_commands = 0;
-      expecting_byte = 0;
+    if (polling_s88 > S88_NOS){
+      polling_s88 = 0;
+      polling_s88_byte = 0;
     }
 
     c = uart_getc_modified(CONSOLE);
