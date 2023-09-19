@@ -654,6 +654,7 @@ int kmain() {
     // set all train speed to 0
   for (uint8_t i = 0; i < train_count; i ++){
     execute_train_command(0, train_numbers[i]);
+    execute_train_command(64, train_numbers[i]);
   }
   // set all the turnabouts to straight
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
