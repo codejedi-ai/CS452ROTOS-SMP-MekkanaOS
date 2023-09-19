@@ -14,11 +14,29 @@ static const size_t COMMANDMAX_LEN = 64;
 #define WINDOW_HEIGHT 45
 #define WINDOW_WIDTH 90
 #define COMMAND_ROW 40
+#define SW_ROW 1
+#define MARKLIN_ROW 1
+#define SENSORS_ROW 1
+#define ACTIVATED_SWITCHES_ROW 9
+#define SECOND_COL 16
+#define THIRD_COL 48
+#define FOURTH 1
+
 #define SENSOR_LIST_MAXLEN 100
 #define QUEUE_MAX_LEN 200
 // 240 bytes per second
 #define S88_NOS 5
 /*
+These are the most essential terminal control sequences that you will need for your train program.
+
+Code	Effect
+"\033[2J"	Clear the screen.
+"\033[H"	Move the cursor to the upper-left corner of the screen.
+"\033[r;cH"	Move the cursor to row r, column c. Note that both the rows and columns are indexed starting at 1.
+"\033[?25l"	Hide the cursor.
+"\033[K"	Delete everything from the cursor to the end of the line.
+These control sequences can help make your program's display more lively.
+
 Code	Effect
 "\033[0m"	Reset special formatting (such as colour).
 "\033[30m"	Black text.
@@ -29,6 +47,7 @@ Code	Effect
 "\033[35m"	Magenta text.
 "\033[36m"	Cyan text.
 "\033[37m"	White text.
+
 */
 
 uint32_t sol_on_time= 0;
@@ -80,8 +99,9 @@ void print_line_numbers_ver(uint32_t c){
 }
 void print_sw_states(uint32_t r, uint32_t c){
   uart_printf(CONSOLE,"\033[%u;%uH",r,c);
+  uart_puts(CONSOLE, "SW");
   for (uint32_t i = 1; i <= 18; i ++){
-    uart_printf(CONSOLE,"\033[%u;%uH",r + i - 1, c);
+    uart_printf(CONSOLE,"\033[%u;%uH",r + i, c);
     uart_printf(CONSOLE,"T%u: ", i);
     uart_putc(CONSOLE, sw_states[i]);
     uart_puts(CONSOLE, "\r\n");
@@ -113,8 +133,9 @@ void read_marklin(uint32_t s88_unit, short int byte_no){
 }
 void print_marklin(int r, int c){
     uart_printf(CONSOLE,"\033[%u;%uH",r,c);
+    uart_puts(CONSOLE, "RECENT SENSOR");    
     for(int i = 1; i <= S88_NOS; i ++) {
-      uart_printf(CONSOLE,"\033[%u;%uH",r + i - 1,c);
+      uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
       uart_putc(CONSOLE, (char)('A' + i - 1));
       uart_putc(CONSOLE, ':');
       print_byte_in_binary(sensor_reading[0][i]);
@@ -143,7 +164,8 @@ char byte_differences(char byte1, char byte2){
 }
 void print_activated(uint16_t r, uint16_t c, uint16_t i){
     uart_printf(CONSOLE,"\033[%u;%uH",r,c);
-    uart_printf(CONSOLE,"\033[%u;%uH",r + i - 1,c);
+    uart_puts(CONSOLE, "ACTIVATED SWITCHES");
+    uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
     uart_putc(CONSOLE, (char)('A' + i - 1));
     uart_putc(CONSOLE, ':');
 
@@ -184,7 +206,11 @@ void update_the_triggered_sensors(uint8_t s88_module_no, uint8_t byte_no){
 }
 
 void print_updated_sensors(int r, int c){
-  for (char i = 0; i < 10; i++){
+  // set cursor to r,c
+  uart_printf(CONSOLE,"\033[%u;%uH",r,c);
+  uart_puts(CONSOLE, "RECENTLY ACTIVATED SENSORS");
+
+  for (char i = 1; i < S88_NOS * 2; i++){
     uint32_t sensor_hist_cur_pointer_old = (sensor_hist_cur_pointer - i + SENSOR_LIST_MAXLEN - 1) % SENSOR_LIST_MAXLEN;
     // sensor_hist_cur_pointer is the current pointer that points at the next index to be written
     uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
@@ -211,21 +237,17 @@ void print_ui_box(){
   uart_printf(CONSOLE,"\033[2J"); 
   print_line_hor(TOP_ROW);
 
-  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 1);
-  uart_puts(CONSOLE, "SW");
-  print_sw_states(TOP_ROW + 2, LEFT_COL + 1);
+  
+  print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
   // print the marklin states
-  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 16 + 1);
-  uart_puts(CONSOLE, "RECENT SENSOR");      
-  print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
+    
+  print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1);
   // print the activated switches
-  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 8, LEFT_COL + 16 + 1);
-  uart_puts(CONSOLE, "ACTIVATED SWITCHES");
-  // print_activated(TOP_ROW + 9, LEFT_COL + 16 + 1);
+  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 8, LEFT_COL + SECOND_COL + 1);
   // print the recentlly activated sensors
-  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + 48 + 1);
-  uart_puts(CONSOLE, "RECENTLY ACTIVATED SENSORS");
-  print_updated_sensors(TOP_ROW + 2, LEFT_COL + 48 + 1);
+  uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 1, LEFT_COL + THIRD_COL + 1);
+
+  print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
 
   print_line_hor(TOP_ROW );
   print_line_hor(TOP_ROW + WINDOW_HEIGHT);
@@ -307,19 +329,34 @@ void dequeue(){
     }
     execution_queue_begin = (execution_queue_begin + 1) % QUEUE_MAX_LEN;
   }
+  // If the command is a sononoid command then it is going to be a 2 byte command
+  // then update the table
+  if (execution_queue[0][execution_queue_begin] == 33 || execution_queue[0][execution_queue_begin] == 34){
+    uint8_t sol_id = execution_queue[1][execution_queue_begin];
+    uint8_t switch_state = execution_queue[0][execution_queue_begin] == 33 ? 'S' : 'C';
+    sw_states[sol_id] = switch_state;
+    // print the switch state
+    print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
+  }
 }
+
+// This section is the read in
+uint8_t expecting_commands = 0; // this is the s_88 the program is going to expect
+uint8_t expecting_byte = 0;
+//  reads in 
 void read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
     // uart_putc(MARKLIN, byte_1);
     enqueue(byte_1, '\r');
+    expecting_commands = s88_id;
+    expecting_byte = 0;
 }
-uint8_t expecting_commands = 0; // this is the s_88 the program is going to expect
-//  reads in 
 void read_many_s88(char s88_no){ 
     char byte_1 = ( 128 + s88_no);
     enqueue(byte_1, '\r');
     // uart_putc(MARKLIN, byte_1);
     expecting_commands = 1;
+    expecting_byte = 0;
 }
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
@@ -336,21 +373,20 @@ void sol_off(){  // Solonoid ID
 }
 void solonoid_command(unsigned char solonoid_id, // Solonoid ID. . 
                       unsigned char direction){  // S 33 go straight, C 34 go bent
-      char byte_1 = 0;
-      char byte_2 = 0;
-      if (direction ==  'C')  byte_1 = 34;  
-      else if (direction ==  'S')  byte_1 = 33;
-      else{
-        print_error("ERROR: INVALID DIRECTION");
-        return;
-      }
+    char byte_1 = 0;
+    char byte_2 = 0;
+    if (direction ==  'C')  byte_1 = 34;  
+    else if (direction ==  'S')  byte_1 = 33;
+    else{
+      print_error("ERROR: INVALID DIRECTION");
+      return;
+    }
 
-      byte_2 = solonoid_id;
-      enqueue(byte_1, byte_2);
-      sol_on_time = get_timerLO();
-      sw_states[solonoid_id] = direction;
-      print_sw_states(TOP_ROW + 2, LEFT_COL + 1);
-      sol_off();
+    byte_2 = solonoid_id;
+    enqueue(byte_1, byte_2);
+    sol_on_time = get_timerLO();
+    sw_states[solonoid_id] = direction;
+    sol_off();
 }
 // the function clears the read memory on the s88. 
 void clear_s88(){
@@ -477,9 +513,66 @@ void parse_char_array(char *arr) {
   }
 }
 
-
-
+// make a function that tests the time at which the marklin replies
+// get the current time stamp, use the uart_getc(MARLKIN) command to get the next byte
+// Such have to block and only commence to the rest of the code when the byte is received
+// break out of the loop whtn the 10 bytes are recienved
+// that is from first module 1 to module 2, each module has 2 bytes
+void check_marklin_response(uint8_t r, uint8_t c){
+  // clear the screen
+  uart_printf(CONSOLE,"\033[2J");
+  // initialize the expecting command and byte
+  expecting_commands = 1;
+  expecting_byte = 0;
+  // read the marklin
+  read_many_s88(S88_NOS);
+  // dequeue the marklin
+  uint32_t read_time = get_timerLO();
+  
+  while (execution_queue_begin != execution_queue_end)
+  {
+    if(get_timerLO() - read_time >  100000){
+      // execute from the queue
+      dequeue();
+      read_time = get_timerLO();
+    }
+  }
+  uint32_t timer = get_timerLO();
+  uint32_t timer_old = get_timerLO();
+  // print prompt to check marlin
+  uart_printf(CONSOLE,"\033[%u;%uH",r, c);
+  uart_puts(CONSOLE, "CHECKING MARKLIN TIME RESPONSE\r\n");
+  while (expecting_commands <= S88_NOS) // the expecting commands is one indexed
+  {
+    uart_printf(CONSOLE,"\033[%u;%uH", r + (expecting_commands - 1) * 2 + expecting_byte + 1, c);
+    /* code */
+    // increment expecting byte if it equals 2 increment expecting commands and set expecting byte to 0
+    // This is to be ran before the ui is printed
+    // if the marklin has a byte to be read
+    // this byte would be busywaiting until the byte is read
+    char byte = uart_getc(MARKLIN);
+    // print the byte and the time it taken to read the byte
+    // print string byte: 
+    
+    uart_puts(CONSOLE, "byte: ");
+    // print the byte in the binary form
+    print_byte_in_binary(byte);
+    // print the expecting command and byte
+    uart_printf(CONSOLE, " expecting: %u %u ", expecting_commands, expecting_byte);
+    uart_printf(CONSOLE, " time taken: %u \r\n", get_timerLO() - timer);
+    timer = get_timerLO();
+    expecting_byte++;
+    if (expecting_byte == 2){
+      expecting_commands++;
+      expecting_byte = 0;
+    }
+  }
+  // print total time taken to complete
+  uart_printf(CONSOLE,"\033[%u;%uH", r + (expecting_commands - 1) * 2 + expecting_byte + 2, c);
+  uart_printf(CONSOLE, "total time: %u", get_timerLO() - timer_old);
+}
 int kmain() {
+  
   // INITIALIZE THE VALUES
   execution_queue_begin = 0;
   execution_queue_end = 0;
@@ -496,23 +589,22 @@ int kmain() {
   uart_config_and_enable(CONSOLE, 115200);
   uart_config_and_enable(MARKLIN, MARKLIN_BR);
   uart_init();
+  // press_go();
+  // the earliest in which you can print
+  
+  print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
 
   memset(sw_states, '*', 255);
-  print_ui_box();
+  
   // move the cursor to the head
   uart_printf(CONSOLE,"\033[H");
   // clear the screen
   
   char* command = NULL;
   memset(command, 0, COMMANDMAX_LEN);
- 
-  unsigned int row = 2, col = 1, command_len = 0;
-  uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = "SET TRAIN TO 0 and Rails to C init updates: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
-  uart_puts(CONSOLE, hello);
-  uint32_t read_time = 0; 
+  check_marklin_response(TOP_ROW + SW_ROW, LEFT_COL + SECOND_COL + 1);
 
-  // make an int array of trains nubmber 1, 2, 24, 47, 54, 58
+    // make an int array of trains nubmber 1, 2, 24, 47, 54, 58
   char train_numbers[] = {1, 2, 24, 47, 54, 58};
   int train_count = 6;
   // set all the turnabouts to curved
@@ -520,23 +612,21 @@ int kmain() {
     solonoid_command(i, 'C');
   }
   // set all train speed to 0
-  for (uint8_t i = 0; i <= train_count; i ++){
+  for (uint8_t i = 0; i <train_count; i ++){
     execute_train_command(0, train_numbers[i]);
   }
   solonoid_command(0x99, 'C');
   solonoid_command(0x9a, 'S');
   solonoid_command(0x9b, 'C');
   solonoid_command(0x9c, 'S');
-  // not strictly necessary, since line 1 is configured during boot
-  // but we'll configure the line anyways, so we know what state it is in
-    
-    
-  // uart_printf(CONSOLE, "PI[%u]> ", counter++);
+
+
+  uint32_t read_time = 0; 
   char c = ' ', animation_state = 0;
   
   while (execution_queue_begin != execution_queue_end)
   {
-    if(get_timerLO() - read_time >  200000){
+    if(get_timerLO() - read_time >  100000){
       // execute from the queue
       dequeue();
       uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
@@ -560,21 +650,34 @@ int kmain() {
       uart_printf(CONSOLE, "queue: %u %u", execution_queue_begin, execution_queue_end);
       // set coulor to white
       uart_puts(CONSOLE,"\033[37m");
-      // print_activated(TOP_ROW + 9, LEFT_COL + 16 + 1);
       read_time = get_timerLO();
     }
   }
+  print_ui_box();
+  unsigned int row = 2, col = 1, command_len = 0;
+  uart_printf(CONSOLE,"\033[%u;%uH",row,col);
+  char hello[] = "SET TRAIN TO 0 and Rails to C init updates: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  uart_puts(CONSOLE, hello);
+  
+
+
+  // not strictly necessary, since line 1 is configured during boot
+  // but we'll configure the line anyways, so we know what state it is in
+    
+    
+  // uart_printf(CONSOLE, "PI[%u]> ", counter++);
+
   uart_printf(CONSOLE,"\033[%u;%uHFINNISHED!!!!!",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   command_len = 0;
   
   expecting_commands = 0; // this is the s_88 the program is going to expect
-  char expecting_byte = 0;
+  
   // INITIALIZE THE TURNOUTS
-  press_go();
+  
   uint32_t loop_time = get_timerLO();
   while (c != 'q') {
     loop_time = get_timerLO();
-    if(get_timerLO() - read_time >  100000){
+    if(get_timerLO() - read_time >  150000){
       // execute from the queue
       dequeue();
       
@@ -594,16 +697,18 @@ int kmain() {
     }
     // Now no eed at least 10 god danm cycles to complete this shit
     // TOTALLY UNACCEPTABLE
+    // The while loop would busy wait for all element in the queue. If there exist nothing in the queue then
+    // the program moves on. 
     uint8_t trys = 0; 
-    while(expecting_commands > 0 && trys < 2){
+    while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
       trys++;
       if(uart_getc_queue(MARKLIN)){
         read_marklin(expecting_commands, expecting_byte);
-        print_marklin(TOP_ROW + 2, LEFT_COL + 16 + 1);
-        print_activated(TOP_ROW + 9, LEFT_COL + 16 + 1, expecting_commands);
+        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + 16 + 1);
+        print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + 16 + 1, expecting_commands);
         // for(int i = 1; i <= S88_NOS; i ++){
         update_the_triggered_sensors(expecting_commands, expecting_byte);
-        print_updated_sensors(TOP_ROW + 2, LEFT_COL + 48 + 1);
+        print_updated_sensors(TOP_ROW + 2, LEFT_COL + THIRD_COL + 1);
          // }
         // the expecting byte can by 0 or 1
         // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
