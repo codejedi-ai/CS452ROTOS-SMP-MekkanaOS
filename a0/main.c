@@ -21,7 +21,7 @@ static const size_t COMMANDMAX_LEN = 64;
 #define SECOND_COL 16
 #define THIRD_COL 48
 #define FOURTH 1
-#define POLL_TIME 150000
+#define POLL_TIME 200000
 #define SENSOR_LIST_MAXLEN 100
 #define QUEUE_MAX_LEN 200
 // 240 bytes per second
@@ -317,14 +317,16 @@ THESE ARE THE EXECUTE MARKLIN COMMANDS BEGIN
 char execution_queue[2][QUEUE_MAX_LEN]; // marklin number and the history
 uint32_t execution_queue_begin = 0;
 uint32_t execution_queue_end = 0;
-
+uint32_t queue_cur_size = 0;
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
   execution_queue[0][execution_queue_end] = byte_1;
   execution_queue[1][execution_queue_end] = byte_2;
   execution_queue_end = (execution_queue_end + 1) % QUEUE_MAX_LEN;
+  queue_cur_size++;
 }
 void dequeue(){
-  if (execution_queue_begin != execution_queue_end){
+  if (queue_cur_size != 0){
+    queue_cur_size--;
     uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
     if (execution_queue[1][execution_queue_begin] != '\r'){
       uart_putc(MARKLIN, execution_queue[1][execution_queue_begin]);
@@ -529,14 +531,14 @@ void check_marklin_response(uint8_t r, uint8_t c){
   // read the marklin
   read_many_s88(S88_NOS);
   // dequeue the marklin
-  uint32_t read_time = get_timerLO();
+  uint32_t execution_time = get_timerLO();
   
   while (execution_queue_begin != execution_queue_end)
   {
-    if(get_timerLO() - read_time >  POLL_TIME){
+    if(get_timerLO() - execution_time >  POLL_TIME){
       // execute from the queue
       dequeue();
-      read_time = get_timerLO();
+      execution_time = get_timerLO();
     }
   }
   uint32_t timer = get_timerLO();
@@ -552,13 +554,19 @@ void check_marklin_response(uint8_t r, uint8_t c){
     // This is to be ran before the ui is printed
     // if the marklin has a byte to be read
     // this byte would be busywaiting until the byte is read
-    char byte = uart_getc(MARKLIN);
+    char c = uart_getc(MARKLIN);
     // print the byte and the time it taken to read the byte
     // print string byte: 
-    
+    // read_marklin(expecting_commands, expecting_byte); 
+    // read_marklin(uint32_t s88_unit, short int byte_no)
+    sensor_reading_old[expecting_byte][expecting_commands] = sensor_reading[expecting_byte][expecting_commands];
+    sensor_reading[expecting_byte][expecting_commands] =  c;
+
+
+    update_the_triggered_sensors(expecting_commands, expecting_byte);
     uart_puts(CONSOLE, "byte: ");
     // print the byte in the binary form
-    print_byte_in_binary(byte);
+    print_byte_in_binary(c);
     // print the expecting command and byte
     uart_printf(CONSOLE, " expecting: %u %u ", expecting_commands, expecting_byte);
     uart_printf(CONSOLE, " time taken: %u \r\n", get_timerLO() - timer);
@@ -578,7 +586,7 @@ int kmain() {
   // INITIALIZE THE VALUES
   execution_queue_begin = 0;
   execution_queue_end = 0;
-  
+  queue_cur_size = 0;
   for (int i = 0; i < QUEUE_MAX_LEN; i++){
     execution_queue[0][i] = 0;
     execution_queue[1][i] = 0;
@@ -625,12 +633,12 @@ int kmain() {
   solonoid_command(0x9c, 'S');
 
 
-  uint32_t read_time = 0; 
+  uint32_t execution_time = 0, read_time = 0; 
   char c = ' ', animation_state = 0;
   
   while (execution_queue_begin != execution_queue_end)
   {
-    if(get_timerLO() - read_time >  POLL_TIME){
+    if(get_timerLO() - execution_time >  POLL_TIME){
       // execute from the queue
       dequeue();
       uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
@@ -651,10 +659,10 @@ int kmain() {
       // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
       uart_printf(CONSOLE,"\033[K");
-      uart_printf(CONSOLE, "queue: %u %u", execution_queue_begin, execution_queue_end);
+      uart_printf(CONSOLE, "queue: %u %u queue_cur_size: %u", execution_queue_begin, execution_queue_end, queue_cur_size);
       // set coulor to white
       uart_puts(CONSOLE,"\033[37m");
-      read_time = get_timerLO();
+      execution_time = get_timerLO();
     }
   }
   print_ui_box();
@@ -680,23 +688,21 @@ int kmain() {
   
   uint32_t loop_time = get_timerLO(), max_loop_time = 0;
   while (c != 'q') {
+    show_timer(get_timerHI(), get_timerLO()); 
     loop_time = get_timerLO();
-    if(get_timerLO() - read_time >  POLL_TIME){
+    if(get_timerLO() - execution_time >  POLL_TIME){
       // execute from the queue
       dequeue();
-      
-      if (expecting_commands == 0){
-        // print flush near the bottom of the window
-        //uart_printf(CONSOLE,"\033[%u;%uH READING MANY S88s",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1);
-        //uart_puts(CONSOLE,"\033[37m");
-        read_many_s88(S88_NOS); 
-      }
       // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
       uart_printf(CONSOLE,"\033[K");
-      uart_printf(CONSOLE, "queue: %u %u", execution_queue_begin, execution_queue_end);
+      uart_printf(CONSOLE, "queue: %u %u queue_cur_size: %u", execution_queue_begin, execution_queue_end, queue_cur_size);
       // set coulor to white
       uart_puts(CONSOLE,"\033[37m");
+      execution_time = get_timerLO();
+    }
+    if (get_timerLO() - read_time >  POLL_TIME * 2){
+      read_many_s88(S88_NOS); 
       read_time = get_timerLO();
     }
     // Now no eed at least 10 god danm cycles to complete this shit
@@ -705,12 +711,12 @@ int kmain() {
     // the program moves on. 
     uint8_t trys = 0; 
     
-    while(expecting_commands > 0 && uart_getc_queue(MARKLIN) && trys < 4){
+    while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
 //      show_timer(get_timerHI(), get_timerLO()); 
       trys++;
       read_marklin(expecting_commands, expecting_byte); 
       update_the_triggered_sensors(expecting_commands, expecting_byte);
-
+      print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
       // the expecting byte can by 0 or 1
       // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
       // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
@@ -718,6 +724,7 @@ int kmain() {
       if (expecting_byte == 2){
         print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
         print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
+        
         expecting_commands++;
         expecting_byte = 0;
       }
@@ -728,11 +735,10 @@ int kmain() {
       }
     }
     if(!uart_getc_queue(MARKLIN)) {
-        expecting_byte = 0;
-        expecting_commands = 0;
-        print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
+      expecting_byte = 0;
+      expecting_commands = 0;
     }
-    show_timer(get_timerHI(), get_timerLO()); 
+
 
     c = uart_getc_modified(CONSOLE);
     if (c == '\r') {
