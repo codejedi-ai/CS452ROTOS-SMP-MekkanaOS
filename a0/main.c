@@ -131,18 +131,17 @@ void read_marklin(uint32_t s88_unit, short int byte_no){
     sensor_reading_old[byte_no][s88_unit] = sensor_reading[byte_no][s88_unit];
     sensor_reading[byte_no][s88_unit] =  uart_getc_modified(MARKLIN);
 }
-void print_marklin(int r, int c){
+void print_marklin(int r, int c, uint8_t i){
     uart_printf(CONSOLE,"\033[%u;%uH",r,c);
     uart_puts(CONSOLE, "RECENT SENSOR");    
-    for(int i = 1; i <= S88_NOS; i ++) {
-      uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
-      uart_putc(CONSOLE, (char)('A' + i - 1));
-      uart_putc(CONSOLE, ':');
-      print_byte_in_binary(sensor_reading[0][i]);
-      uart_putc(CONSOLE, ' ');
-      print_byte_in_binary(sensor_reading[1][i]);
-      uart_puts(CONSOLE, "\r\n");
-    }
+    uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
+    uart_putc(CONSOLE, (char)('A' + i - 1));
+    uart_putc(CONSOLE, ':');
+    print_byte_in_binary(sensor_reading[0][i]);
+    uart_putc(CONSOLE, ' ');
+    print_byte_in_binary(sensor_reading[1][i]);
+    uart_puts(CONSOLE, "\r\n");
+    
 }
 
 /*
@@ -240,8 +239,8 @@ void print_ui_box(){
   
   print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
   // print the marklin states
-    
-  print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1);
+  for (uint8_t i = 1; i <= S88_NOS; i++)
+  print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, i);
   // print the activated switches
   uart_printf(CONSOLE,"\033[%u;%uH", TOP_ROW + 8, LEFT_COL + SECOND_COL + 1);
   // print the recentlly activated sensors
@@ -301,10 +300,11 @@ void show_timer(const unsigned int hi, const unsigned int lo){
   unsigned int tenth_of_second = lo / (unsigned int)1e5;
 
   if (TENTH_OF_SEC != tenth_of_second%10){
-    // clear row
-    uart_puts(CONSOLE, "\033[K");
+    
     uart_printf(CONSOLE,"\033[H");
     uart_printf(CONSOLE,"\033[?25l");
+    // clear row
+    uart_puts(CONSOLE, "\033[K");
     uart_printf(CONSOLE, "Time:%u:%u:%u", minutes, seconds % 60,tenth_of_second%10);
   }
 
@@ -704,16 +704,17 @@ int kmain() {
     // The while loop would busy wait for all element in the queue. If there exist nothing in the queue then
     // the program moves on. 
     uint8_t trys = 0; 
+    print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
     while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
-      show_timer(get_timerHI(), get_timerLO()); 
+//      show_timer(get_timerHI(), get_timerLO()); 
       // trys++;
       if(uart_getc_queue(MARKLIN)){
         read_marklin(expecting_commands, expecting_byte);
-        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1);
+        print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
         print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
         // for(int i = 1; i <= S88_NOS; i ++){
         update_the_triggered_sensors(expecting_commands, expecting_byte);
-        print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
+        
          // }
         // the expecting byte can by 0 or 1
         // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
@@ -782,7 +783,7 @@ int kmain() {
     uart_printf(CONSOLE, "loop time: %u", get_timerLO() - loop_time);
     if (max_loop_time < get_timerLO() - loop_time){
       max_loop_time = get_timerLO() - loop_time;
-      uart_printf(CONSOLE, "max time: %u", max_loop_time);
+      uart_printf(CONSOLE, " max time: %u", max_loop_time);
     }
     
     // uart_printf(CONSOLE,"\033[2J");
