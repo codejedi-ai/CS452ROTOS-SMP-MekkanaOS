@@ -21,9 +21,11 @@ static const size_t COMMANDMAX_LEN = 64;
 #define SECOND_COL 16
 #define THIRD_COL 48
 #define FOURTH 1
-#define POLL_TIME 200000
+#define POLL_TIME 150000
 #define SENSOR_LIST_MAXLEN 100
 #define QUEUE_MAX_LEN 200
+#define SWITCH_COUNT 18
+#define ERROR_ROW COMMAND_ROW + 1
 // 240 bytes per second
 #define S88_NOS 5
 /*
@@ -51,7 +53,8 @@ Code	Effect
 */
 
 uint32_t sol_on_time= 0;
-uint8_t trains_speed[81];
+uint8_t trains_speed[81]; // this is the speed of the train
+uint8_t trains_direction[81]; // this is the direction of the train
 char sensor_reading[2][S88_NOS];
 char sensor_reading_old[2][S88_NOS];
 uint8_t recently_triggered_sensors[SENSOR_LIST_MAXLEN]; // marklin number and the history
@@ -100,7 +103,7 @@ void print_line_numbers_ver(uint32_t c){
 void print_sw_states(uint32_t r, uint32_t c){
   uart_printf(CONSOLE,"\033[%u;%uH",r,c);
   uart_puts(CONSOLE, "SW");
-  for (uint32_t i = 1; i <= 18; i ++){
+  for (uint32_t i = 1; i <= SWITCH_COUNT; i ++){
     uart_printf(CONSOLE,"\033[%u;%uH",r + i, c);
     uart_printf(CONSOLE,"T%u: ", i);
     uart_putc(CONSOLE, sw_states[i]);
@@ -109,7 +112,7 @@ void print_sw_states(uint32_t r, uint32_t c){
   char middle_Sw[] ={0x99,0x9a,0x9b,0x9c};
   for (uint32_t i = 0; i < 4; i ++){
     char sw_ind = middle_Sw[i];
-    uart_printf(CONSOLE,"\033[%u;%uH",r + i + 18, c);
+    uart_printf(CONSOLE,"\033[%u;%uH",r + i + SWITCH_COUNT + 1, c);
     uart_printf(CONSOLE,"T%x: ", (int) sw_ind);
     uart_putc(CONSOLE, sw_states[(int) sw_ind]);
     uart_puts(CONSOLE, "\r\n");
@@ -209,8 +212,8 @@ void print_updated_sensors(int r, int c){
   uart_printf(CONSOLE,"\033[%u;%uH",r,c);
   uart_puts(CONSOLE, "RECENTLY ACTIVATED SENSORS");
 
-  for (char i = 1; i < S88_NOS * 2; i++){
-    uint32_t sensor_hist_cur_pointer_old = (sensor_hist_cur_pointer - i + SENSOR_LIST_MAXLEN - 1) % SENSOR_LIST_MAXLEN;
+  for (char i = 1; i <= S88_NOS * 2; i++){
+    uint32_t sensor_hist_cur_pointer_old = (sensor_hist_cur_pointer - i + SENSOR_LIST_MAXLEN) % SENSOR_LIST_MAXLEN;
     // sensor_hist_cur_pointer is the current pointer that points at the next index to be written
     uart_printf(CONSOLE,"\033[%u;%uH",r + i,c);
     uart_putc(CONSOLE, (char)('A' + recently_triggered_s88[sensor_hist_cur_pointer_old] - 1));
@@ -282,7 +285,7 @@ void print_typing_command(char *command){
 }
 
 void print_error(char *error_msg){
-  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 1,LEFT_COL + 1);
+  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + ERROR_ROW,LEFT_COL + 1);
   uart_printf(CONSOLE,"\033[K");  
   uart_printf(CONSOLE,"\033[31m"); // "\033[31m" Set the shit to white
   // print error_msg
@@ -325,6 +328,15 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
   queue_cur_size++;
 }
 void dequeue(){
+  if (execution_queue[0][execution_queue_begin] == 33 || execution_queue[0][execution_queue_begin] == 34){
+    uint8_t sol_id = execution_queue[1][execution_queue_begin];
+    if(execution_queue[0][execution_queue_begin] == 33 ){
+      sw_states[sol_id] = 'S';
+    }else if(execution_queue[0][execution_queue_begin] == 34 ){
+      sw_states[sol_id] = 'C';
+    }
+    // print the switch state
+  }
   if (queue_cur_size != 0){
     queue_cur_size--;
     uart_putc(MARKLIN, execution_queue[0][execution_queue_begin]);
@@ -335,13 +347,7 @@ void dequeue(){
   }
   // If the command is a sononoid command then it is going to be a 2 byte command
   // then update the table
-  if (execution_queue[0][execution_queue_begin] == 33 || execution_queue[0][execution_queue_begin] == 34){
-    uint8_t sol_id = execution_queue[1][execution_queue_begin];
-    uint8_t switch_state = execution_queue[0][execution_queue_begin] == 33 ? 'S' : 'C';
-    sw_states[sol_id] = switch_state;
-    // print the switch state
-    print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
-  }
+
 }
 
 // This section is the read in
@@ -513,7 +519,8 @@ void parse_char_array(char *arr) {
       clear_s88();
   } else if(streq(num[0], "read")) {
       read_many_s88(S88_NOS);
-      
+  } else {
+    print_error("ERROR: INVALID COMMAND");
   }
 }
 
@@ -619,28 +626,41 @@ int kmain() {
     // make an int array of trains nubmber 1, 2, 24, 47, 54, 58
   char train_numbers[] = {1, 2, 24, 47, 54, 58};
   int train_count = 6;
+  // set all the turnabouts to straight
+  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
+    solonoid_command(i, 'S');
+    // this command only enqueues the switches
+  }
+  // uart_printf(CONSOLE,"\033[%u;%uHSWITCHES ALL STRAIGHT:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
   // set all the turnabouts to curved
-  for (uint8_t i = 1; i <= 18; i ++){
+  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
     solonoid_command(i, 'C');
   }
   // set all train speed to 0
-  for (uint8_t i = 0; i <train_count; i ++){
+  for (uint8_t i = 0; i < train_count; i ++){
     execute_train_command(0, train_numbers[i]);
   }
+  solonoid_command(0x99, 'S');
+  solonoid_command(0x9a, 'C');
+  solonoid_command(0x9b, 'S');
+  solonoid_command(0x9c, 'C');
+
   solonoid_command(0x99, 'C');
   solonoid_command(0x9a, 'S');
   solonoid_command(0x9b, 'C');
   solonoid_command(0x9c, 'S');
 
 
-  uint32_t execution_time = 0, read_time = 0; 
+  uint32_t execution_time = 0;
   char c = ' ', animation_state = 0;
   
   while (execution_queue_begin != execution_queue_end)
   {
     if(get_timerLO() - execution_time >  POLL_TIME){
+      
       // execute from the queue
       dequeue();
+      print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
       uart_printf(CONSOLE,"\033[%u;%uHINITIALIZING:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
       if (animation_state == 0){
         uart_puts(CONSOLE, "-");
@@ -691,19 +711,25 @@ int kmain() {
     show_timer(get_timerHI(), get_timerLO()); 
     loop_time = get_timerLO();
     if(get_timerLO() - execution_time >  POLL_TIME){
-      // execute from the queue
       dequeue();
+      if(!uart_getc_queue(MARKLIN) && expecting_commands == 0){
+        // not reading anything from the marklin and expecting commands is 6
+        if (queue_cur_size == 0) {
+          read_many_s88(S88_NOS); 
+        }
+      }
+      // execute from the queue
+      
       // print the lft and right pointer of the queue
       uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + COMMAND_ROW + 3, 2);
       uart_printf(CONSOLE,"\033[K");
       uart_printf(CONSOLE, "queue: %u %u queue_cur_size: %u", execution_queue_begin, execution_queue_end, queue_cur_size);
+      print_sw_states(TOP_ROW + SW_ROW, LEFT_COL + 1);
       // set coulor to white
       uart_puts(CONSOLE,"\033[37m");
+      print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
+      
       execution_time = get_timerLO();
-    }
-    if (get_timerLO() - read_time >  POLL_TIME * 2){
-      read_many_s88(S88_NOS); 
-      read_time = get_timerLO();
     }
     // Now no eed at least 10 god danm cycles to complete this shit
     // TOTALLY UNACCEPTABLE
@@ -711,12 +737,11 @@ int kmain() {
     // the program moves on. 
     uint8_t trys = 0; 
     
-    while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
-//      show_timer(get_timerHI(), get_timerLO()); 
+    while(uart_getc_queue(MARKLIN) && 1 <= expecting_commands && expecting_commands <= S88_NOS){
+      // show_timer(get_timerHI(), get_timerLO()); 
       trys++;
       read_marklin(expecting_commands, expecting_byte); 
       update_the_triggered_sensors(expecting_commands, expecting_byte);
-      print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
       // the expecting byte can by 0 or 1
       // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
       // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
@@ -728,17 +753,11 @@ int kmain() {
         expecting_commands++;
         expecting_byte = 0;
       }
-      if(expecting_commands > S88_NOS){
-        expecting_commands = 0;
-        clear_s88();
-        // set cursor location to the bottom of the screen
-      }
     }
-    if(!uart_getc_queue(MARKLIN)) {
-      expecting_byte = 0;
+    if (expecting_commands > S88_NOS){
       expecting_commands = 0;
+      expecting_byte = 0;
     }
-
 
     c = uart_getc_modified(CONSOLE);
     if (c == '\r') {
@@ -770,6 +789,7 @@ int kmain() {
             command[command_len] = c;
             command[++command_len] = 0;
             print_typing_command(command);
+            print_error(" ");
             // the command changes
             // this would keep printing the command even though the command does not change`
           } else {
