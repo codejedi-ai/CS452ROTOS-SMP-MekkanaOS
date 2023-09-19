@@ -660,7 +660,7 @@ int kmain() {
   print_ui_box();
   unsigned int row = 2, col = 1, command_len = 0;
   uart_printf(CONSOLE,"\033[%u;%uH",row,col);
-  char hello[] = "SET TRAIN TO 0 and Rails to C init updates: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
+  char hello[] = "VLOG a0: This is d273liu (" __TIME__ ")\r\nPress 'q' to reboot\r\n";
   uart_puts(CONSOLE, hello);
   
 
@@ -704,35 +704,33 @@ int kmain() {
     // The while loop would busy wait for all element in the queue. If there exist nothing in the queue then
     // the program moves on. 
     uint8_t trys = 0; 
-    print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
-    while(expecting_commands > 0 && uart_getc_queue(MARKLIN)){
+    
+    while(expecting_commands > 0 && uart_getc_queue(MARKLIN) && trys < 4){
 //      show_timer(get_timerHI(), get_timerLO()); 
-      // trys++;
-      if(uart_getc_queue(MARKLIN)){
-        read_marklin(expecting_commands, expecting_byte);
+      trys++;
+      read_marklin(expecting_commands, expecting_byte); 
+      update_the_triggered_sensors(expecting_commands, expecting_byte);
+
+      // the expecting byte can by 0 or 1
+      // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
+      // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
+      expecting_byte++;
+      if (expecting_byte == 2){
         print_marklin(TOP_ROW + MARKLIN_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
         print_activated(TOP_ROW + ACTIVATED_SWITCHES_ROW, LEFT_COL + SECOND_COL + 1, expecting_commands);
-        // for(int i = 1; i <= S88_NOS; i ++){
-        update_the_triggered_sensors(expecting_commands, expecting_byte);
-        
-         // }
-        // the expecting byte can by 0 or 1
-        // before incrementing if it is equal to 1 then we need to overflow to the expecting_commands
-        // uart_printf(CONSOLE,"\033[%u;%uHexpecting_commands: %u expecting_byte: %u ",TOP_ROW + COMMAND_ROW + 2, LEFT_COL + 1, expecting_commands, expecting_byte);
-        expecting_byte++;
-        if (expecting_byte == 2){
-          expecting_commands++;
-          expecting_byte = 0;
-        }
-        if(expecting_commands > S88_NOS){
-          expecting_commands = 0;
-          clear_s88();
-          // set cursor location to the bottom of the screen
-        }
-      } else {
+        expecting_commands++;
+        expecting_byte = 0;
+      }
+      if(expecting_commands > S88_NOS){
+        expecting_commands = 0;
+        clear_s88();
+        // set cursor location to the bottom of the screen
+      }
+    }
+    if(!uart_getc_queue(MARKLIN)) {
         expecting_byte = 0;
         expecting_commands = 0;
-      }
+        print_updated_sensors(TOP_ROW + SENSORS_ROW, LEFT_COL + THIRD_COL + 1);
     }
     show_timer(get_timerHI(), get_timerLO()); 
 
@@ -779,7 +777,7 @@ int kmain() {
     
     // print the time it takes the loop to finnish at the bottom of the window
     uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + WINDOW_HEIGHT - 1, LEFT_COL + 1);
-    uart_printf(CONSOLE,"\033[K");
+    //uart_printf(CONSOLE,"\033[K");
     uart_printf(CONSOLE, "loop time: %u", get_timerLO() - loop_time);
     if (max_loop_time < get_timerLO() - loop_time){
       max_loop_time = get_timerLO() - loop_time;
