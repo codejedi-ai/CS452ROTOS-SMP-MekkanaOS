@@ -130,13 +130,6 @@ unsigned char uart_getc_queue(size_t line){
   if (UART_REG(line, UART_FR) & UART_FR_RXFE) return 0;
   return 1;
 }
-unsigned char uart_getc(size_t line) {
-  unsigned char ch;
-  /* wait for data if necessary */
-  while (UART_REG(line, UART_FR) & UART_FR_RXFE);
-  ch = UART_REG(line, UART_DR);
-  return(ch);
-}
 unsigned char uart_getc_modified(size_t line) {
   unsigned char ch;
   /* wait for data if necessary */
@@ -144,6 +137,14 @@ unsigned char uart_getc_modified(size_t line) {
   ch = UART_REG(line, UART_DR);
   return(ch);
 }
+unsigned char uart_getc(size_t line) {
+  unsigned char ch;
+  /* wait for data if necessary */
+  while (UART_REG(line, UART_FR) & UART_FR_RXFE);
+  ch = UART_REG(line, UART_DR);
+  return(ch);
+}
+
 
 void uart_putc(size_t line, unsigned char c) {
   // make sure there is room to write more data

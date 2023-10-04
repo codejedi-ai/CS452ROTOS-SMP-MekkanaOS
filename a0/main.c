@@ -633,9 +633,10 @@ int kmain() {
     recently_triggered_sensors[i] = 0;
     recently_triggered_s88[i] = 0;
   }
+  uart_init();
   uart_config_and_enable(CONSOLE, 115200);
   uart_config_and_enable(MARKLIN, MARKLIN_BR);
-  uart_init();
+  
   
   // the earliest in which you can print
   

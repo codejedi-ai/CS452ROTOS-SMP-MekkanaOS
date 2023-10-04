@@ -1,5 +1,6 @@
 XDIR:=/Users/darcyliu/bin/xdev
-# /Users/darcyliu/bin/xdev if on local
+# switch it if on local
+# XDIR:=/u/cs452/public/xdev
 ARCH=cortex-a72
 TRIPLE=aarch64-none-elf
 XBINDIR:=$(XDIR)/bin
