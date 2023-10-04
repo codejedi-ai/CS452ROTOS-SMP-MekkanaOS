@@ -15,7 +15,7 @@ void k2p1(){
 	tid = 3;
 	char msgreply[50];
 	int ret_code = Send(tid, msg, msglen, msgreply, 25);
-	uart_printf(1, "k2p1: Message sent however my reply should be %s here..... ret_code = %u \r\n", msgreply, ret_code);
+	uart_printf(1, "k2p1: Message sent however my reply should be [%s]..... ret_code = %u \r\n", msgreply, ret_code);
 	Exit();
 }
 void k2p2(){

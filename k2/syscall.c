@@ -130,6 +130,21 @@ void Handle(void* sp) // A helper function to pull some c variables into assembl
 	return 0; // return should NEVER be called here, as it is a one-way path
 }
 
+void strcpy(char *dest, int lenDes, char *src, int lenSrc){
+	int i = 0;
+	while (*src) {
+		if (i >= lenSrc) {break;}
+		if (i >= lenDes) {break;}
+		*dest = *src;
+		dest++;
+		src++;
+		i++;
+	}
+	*dest = 0;
+	*src = 0;
+	return;
+}
+
 // Each parameter is now stored in the registers
 int send_helper(){
 	// Debug
@@ -196,13 +211,12 @@ int recieve_helper(){
 	// The mailbox is a circular READY_QUEUE
 
 	struct message curread_message = PROCS[p].message_recieved;
+	int  curread_message_length = curread_message.msglen;
 	char *curread_msg = curread_message.msg;
 	int sender_tid = curread_message.tid;
 	*tid = sender_tid;
 	// DEBUG
-	for (int i = 0; i< msglen; i++){
-		msg[i] = curread_msg[i];
-	}
+	strcpy(curread_msg, curread_message_length, msg, msglen);
 	msg[msglen] = 0;
 	# if DEBUG == 2
 	// Print the recieved message
@@ -221,6 +235,7 @@ int reply_helper(){
 	char *reply = (char *)PROCS[p].registervalues[1];
 	int replylen = PROCS[p].registervalues[2];
 	char *reply_buffer = PROCS[tid - 1].message_sent.reply;
+	int reply_buffer_len = PROCS[tid - 1].message_sent.replylen;
 	// Have the kernel copy the reply into the messageDS of the target task
 
 	// PROCS[tid - 1].message_sent.reply[replylen] = 0;
@@ -233,16 +248,7 @@ int reply_helper(){
 	uart_printf(1, "reply_buffer is %x, *reply is %x\r\n", reply_buffer, reply);
 	// uart_printf(1, "*reply is %c\r\n", *reply);
 	int i = 0;
-	*(reply_buffer + replylen) = 0;
-	while (*reply) {
-		if (i >= replylen) {break;}
-		// uart_putc(1, *reply);
-		(*reply_buffer) = (*reply);
-		reply_buffer++;
-		reply++;
-		i++;
-	}
-	*(4 + reply_buffer) = 0;
+	strcpy(reply_buffer, reply_buffer_len, reply, replylen);
 	// 
 	// now unblock the target task
 	queue_unblock(tid, PROCS[tid - 1].priority, READY);
@@ -250,6 +256,7 @@ int reply_helper(){
 	PROCS[tid - 1].registervalues[0] = 0;
 	PROCS[tid - 1].waiting_reply = 0;
 }
+
 void Exception(uint64_t esr_el1)
 {
 	#if DEBUG == 1
@@ -319,6 +326,13 @@ void Exception(uint64_t esr_el1)
 		case 7: // reply
 			scrSchedule(PID, PROCS[p].priority, READY);
 			reply_helper();
+			break;
+		case 8: // unblock
+			scrSchedule(PID, PROCS[p].priority, READY);
+			int tid_unblock = PROCS[p].registervalues[0];
+			PROCS[tid_unblock - 1].waiting_reply = 0;
+			PROCS[tid_unblock - 1].waiting_send = 0;
+			queue_unblock(tid_unblock, PROCS[tid_unblock - 1].priority, READY);
 			break;
 		default:
 			#if DEBUG == 1
@@ -413,6 +427,10 @@ int Receive(int *tid, char *msg, int msglen){
 }
 int Reply( int tid, void *reply, int replylen ){
 	asm("svc 7");
+	return;
+}
+int UnblockTask(int tid){
+	asm("svc 8");
 	return;
 }
 // helper functions 
