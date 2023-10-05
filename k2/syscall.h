@@ -2,7 +2,7 @@
 #define _syscall_h_ 1
 #include "asm.h"
 #include <stdint.h>
-
+#define NUMPROCS 20
 
 
 void InitSys(void* reg);
@@ -43,7 +43,9 @@ struct process {
 	// define an array of messages such would be held in memory for each process.
 	// A kernel call is needed to get the message array for the process.
 	struct message message_sent;
-	struct message message_recieved;
+	struct message message_recieved[50];
+	uint8_t waiting_recieve_head;
+	uint8_t waiting_recieve_tail;
 	uint8_t waiting_reply;
 	uint8_t waiting_send;
 };

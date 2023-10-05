@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "processes.h": "c",
+        "util.h": "c"
+    }
+}

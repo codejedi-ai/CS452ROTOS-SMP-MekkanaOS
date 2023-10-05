@@ -2,9 +2,6 @@
 #include "syscall.h"
 #include "processes.h"
 
-// Serial line 1 on the RPi hat is used for the console
-const size_t CONSOLE = 1;
-const size_t TRAIN = 2;
 
 void* STACK_EL0_START; // Maybe delete this later
 
@@ -18,12 +15,12 @@ int kmain(void *reg) {
   uart_config_and_enable(TRAIN, 2400, 1);
   
 
-  uart_printf(CONSOLE, "Hello World I am d273liu\r\n");
+  uart_printf(CONSOLE, "DEBUG: unblock the recieve, ONE SEND AND MANY RECIEVESHello World I am d273liu\r\n");
   
   // uart_printf(CONSOLE, "%u\r\n", &STACK_EL0_START);
   // uart_printf(CONSOLE, "%u\r\n", STACK_EL0_START);
   
-  KernelCreate(2, first_task, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
+  KernelCreate(3, first_task, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
   // uart_printf(CONSOLE, "Process %u %u\r\n", p, p_1);
   Schedule();
   

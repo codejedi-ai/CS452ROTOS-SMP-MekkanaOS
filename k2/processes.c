@@ -9,13 +9,13 @@
 void k2p1(){
 	int tid = MyTid();
 	// write a message
-	uart_printf(1, "k2p1: My tid is %u\r\n", tid);
+	uart_printf(CONSOLE, "k2p1: My tid is %u\r\n", tid);
 	char *msg = "k2p1: Hello, this is process k2p1";
 	int msglen = 24;
 	tid = 3;
 	char msgreply[50];
 	int ret_code = Send(tid, msg, msglen, msgreply, 25);
-	uart_printf(1, "k2p1: Message sent however my reply should be [%s]..... ret_code = %u \r\n", msgreply, ret_code);
+	uart_printf(CONSOLE, "k2p1: Message sent however my reply should be [%s]..... ret_code = %d \r\n", msgreply, ret_code);
 	Exit();
 }
 void k2p2(){
@@ -25,11 +25,12 @@ void k2p2(){
 	int tid;
 	char msg[50];
 	int msglen = 48;
-	uart_printf(1, "k2p2: My tid is %u\r\n", mytid);
-	Receive(&tid, msg, msglen);
-	uart_printf(1, "k2p2: Message recieved: %s\r\n", msg);
-	char *reply = "k2p2: Hello, this is process k2p2 Hello There";
-	Reply(tid, reply, 25);
+	uart_printf(CONSOLE, "k2p2: My tid is %u\r\n", mytid);
+	int recret = Receive(&tid, msg, msglen);
+	uart_printf(CONSOLE, "k2p2: Message recieved: [%s], recret = %d\r\n", msg, recret);
+	char *reply = "k2p1 Hello There";
+	int repret = Reply(tid, reply, 25);
+	uart_printf(CONSOLE, "k2p2: Reply sent Repret = %d\r\n", repret);
 	
 
 	Exit();
@@ -39,8 +40,8 @@ void first_task() // First task as dictated in the reqs
 	// We are assuming that first_task has a priority of 2
 	int tid;
 	tid = Create(1, k2p1);
-	uart_printf(1,"Created: %u\r\n", tid);
-	tid = Create(1, k2p2);
-	uart_printf(1,"Created: %u\r\n", tid);
+	uart_printf(CONSOLE,"Created: %u\r\n", tid);
+	tid = Create(2, k2p2);
+	uart_printf(CONSOLE,"Created: %u\r\n", tid);
 	Exit();
 }

@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+// Serial line 1 on the RPi hat is used for the console
+#define CONSOLE 1
+#define TRAIN 2
 
 void uart_putc(size_t line, unsigned char c);
 unsigned char uart_getc(size_t line);
