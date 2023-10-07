@@ -1,0 +1,143 @@
+#include "custstr.h"
+#include "rpi.h"
+#include "util.h"
+
+int8_t is_empty(char *str){
+  uart_printf(CONSOLE, "is_empty: str = %s\r\n", str);
+  return (*str == '\0');
+}
+int8_t is_Hex(char *switch_number){
+	if (switch_number[0] == '\0') return 0;
+	if (switch_number[1] == '\0') return 0;
+	return(switch_number[0] == '0' && switch_number[1] == 'x');
+}
+
+char str_to_int(char *str){
+    char ret = 0; 
+    while (*str != '\0') { // loop until the end of the array
+        ret = 10 * ret;
+        ret += a2d(*str);
+        str++; // move to the next character
+    }
+    return ret;
+}
+
+char hexstr_to_int(char *str){
+    char ret = 0; 
+    str++;
+    str++;
+    while (*str != '\0') { // loop until the end of the array
+        ret = 16 * ret;
+        ret += a2d(*str);
+        str++; // move to the next character
+    }
+    return ret;
+}
+// with inplace return again
+void strcmp(int* ret, char* s1, char* s2){
+	while(*s1 && *s2){
+		// // uart_printf(CONSOLE, "Addr: %x, %x compsiring: ", s1, s2);
+		// uart_putc(CONSOLE, *s1);
+		// uart_putc(CONSOLE, *s2);
+		// // uart_printf(CONSOLE, "\r\n");
+		if(*s1 != *s2){
+			*ret = 0;
+            return;
+		}
+		
+		s1++;
+		s2++;
+	}
+		// // uart_printf(CONSOLE, "compairing last char: ");
+		// uart_putc(CONSOLE, *s1);
+		// uart_putc(CONSOLE, *s2);
+	*ret = (*s1 == *s2);
+}
+// with inplace return again
+int strcmp_ret(char* s1, char* s2){
+	while(*s1 && *s2){
+		// // uart_printf(CONSOLE, "Addr: %x, %x compsiring: ", s1, s2);
+		// uart_putc(CONSOLE, *s1);
+		// uart_putc(CONSOLE, *s2);
+		// // uart_printf(CONSOLE, "\r\n");
+		if(*s1 != *s2){
+            return 0;
+		}
+		
+		s1++;
+		s2++;
+	}
+		// // uart_printf(CONSOLE, "compairing last char: ");
+		// uart_putc(CONSOLE, *s1);
+		// uart_putc(CONSOLE, *s2);
+	return (*s1 == *s2);
+}
+int stringconcat(char* dest, const char* src) {
+	int newsz = 0;
+    while (*dest) {
+        // uart_putc(CONSOLE, *dest);
+        dest++;
+		newsz++;
+    }
+    while (*src) {
+        *dest = *src;
+        // uart_putc(CONSOLE, *dest);
+        dest++;
+        src++;
+		newsz++;
+       
+    }
+    *dest = '\0';
+	return newsz;
+}
+
+char* parse_char_arr(){
+	char* ret = "";
+	return ret;
+}
+// this fiunction would
+// return strings in place
+// dest string, dest str size str and the part in which you want
+void parsestring( char *retarr, int size, char * str, int part) {
+  int i = 1, j = 0;
+  retarr[0] = 0;
+  while (*str) {
+    if (*str == ' ') {
+      i++;
+    }else if (part == i){
+      if (j >= size - 1) {
+        break;
+      }
+      retarr[j++] = *str;
+      retarr[j] = 0;
+    }
+    str++;
+  }
+  
+}
+
+int strcpy(char *dest, int lenDes, char *src, int lenSrc){
+	int i = 0;
+	while (*src) {
+		if (i >= lenSrc) {break;}
+		if (i >= lenDes) {break;}
+		*dest = *src;
+		dest++;
+		src++;
+		i++;
+	}
+	*dest = 0;
+	return i;
+}
+
+void strflush(char* msg, uint8_t msglen){
+    for (int i = 0; i < msglen; i++){
+    if (msg[i] != '\0'){
+        // print mem address
+        uart_printf(CONSOLE, "strflush: msg[%x] = ", i, msg[i]);
+        uart_putc(CONSOLE, msg[i]);
+        uart_printf(CONSOLE, "\r\n");
+    }else
+        break;
+    }
+}

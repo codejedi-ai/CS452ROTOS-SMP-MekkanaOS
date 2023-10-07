@@ -1,0 +1,2 @@
+void signup();
+void gameserver();
