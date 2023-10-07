@@ -1,6 +1,7 @@
-syscall.o: syscall.c syscall.h asm.h processes.h rpi.h util.h
+syscall.o: syscall.c syscall.h asm.h processes.h rpi.h util.h custstr.h
 syscall.h:
 asm.h:
 processes.h:
 rpi.h:
 util.h:
+custstr.h:

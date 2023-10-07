@@ -3,7 +3,7 @@
 #include "asm.h"
 #include "rpi.h"
 #include "util.h"
-
+#include "custstr.h"
 static void *STACKSTART;
 // This is the PID of the currentlly running process
 static int PID = 0;
@@ -16,7 +16,7 @@ static struct process PROCS[NUMPROCS];
 int heap_size = 0;
 static struct state READY_QUEUE[NUMPROCS];
 static struct state BLOCKED_QUEUE[NUMPROCS];
-#define DEBUG 2
+#define DEBUG 3
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
@@ -115,26 +115,13 @@ void Handle(void* sp) // A helper function to pull some c variables into assembl
 	int p = PID - 1;
 	
 	#if DEBUG == 1
-	uart_printf(CONSOLE, "Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	// uart_printf(CONSOLE, "Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	#endif
 	
 	Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	return 0; // return should NEVER be called here, as it is a one-way path
 }
 
-int strcpy(char *dest, int lenDes, char *src, int lenSrc){
-	int i = 0;
-	while (*src) {
-		if (i >= lenSrc) {break;}
-		if (i >= lenDes) {break;}
-		*dest = *src;
-		dest++;
-		src++;
-		i++;
-	}
-	*dest = 0;
-	return i;
-}
 int8_t dead(int8_t p){
 	return (PROCS[p].stackpointer == NULL && PROCS[p].pcpointer == NULL);
 }
@@ -142,7 +129,7 @@ int8_t dead(int8_t p){
 void send_helper(){
 	# if DEBUG == 2
 	// print the function called
-	uart_printf(CONSOLE, "===============\r\n Send Helper Called:\r\n");
+	// uart_printf(CONSOLE, "===============\r\n Send Helper Called:\r\n");
 	# endif
 	// Debug
 	int p = PID - 1;
@@ -167,19 +154,19 @@ void send_helper(){
 	PROCS[p].message_recieved[tail].msglen = msglen;
 	PROCS[p].message_recieved[tail].reply = reply;
 	PROCS[p].message_recieved[tail].replylen = replylen;
-	uart_printf(CONSOLE, "reply addr is %x\r\n", reply);
+	// // uart_printf(CONSOLE, "reply addr is %x\r\n", reply);
 	PROCS[p].waiting_recieve_tail++;
 	PROCS[p].waiting_recieve_tail %= 50;
 	
 	# if DEBUG == 2
 	// print the function called
-	uart_printf(CONSOLE, "===============\r\n Completed adding message to the queue:\r\n");
+	// uart_printf(CONSOLE, "===============\r\n Completed adding message to the queue:\r\n");
 	// print all the params
-	uart_printf(CONSOLE, "TID is %u\r\n", tid);
-	uart_printf(CONSOLE, "MSG is %s\r\n", msg);
-	uart_printf(CONSOLE, "MSGLEN is %u\r\n", msglen);
-	uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
-	uart_printf(CONSOLE, "REPLYLEN is %u\r\n ============== \r\n", replylen);
+	// uart_printf(CONSOLE, "TID is %u\r\n", tid);
+	// uart_printf(CONSOLE, "MSG is %s\r\n", msg);
+	// uart_printf(CONSOLE, "MSGLEN is %u\r\n", msglen);
+	// uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
+	// uart_printf(CONSOLE, "REPLYLEN is %u\r\n ============== \r\n", replylen);
 	# endif
 	if (PROCS[p].waiting_send == 1){
 		// The task is waiting for a message
@@ -187,7 +174,7 @@ void send_helper(){
 		p = tid - 1;
 		# if DEBUG == 2
 		// print therefore unblocked
-		uart_printf(CONSOLE, "===============\r\n RECIEVE HELPER FOR %u by Send Helper Unblocked:\r\n", tid);
+		// uart_printf(CONSOLE, "===============\r\n RECIEVE HELPER FOR %u by Send Helper Unblocked:\r\n", tid);
 		# endif
 
 		recieve_helper(tid);
@@ -202,8 +189,8 @@ void recieve_helper(int PID){
 	int tail = PROCS[PID - 1].waiting_recieve_tail;
 	# if DEBUG
 	// print PID
-	uart_printf(CONSOLE, "PID is %u\r\n", PID);
-	uart_printf(CONSOLE, "head is %u, tail is %u\r\n", head, tail);
+	// uart_printf(CONSOLE, "=============== Recieve called by PID:%u\r\n", PID);
+	// uart_printf(CONSOLE, "head is %u, tail is %u\r\n", head, tail);
 	# endif
 	
 	int *tid =  PROCS[PID - 1].registervalues[0]; // This is a memory address for the TID
@@ -213,14 +200,14 @@ void recieve_helper(int PID){
 	// print therefore blocked
 	
 	// print the value of the tid poitnter msg pointer and the msglen pointer
-	uart_printf(CONSOLE, "p = %d\r\n", PID - 1);
-	uart_printf(CONSOLE, "TID is %x\r\n", tid);
-	uart_printf(CONSOLE, "MSG is %x\r\n", msg);
-	uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", msglen);
+	// uart_printf(CONSOLE, "p = %d\r\n", PID - 1);
+	// uart_printf(CONSOLE, "TID is %x\r\n", tid);
+	// uart_printf(CONSOLE, "MSG is %x\r\n", msg);
+	// uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", msglen);
 
 	# endif
 	if (head == tail){
-		uart_printf(CONSOLE, "===============\r\n Recieve Helper Blocked:\r\n");
+		// // uart_printf(CONSOLE, "===============\r\n Recieve Helper Blocked:\r\n");
 		// The messageDS is empty
 		// Block the task
 		// it is replying to a not reply blocked task
@@ -235,7 +222,7 @@ void recieve_helper(int PID){
 	// HOWEVER THE TASK IS STILL BLOCKED ONE MUST REPLY TO THE MESSAGE
 	# if DEBUG == 2
 	// Print the function called
-	uart_printf(CONSOLE, "===============\r\n Recieve Helper Called:\r\n");
+	// uart_printf(CONSOLE, "===============\r\n Proceeding with the Recieve Helper Called by %u:\r\n", PID);
 	# endif
 	int p = PID - 1;
 	// Those are the returning variables. The memories needed to be written when the recieve function returns
@@ -254,26 +241,32 @@ void recieve_helper(int PID){
 	char *curread_msg = PROCS[p].message_recieved[head].msg;
 	int sender_tid = PROCS[p].message_recieved[head].tid;
 	*tid = sender_tid;
+	# if DEBUG == 2 
+		strflush(curread_msg, curread_message_length); 
+	# endif
 	// msg is the destination curread_msg is the source
 	msglen = strcpy(msg, msglen, curread_msg, curread_message_length);
+	# if DEBUG == 2 
+		strflush(msg, msglen); 
+	# endif
 	// DEBUG
 	# if DEBUG == 2
 	// Print the recieved message
-	uart_printf(CONSOLE, "head is %u, tail is %u\r\n", head, tail);
-	uart_printf(CONSOLE, "curread_msg is %s\r\n", curread_msg);
-	uart_printf(CONSOLE, "curread_message_length is %u\r\n", curread_message_length);
-	uart_printf(CONSOLE, "sender_tid TID is %u\r\n", sender_tid);
-	uart_printf(CONSOLE, "msg is %s\r\n", msg);
-	uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", curread_message_length);
+	// uart_printf(CONSOLE, "head is %u, tail is %u\r\n", head, tail);
+	// uart_printf(CONSOLE, "curread_msg is %s\r\n", curread_msg);
+	// uart_printf(CONSOLE, "curread_message_length is %u\r\n", curread_message_length);
+	// uart_printf(CONSOLE, "sender_tid TID is %u\r\n", sender_tid);
+	// uart_printf(CONSOLE, "msg is %s\r\n", msg);
+	// uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", curread_message_length);
 	# endif
 	
 	// update the head
 
 	# if DEBUG == 2
 	// Print the recieved message
-	uart_printf(CONSOLE, "TID is %u\r\n", sender_tid);
-	uart_printf(CONSOLE, "curread_msg is %s\r\n", curread_msg);
-	uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", msglen);
+	// uart_printf(CONSOLE, "TID is %u\r\n", sender_tid);
+	// uart_printf(CONSOLE, "curread_msg is %s\r\n", curread_msg);
+	// uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", msglen);
 	# endif
 	PROCS[p].waiting_recieve_head++;
 	PROCS[p].waiting_recieve_head %= 50;
@@ -283,7 +276,7 @@ void recieve_helper(int PID){
 }
 void reply_helper(){
 	# if DEBUG == 2
-	uart_printf(CONSOLE, "===============\r\n Reply Helper Called:\r\n");
+	// uart_printf(CONSOLE, "===============\r\n Reply Helper Called:\r\n");
 	# endif
 	// replies to the PID
 	int p = PID - 1;
@@ -295,16 +288,16 @@ void reply_helper(){
 	// Have the kernel copy the reply into the messageDS of the target task
 	# if DEBUG == 2
 	// Print the recieved message
-	uart_printf(CONSOLE, "TID is %u\r\n", tid);
-	uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
-	uart_printf(CONSOLE, "REPLYLEN is %u\r\n ===============\r\n ", replylen);
-	uart_printf(CONSOLE, "replying to PID is %u, reply PID is %u\r\n", tid , PID );
-	uart_printf(CONSOLE, "reply_buffer is %x, *reply is %x\r\n", reply_buffer, reply);
+	// uart_printf(CONSOLE, "TID is %u\r\n", tid);
+	// uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
+	// uart_printf(CONSOLE, "REPLYLEN is %u\r\n ===============\r\n ", replylen);
+	// uart_printf(CONSOLE, "replying to PID is %u, reply PID is %u\r\n", tid , PID );
+	// uart_printf(CONSOLE, "reply_buffer is %x, *reply is %x\r\n", reply_buffer, reply);
 	# endif
 	// PROCS[tid - 1].message_sent.reply[replylen] = 0;
 
 
-	// uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
+	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
 	int i = 0;
 	replylen = strcpy(reply_buffer, reply_buffer_len, reply, replylen);
 	// 
@@ -321,7 +314,7 @@ void reply_helper(){
 void Exception(uint64_t esr_el1)
 {
 	#if DEBUG == 1
-	uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+	// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
 	#endif
 	// PID is the currentlly running process
 	int p = PID - 1;
@@ -330,8 +323,8 @@ void Exception(uint64_t esr_el1)
 		
 		#if DEBUG == 1
 		// print the running PID
-		// uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
-		// uart_printf(CONSOLE, "Case is %x\n\r", i); // DEBUG PRINT
+		// // uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
+		// // uart_printf(CONSOLE, "Case is %x\n\r", i); // DEBUG PRINT
 		#endif
 		
 		switch (i) {
@@ -352,7 +345,7 @@ void Exception(uint64_t esr_el1)
 			PROCS[p].registervalues[0] = PROCS[p].pid;
 			break;
 		case 4: // parenttid
-			// uart_printf(CONSOLE, "PPID is %u\n\r", PROCS[p].parentpid); // DEBUG PRINT
+			// // uart_printf(CONSOLE, "PPID is %u\n\r", PROCS[p].parentpid); // DEBUG PRINT
 		
 			scrSchedule(PID, PROCS[p].priority, READY);
 			PROCS[p].registervalues[0] = PROCS[p].parentpid;
@@ -364,7 +357,7 @@ void Exception(uint64_t esr_el1)
 			if (dead(tid_dest - 1)){
 				# if DEBUG == 2
 				// print apparentlly tid_dest is dead
-				uart_printf(CONSOLE, "%u is dead\r\n", tid_dest);
+				// uart_printf(CONSOLE, "%u is dead\r\n", tid_dest);
 				# endif
 				// The destination task does not exist
 				scrSchedule(PID, PROCS[p].priority, READY);
@@ -396,7 +389,7 @@ void Exception(uint64_t esr_el1)
 			if(dead(tid_dest - 1)){
 				# if DEBUG == 2
 				// print apparentlly tid_dest is dead
-				uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
+				// uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
 				# endif
 				//-1	tid is not the task id of an existing task.
 				PROCS[p].registervalues[0] = -1;
@@ -404,7 +397,7 @@ void Exception(uint64_t esr_el1)
 			else if(PROCS[tid_dest - 1].waiting_reply == 0){
 				# if DEBUG == 2
 				// print apparentlly tid_dest is dead
-				uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
+				// uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
 				# endif
 				//-2	tid is not the task id of a reply-blocked task.
 				PROCS[p].registervalues[0] = -2;
@@ -421,7 +414,7 @@ void Exception(uint64_t esr_el1)
 			break;
 		default:
 			#if DEBUG == 1
-			uart_printf(CONSOLE, "Unknown SVC Call\n\r"); // DEBUG PRINT
+			// uart_printf(CONSOLE, "Unknown SVC Call\n\r"); // DEBUG PRINT
 			#endif
 			break;
 		}
@@ -448,11 +441,11 @@ void Schedule()
 	// We need to reset the EL1 stack pointer as well
 	
 	#if DEBUG == 1
-	// uart_printf(CONSOLE, "Beginning pcpointer: %x stackpointer: %x registervalues: %x registervalues: %x %x %x %x %x %x %x %x\r\n", p, PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].registervalues[0], PROCS[p].registervalues[24], PROCS[p].registervalues[25], PROCS[p].registervalues[26], PROCS[p].registervalues[27], PROCS[p].registervalues[28], PROCS[p].registervalues[29], PROCS[p].registervalues[30]); // DEBUG
+	// // uart_printf(CONSOLE, "Beginning pcpointer: %x stackpointer: %x registervalues: %x registervalues: %x %x %x %x %x %x %x %x\r\n", p, PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].registervalues[0], PROCS[p].registervalues[24], PROCS[p].registervalues[25], PROCS[p].registervalues[26], PROCS[p].registervalues[27], PROCS[p].registervalues[28], PROCS[p].registervalues[29], PROCS[p].registervalues[30]); // DEBUG
 	// print all the register values
-	// uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
-	// uart_printf(CONSOLE, "PC is %x\n\r", PROCS[p].pcpointer); // DEBUG PRINT
-	// uart_printf(CONSOLE, "SP is %x\n\r", PROCS[p].stackpointer); // DEBUG PRINT
+	// // uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
+	// // uart_printf(CONSOLE, "PC is %x\n\r", PROCS[p].pcpointer); // DEBUG PRINT
+	// // uart_printf(CONSOLE, "SP is %x\n\r", PROCS[p].stackpointer); // DEBUG PRINT
 
 	
 	// uart_getc(1); /// Spins to stop it from keep on running // DEBUG
@@ -467,7 +460,7 @@ int KernelCreate(int priority, void (*function)(), int parent)
 	// Error Check to see if the pid is correct or not?
 	// if (priority < 0) {return -1;} // All prios are valid now
 	for (int p = 0; p < NUMPROCS; p++) {
-		// uart_printf(CONSOLE, "%u %u\r\n", PRIORITY[p], p); // DEBUG code
+		// // uart_printf(CONSOLE, "%u %u\r\n", PRIORITY[p], p); // DEBUG code
 		if (PROCS[p].pcpointer == NULL) {
 			// This PID is currently not taken
 			PROCS[p].pcpointer = function;
@@ -483,7 +476,7 @@ int KernelCreate(int priority, void (*function)(), int parent)
 			PROCS[p].waiting_recieve_head = 0;
 			PROCS[p].waiting_recieve_tail = 0;
 			#if DEBUG == 1
-			uart_printf(CONSOLE, "Process registervalues: %x, PCPointer: %x, stackpointer: %x parentpid: %x PID: %x created\r\n", &PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].parentpid, PROCS[p].pid); // DEBUG
+			// uart_printf(CONSOLE, "Process registervalues: %x, PCPointer: %x, stackpointer: %x parentpid: %x PID: %x created\r\n", &PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].parentpid, PROCS[p].pid); // DEBUG
 			#endif
 			
 			scrSchedule(p + 1, PROCS[p].priority, READY);
