@@ -77,8 +77,8 @@ void reset_game(struct game *cur_game)
 int check_game(struct game *cur_game){
 	uart_printf(CONSOLE, "check_game: tid1_move = %s, tid2_move = %s\r\n", cur_game->tid1_move, cur_game->tid2_move);
 	// check for draw
-	if (strcmp_ret(cur_game->tid1_move, cur_game->tid2_move)){
-		return 0;
+	if (!full_play(cur_game)){
+		return -1;
 	}
 	if (strcmp_ret(cur_game->tid1_move, "rock") && strcmp_ret(cur_game->tid2_move, "scissors")){
 		cur_game->tid1_score++;
@@ -99,7 +99,10 @@ int check_game(struct game *cur_game){
 		cur_game->tid2_score++;
 		return 2;
 	}
-	return -1;
+	if (strcmp_ret(cur_game->tid1_move, cur_game->tid2_move)){
+		return 0;
+	}
+	
 }
 void gameserver(){
 	RegisterAs("gameserver");
@@ -175,6 +178,18 @@ void gameserver(){
 				// print the plays
 				uart_printf(CONSOLE, "gameserver: tid1_move = %s, tid2_move = %s\r\n", games[game_no].tid1_move, games[game_no].tid2_move);
 				int victor = check_game(&games[game_no]);
+				// uart_printf(CONSOLE, "gameserver: victor = %d\r\n", victor);
+				if (victor == -1){
+					// the game is incomplete
+					uart_printf(CONSOLE, "gameserver: game incomplete\r\n");
+					continue;
+				} else {
+					// the game is complete
+					// print the scores
+					// uart_printf(CONSOLE, "gameserver: tid1_score = %d, tid2_score = %d\r\n", games[game_no].tid1_score, games[game_no].tid2_score);
+					// reset the game
+					reset_game(&games[game_no]);
+				}
 				int repret1, repret2;
 				if (victor == 1){
 					// player 1 wins
@@ -184,15 +199,13 @@ void gameserver(){
 					// player 2 wins
 					repret1 = Reply(tid1, "L", 2);
 					repret2 = Reply(tid2, "W", 2);
-				} else{
+				} else if (victor == 0){
 					// draw
 					repret1 = Reply(tid1, "D", 2);
 					repret2 = Reply(tid2, "D", 2);
 				}
 				uart_printf(CONSOLE, "gameserver: repret1 = %d, repret2 = %d\r\n", repret1, repret2);
 				return victor;
-			}else{
-				return 0;
 			}
 			//int repret = Reply(tid, "W", 2);
 		}
@@ -219,4 +232,4 @@ char play(char* move){
 	uart_printf(CONSOLE, "Result: msg = %c\r\n", retchar);
 	strflush(msg, 25);
 	return retchar;
-}
+}x
