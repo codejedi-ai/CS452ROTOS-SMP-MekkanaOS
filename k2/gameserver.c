@@ -57,40 +57,13 @@ int set_play(char* move, uint32_t tid, struct game *games){
 		if (games[i].tid1 == tid){
 			games[i].tid1_move[0] = 0;
 			strcpy(games[i].tid1_move, 10, move, 10);
-			game_no = i;
-			break;
+			return i;
 		}
 		if (games[i].tid2 == tid){
 			games[i].tid2_move[0] = 0;
 			strcpy(games[i].tid2_move, 10, move, 10);
-			game_no = i;
-			break;
+			return i;
 		}
-	}
-	int tid1 = games[game_no].tid1;
-	int tid2 = games[game_no].tid2;
-	if (full_play(&games[game_no])){
-		// print the plays
-		uart_printf(CONSOLE, "gameserver: tid1_move = %s, tid2_move = %s\r\n", games[game_no].tid1_move, games[game_no].tid2_move);
-		int victor = check_game(&games[game_no]);
-		int repret1, repret2;
-		if (victor == 1){
-			// player 1 wins
-			repret1 = Reply(tid1, "W", 2);
-			repret2 = Reply(tid2, "L", 2);
-		} else if (victor == 2){
-			// player 2 wins
-			repret1 = Reply(tid1, "L", 2);
-			repret2 = Reply(tid2, "W", 2);
-		} else{
-			// draw
-			repret1 = Reply(tid1, "D", 2);
-			repret2 = Reply(tid2, "D", 2);
-		}
-		uart_printf(CONSOLE, "gameserver: repret1 = %d, repret2 = %d\r\n", repret1, repret2);
-		return victor;
-	}else{
-		return 0;
 	}
 }
 void reset_game(struct game *cur_game)
@@ -103,32 +76,30 @@ void reset_game(struct game *cur_game)
 
 int check_game(struct game *cur_game){
 	uart_printf(CONSOLE, "check_game: tid1_move = %s, tid2_move = %s\r\n", cur_game->tid1_move, cur_game->tid2_move);
+	// check for draw
+	if (strcmp_ret(cur_game->tid1_move, cur_game->tid2_move)){
+		return 0;
+	}
 	if (strcmp_ret(cur_game->tid1_move, "rock") && strcmp_ret(cur_game->tid2_move, "scissors")){
-		reset_game(cur_game);
 		cur_game->tid1_score++;
 		return 1;
 	} else if (strcmp_ret(cur_game->tid1_move, "scissors") && strcmp_ret(cur_game->tid2_move, "paper")){
-		reset_game(cur_game);
 		cur_game->tid1_score++;
 		return 1;
 	} else if (strcmp_ret(cur_game->tid1_move, "paper") && strcmp_ret(cur_game->tid2_move, "rock")){
-		reset_game(cur_game);
 		cur_game->tid1_score++;
 		return 1;
 	} else if (strcmp_ret(cur_game->tid1_move, "rock") && strcmp_ret(cur_game->tid2_move, "paper")){
-		reset_game(cur_game);
 		cur_game->tid2_score++;
 		return 2;
 	} else if (strcmp_ret(cur_game->tid1_move, "scissors") && strcmp_ret(cur_game->tid2_move, "rock")){
-		reset_game(cur_game);
 		cur_game->tid2_score++;
 		return 2;
 	} else if (strcmp_ret(cur_game->tid1_move, "paper") && strcmp_ret(cur_game->tid2_move, "scissors")){
-		reset_game(cur_game);
 		cur_game->tid2_score++;
 		return 2;
 	}
-	return 0;
+	return -1;
 }
 void gameserver(){
 	RegisterAs("gameserver");
@@ -195,10 +166,34 @@ void gameserver(){
 			// print player2 play
 			uart_printf(CONSOLE, "TID: %u gameserver: player2 play: %s\r\n", games[0].tid2, games[0].tid2_move);
 			//print_int(check);
-			uint8_t vic = set_play(msg, tid, games);
-			uart_printf(CONSOLE, "TID: %u gameserver: vic = %d\r\n", tid, vic);
+			uint8_t game_no = set_play(msg, tid, games);
+			uart_printf(CONSOLE, "TID: %u gameserver: vic = %d\r\n", tid, game_no);
 
-			
+			int tid1 = games[game_no].tid1;
+			int tid2 = games[game_no].tid2;
+			if (full_play(&games[game_no])){
+				// print the plays
+				uart_printf(CONSOLE, "gameserver: tid1_move = %s, tid2_move = %s\r\n", games[game_no].tid1_move, games[game_no].tid2_move);
+				int victor = check_game(&games[game_no]);
+				int repret1, repret2;
+				if (victor == 1){
+					// player 1 wins
+					repret1 = Reply(tid1, "W", 2);
+					repret2 = Reply(tid2, "L", 2);
+				} else if (victor == 2){
+					// player 2 wins
+					repret1 = Reply(tid1, "L", 2);
+					repret2 = Reply(tid2, "W", 2);
+				} else{
+					// draw
+					repret1 = Reply(tid1, "D", 2);
+					repret2 = Reply(tid2, "D", 2);
+				}
+				uart_printf(CONSOLE, "gameserver: repret1 = %d, repret2 = %d\r\n", repret1, repret2);
+				return victor;
+			}else{
+				return 0;
+			}
 			//int repret = Reply(tid, "W", 2);
 		}
 		
