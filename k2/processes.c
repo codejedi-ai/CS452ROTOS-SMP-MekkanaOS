@@ -92,23 +92,37 @@ void test_nameserver(){
 }
 void player1(){
 	int tid = MyTid();
+	// register
+	RegisterAs("player1");
 	signup();
-	char play_ret = play("rock");
-	// play rock paper scissors
-	uart_printf(CONSOLE, "player:%d have: ", tid);
-	uart_putc(CONSOLE, (char)play_ret);
-	uart_printf(CONSOLE, "\r\n");
+	for (int i = 0; i < 5; i++)
+	{
+		// do nothing
+		char play_ret = play("rock");
+		// play rock paper scissors
+		uart_printf(CONSOLE, "Play: %u, player: %d have: ",i, tid);
+		uart_putc(CONSOLE, (char)play_ret);
+		uart_printf(CONSOLE, "\r\n");
+	}
+
 	quit();
 	Exit();
 }
 void player2(){
 	int tid = MyTid();
+	// register
+	RegisterAs("player2");
 	signup();
 	// play rock paper scissors
-	char play_ret = play("rock");
-	uart_printf(CONSOLE, "player:%d have: ", tid);
-	uart_putc(CONSOLE, (char)play_ret);
-	uart_printf(CONSOLE, "\r\n");
+	for (int i = 0; i < 5; i++)
+	{
+		// do nothing
+		char play_ret = play("paper");
+		// play rock paper scissors
+		uart_printf(CONSOLE, "Play %u, player:%d have: ",i, tid);
+		uart_putc(CONSOLE, (char)play_ret);
+		uart_printf(CONSOLE, "\r\n");
+	}
 	quit();
 	Exit();
 }
@@ -122,6 +136,8 @@ void first_task() // First task as dictated in the reqs
 	tid = Create(2, k2p2);
 	uart_printf(CONSOLE,"Created: %u\r\n", tid);
 	*/
+	// register as creation task
+	RegisterAs("first_task");
 	tid = Create(1, player1);
 	uart_printf(CONSOLE,"Created: %u\r\n", tid);
 	tid = Create(1, player2);

@@ -179,17 +179,8 @@ void gameserver(){
 				uart_printf(CONSOLE, "gameserver: tid1_move = %s, tid2_move = %s\r\n", games[game_no].tid1_move, games[game_no].tid2_move);
 				int victor = check_game(&games[game_no]);
 				// uart_printf(CONSOLE, "gameserver: victor = %d\r\n", victor);
-				if (victor == -1){
-					// the game is incomplete
-					uart_printf(CONSOLE, "gameserver: game incomplete\r\n");
-					continue;
-				} else {
-					// the game is complete
-					// print the scores
-					// uart_printf(CONSOLE, "gameserver: tid1_score = %d, tid2_score = %d\r\n", games[game_no].tid1_score, games[game_no].tid2_score);
-					// reset the game
-					reset_game(&games[game_no]);
-				}
+				reset_game(&games[game_no]);
+				// uart_printf(CONSOLE, "gameserver: tid1_score = %d, tid2_score = %d\r\n", games[game_no].tid1_score, games[game_no].tid2_score);
 				int repret1, repret2;
 				if (victor == 1){
 					// player 1 wins
@@ -205,7 +196,6 @@ void gameserver(){
 					repret2 = Reply(tid2, "D", 2);
 				}
 				uart_printf(CONSOLE, "gameserver: repret1 = %d, repret2 = %d\r\n", repret1, repret2);
-				return victor;
 			}
 			//int repret = Reply(tid, "W", 2);
 		}
@@ -230,6 +220,6 @@ char play(char* move){
 	Send(pid, move, 9, msg, 25);
 	char retchar = (char* )msg[0];
 	uart_printf(CONSOLE, "Result: msg = %c\r\n", retchar);
-	strflush(msg, 25);
+	//strflush(msg, 25);
 	return retchar;
-}x
+}

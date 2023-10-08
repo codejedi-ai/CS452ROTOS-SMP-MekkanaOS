@@ -1,5 +1,6 @@
 #include "syscall.h"
 #include "processes.h"
+#include "nameserver.h"
 #include "asm.h"
 #include "rpi.h"
 #include "util.h"
@@ -538,6 +539,7 @@ int Create(int priority, void (*function)()) { // Returns to the Kernel, then ca
 // The difference between an exit and a Yield is Exit do not return back to the priority READY_QUEUE where Yield returns the program back into the priority READY_QUEUE to be ran again. 
 void Exit()
 {
+	Deregister();
 	asm("svc 0");
 	return;
 }
