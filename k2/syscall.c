@@ -410,10 +410,9 @@ void Exception(uint64_t esr_el1)
 			else 
 				reply_helper();
 			break;
-		case 8: // unblock
+		case 8: // MyPriority
 			scrSchedule(PID, PROCS[p].priority, READY);
-			int tid_unblock = PROCS[p].registervalues[0];
-			queue_unblock(tid_unblock, PROCS[tid_unblock - 1].priority, READY);
+			PROCS[p].registervalues[0] = PROCS[p].priority;
 			break;
 		default:
 			#if DEBUG == 1
@@ -514,7 +513,7 @@ int Reply( int tid, void *reply, int replylen ){
 	asm("svc 7");
 	return;
 }
-int UnblockTask(int tid){
+int MyPriority(int tid){
 	asm("svc 8");
 	return;
 }
