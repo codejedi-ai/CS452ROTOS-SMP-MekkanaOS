@@ -10,6 +10,7 @@ Return Value
 -1	unable to reach name server
 */
 int RegisterAs(const char *name);
+int Deregister();
 /*
 asks the name server for the task id of the task that is registered under the given name. Whether WhoIs() blocks waiting for a registration or returns with an error, if no task is registered under the given name, is implementation-dependent. There is guaranteed to be a unique task id associated with each registered name, but the registered task may change at any time after a call to WhoIs().
 Return Value

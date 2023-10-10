@@ -17,7 +17,7 @@ int kmain(void *reg) {
   
 
   uart_printf(CONSOLE, "DEBUG: //pid_names[tid] = name; , ONE SEND AND MANY RECIEVES\r\nHello World I am d273liu\r\n");
-  
+  // test adder
   // uart_printf(CONSOLE, "%u\r\n", &STACK_EL0_START);
   // uart_printf(CONSOLE, "%u\r\n", STACK_EL0_START);
   int tid = KernelCreate(10, nameserver, 0);

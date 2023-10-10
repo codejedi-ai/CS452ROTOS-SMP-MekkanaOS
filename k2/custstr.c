@@ -12,6 +12,11 @@ int8_t is_Hex(char *switch_number){
 }
 
 char str_to_int(char *str){
+    uint8_t is_neg = 0;
+    if (str[0] == '-') {
+      is_neg = 1;
+      str++;
+    }
     char ret = 0; 
     while (*str != '\0') { // loop until the end of the array
         ret = 10 * ret;

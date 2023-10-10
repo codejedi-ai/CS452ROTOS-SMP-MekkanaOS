@@ -30,8 +30,12 @@ void k2_sender(int msglen){
 	// define the send message here
 	tid = WhoIs("RECEIVER");
 	char msgreply[msglen];
+
+	// begin of the send
 	int ret_code = Send(tid, msg, msglen, msgreply, msglen);
 	uart_printf(CONSOLE, "k2_sender: Message sent however my reply should be [%s]..... ret_code = %d \r\n", msgreply, ret_code);
+	// end of the send
+	Exit();
 }
 void k2_receiver(int msglen){
 	// initially this task should have tid of 3
@@ -50,37 +54,46 @@ void k2_receiver(int msglen){
 	char reply[msglen];
 	// define the reply message here
 	int repret = Reply(tid, reply, msglen);
-	uart_printf(CONSOLE, "k2_receiver: Reply sent Repret = %d\r\n", repret);	
+	uart_printf(CONSOLE, "k2_receiver: Reply sent Repret = %d\r\n", repret);
+	Exit();	
 }
-// make sender and receiever of 4 message size
-void k2_sender_4(){
-	k2_sender(4);
-	Exit();
-}
-void k2_receiver_4(){
-	k2_receiver(4);
-	Exit();
-}
-void recieve_first_send_second(){
-    int tid = Create(1, k2_sender_4);
+
+void recieve_first_send_second(int msglen){
+	int64_t args[1];
+	args[0] = msglen;
+    int tid = CreateArgs(1, k2_sender, 1 , args);
     uart_printf(CONSOLE,"Created: %u\r\n", tid);
-    tid = Create(1, k2_receiver_4);
+    tid = CreateArgs(1, k2_receiver, 1 , args);
     uart_printf(CONSOLE,"Created: %u\r\n", tid);
     Exit();
 }
-void send_first_recieve_second(){
-    int tid = Create(1, k2_receiver_4);
+void send_first_recieve_second(int64_t msglen){
+	int64_t args[1];
+	args[0] = msglen;
+    int tid = CreateArgs(1, k2_receiver, 1 , args);
     uart_printf(CONSOLE,"Created: %u\r\n", tid);
-    tid = Create(1, k2_sender_4);
+    tid = CreateArgs(1, k2_sender, 1 , args);
     uart_printf(CONSOLE,"Created: %u\r\n", tid);
     Exit();
 }
 
-void CreateArgsTest(int i){
+void CreateArgsTest(int i, int j){
 	RegisterAs("CreateArgsTest");
-	uart_printf(CONSOLE, "CreateArgsTest: %u\r\n", i);
+	uart_printf(CONSOLE, "CreateArgsTest: %u, %u\r\n", i, j);
 	Exit();
 }
+int64_t adder(int64_t a, int64_t b, int64_t c, int64_t d, int64_t e, int64_t f, int64_t g, int64_t h, int64_t i, int64_t j) {
+    return a + b + c + d + e + f + g + h + i + j;
+}
+// make a addrTask as a test for the adder function
+void adderTask(int64_t a, int64_t b, int64_t c, int64_t d, int64_t e, int64_t f, int64_t g, int64_t h, int64_t i, int64_t j){
+	// print the params
+	RegisterAs("adderTask");
+	uart_printf(CONSOLE, "adderTask: %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\r\n", a, b, c, d, e, f, g, h, i, j);
+	uart_printf(CONSOLE, "adderTask result: %u\r\n", adder(a, b, c, d, e, f, g, h, i, j));
+	Exit();
+}
+
 
 void parse_char_array(char *arr) {
   
@@ -115,20 +128,62 @@ void parse_char_array(char *arr) {
 	  // the fourth argument is the arguments
 	  int argsno = 100;
 	  int64_t args[100];
-	  args[0] = 1768;
+	  args[0] = (int64_t)str_to_int(num[1]);
+	  args[1] = (int64_t)str_to_int(num[2]);
 	  uart_printf(CONSOLE, "argsno: %x\r\n", argsno);
 	  uart_printf(CONSOLE, "args: %x\r\n", args);
 	  int tid = CreateArgs(5, CreateArgsTest, 100, args);
 	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
 	  return;
   }
-  
+  // ad the adder test with predefined params of 1 - 10
+  strcmp(&cmp, num[0], "adder");
+  if (cmp){
+	  // this is a create args command
+	  // the first argument is the priority
+	  // the second argument is the function pointer
+	  // the third argument is the number of arguments
+	  // the fourth argument is the arguments
+	  int argsno = 10;
+	  int64_t args[10];
+	  /*
+	  args[0] = (int64_t)str_to_int(num[1]);
+	  args[1] = (int64_t)str_to_int(num[2]);
+	  args[2] = (int64_t)str_to_int(num[3]);
+	  args[3] = (int64_t)str_to_int(num[4]);
+	  args[4] = (int64_t)str_to_int(num[5]);
+	  args[5] = (int64_t)str_to_int(num[6]);
+	  args[6] = (int64_t)str_to_int(num[7]);
+	  args[7] = (int64_t)str_to_int(num[8]);
+	  args[8] = (int64_t)str_to_int(num[9]);
+	  args[9] = (int64_t)str_to_int(num[10]);
+	  */
+	 // the args are predetermined from 1 - 10
+	  args[0] = 1;
+	  args[1] = 2;
+	  args[2] = 3;
+	  args[3] = 4;
+	  args[4] = 5;
+	  args[5] = 6;
+	  args[6] = 7;
+	  args[7] = 8;
+	  args[8] = 9;
+	  args[9] = 10;
+
+	  uart_printf(CONSOLE, "argsno: %x\r\n", argsno);
+	  uart_printf(CONSOLE, "args: %x\r\n", args);
+	  int tid = CreateArgs(5, adderTask, 10, args);
+	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
+	  return;
+  }
 }
 void recieve_task(){
 	RegisterAs(".");
 	// first it would await for a message to arrive that would ultimatelly be a command to initialize the task
-
+	Exit();
 }
+
+
 void k2(){
 	// register the k2
 	RegisterAs("K2");
