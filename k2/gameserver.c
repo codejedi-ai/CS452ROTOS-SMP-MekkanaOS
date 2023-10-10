@@ -75,7 +75,7 @@ void reset_game(struct game *cur_game)
 }
 
 int check_game(struct game *cur_game){
-	uart_printf(CONSOLE, "check_game: tid1_move = %s, tid2_move = %s\r\n", cur_game->tid1_move, cur_game->tid2_move);
+
 	// check for draw
 	if (!full_play(cur_game)){
 		return -1;
@@ -124,7 +124,7 @@ void gameserver(){
 		// if msg is signup
 		if (strcmp_ret(msg, "signup")){
 			// find a game that is not full
-			uart_printf(CONSOLE, "gameserver: signup recieved\r\n");
+
 			for (int i = 0; i < 10; i++)
 			{
 				
@@ -138,7 +138,7 @@ void gameserver(){
 						games[i].tid2 = tid;
 						games[i].tid2_move[0] = 0;
 					}
-					uart_printf(CONSOLE, "gameserver: game %d added player\r\n", i);
+
 					break;
 				}
 			}
@@ -146,7 +146,7 @@ void gameserver(){
 			continue;
 		} else if (strcmp_ret(msg, "quit")){
 			// find a game that is not full
-			uart_printf(CONSOLE, "gameserver: quit recieved\r\n");
+
 			for (int i = 0; i < 10; i++)
 			{
 				if (games[i].tid1 == tid){
@@ -162,25 +162,25 @@ void gameserver(){
 			continue;
 		} else if (strcmp_ret(msg, "rock") || strcmp_ret(msg, "paper") || strcmp_ret(msg, "scissors")){
 			// find a game that is not full
-			uart_printf(CONSOLE, "TID: %u gameserver: %s recieved\r\n", tid, msg);
+
 			
 			// print player1 play
-			uart_printf(CONSOLE, "TID: %u gameserver: player1 play: %s\r\n", games[0].tid1, games[0].tid1_move);
+
 			// print player2 play
-			uart_printf(CONSOLE, "TID: %u gameserver: player2 play: %s\r\n", games[0].tid2, games[0].tid2_move);
+
 			//print_int(check);
 			uint8_t game_no = set_play(msg, tid, games);
-			uart_printf(CONSOLE, "TID: %u gameserver: vic = %d\r\n", tid, game_no);
+
 
 			int tid1 = games[game_no].tid1;
 			int tid2 = games[game_no].tid2;
 			if (full_play(&games[game_no])){
 				// print the plays
-				uart_printf(CONSOLE, "gameserver: tid1_move = %s, tid2_move = %s\r\n", games[game_no].tid1_move, games[game_no].tid2_move);
+
 				int victor = check_game(&games[game_no]);
-				// uart_printf(CONSOLE, "gameserver: victor = %d\r\n", victor);
+
 				reset_game(&games[game_no]);
-				// uart_printf(CONSOLE, "gameserver: tid1_score = %d, tid2_score = %d\r\n", games[game_no].tid1_score, games[game_no].tid2_score);
+
 				int repret1, repret2;
 				if (victor == 1){
 					// player 1 wins
@@ -195,7 +195,7 @@ void gameserver(){
 					repret1 = Reply(tid1, "D", 2);
 					repret2 = Reply(tid2, "D", 2);
 				}
-				uart_printf(CONSOLE, "gameserver: repret1 = %d, repret2 = %d\r\n", repret1, repret2);
+
 			}
 			//int repret = Reply(tid, "W", 2);
 		}
@@ -219,7 +219,7 @@ char play(char* move){
 
 	Send(pid, move, 9, msg, 25);
 	char retchar = (char* )msg[0];
-	uart_printf(CONSOLE, "Result: msg = %c\r\n", retchar);
+
 	//strflush(msg, 25);
 	return retchar;
 }

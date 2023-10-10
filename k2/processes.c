@@ -5,6 +5,8 @@
 #include "nameserver.h"
 #include "custstr.h"
 #include "gameserver.h"
+#include "systimer.h"
+#include "k2_time_tests.h"
 #define DISPLAY 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -32,38 +34,7 @@ Code	Effect
 
 
 
-// Send message test. Process one would be sending a message to process two. 
-// The expected output of this test would be seeing the message from process one in process two.
-// The name of process one and process two would be abbreviared as k2p1 and k2p2
-void k2p1(){
-	int tid = MyTid();
-	// write a message
-	uart_printf(CONSOLE, "k2p1: My tid is %u\r\n", tid);
-	char *msg = "k2p1: Hello, this is process k2p1";
-	int msglen = 24;
-	tid = 4;
-	char msgreply[50];
-	int ret_code = Send(tid, msg, msglen, msgreply, 25);
-	uart_printf(CONSOLE, "k2p1: Message sent however my reply should be [%s]..... ret_code = %d \r\n", msgreply, ret_code);
-	Exit();
-}
-void k2p2(){
-	// initially this task should have tid of 3
-	// recieve a message
-	int mytid = MyTid();
-	int tid;
-	char msg[50];
-	int msglen = 48;
-	uart_printf(CONSOLE, "k2p2: My tid is %u\r\n", mytid);
-	int recret = Receive(&tid, msg, msglen);
-	uart_printf(CONSOLE, "k2p2: Message recieved: [%s], recret = %d\r\n", msg, recret);
-	char *reply = "k2p1 Hello There";
-	int repret = Reply(tid, reply, 25);
-	uart_printf(CONSOLE, "k2p2: Reply sent Repret = %d\r\n", repret);
-	
 
-	Exit();
-}
 void test_nameserver(){
 	char* myname = "test_nameserver";
 	// set coulor to green
@@ -126,21 +97,28 @@ void player2(){
 	quit();
 	Exit();
 }
+void print_int(int i){
+	uart_printf(CONSOLE, "print_int: %u\r\n", i);
+}
 void first_task() // First task as dictated in the reqs
 {
 	// We are assuming that first_task has a priority of 2
 	int tid;
-	/*
-	tid = Create(1, k2p1);
-	uart_printf(CONSOLE,"Created: %u\r\n", tid);
-	tid = Create(2, k2p2);
-	uart_printf(CONSOLE,"Created: %u\r\n", tid);
-	*/
-	// register as creation task
-	RegisterAs("first_task");
-	tid = Create(1, player1);
-	uart_printf(CONSOLE,"Created: %u\r\n", tid);
-	tid = Create(1, player2);
-	uart_printf(CONSOLE,"Created: %u\r\n", tid);
 	Exit();
+}
+
+void iotest(){
+  unsigned int counter=1;
+  uart_printf(CONSOLE, "PI[%u]> ", counter++);
+  char c = ' ';
+  while (c != 'q') {
+    c = uart_getc(CONSOLE);
+    if (c == '\r') {
+      uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
+    } else {
+      uart_putc(CONSOLE, c);
+    }
+  }
+  uart_puts(CONSOLE, "\r\n");
+  Exit();
 }

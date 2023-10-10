@@ -4,6 +4,7 @@
         "util.h": "c",
         "syscall.h": "c",
         "custstr.h": "c",
-        "nameserver.h": "c"
+        "nameserver.h": "c",
+        "systimer.h": "c"
     }
 }

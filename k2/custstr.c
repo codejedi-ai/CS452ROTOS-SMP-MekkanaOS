@@ -3,7 +3,6 @@
 #include "util.h"
 
 int8_t is_empty(char *str){
-  uart_printf(CONSOLE, "is_empty: str = %s\r\n", str);
   return (*str == '\0');
 }
 int8_t is_Hex(char *switch_number){
@@ -36,52 +35,40 @@ char hexstr_to_int(char *str){
 // with inplace return again
 void strcmp(int* ret, char* s1, char* s2){
 	while(*s1 && *s2){
-		// // uart_printf(CONSOLE, "Addr: %x, %x compsiring: ", s1, s2);
-		// uart_putc(CONSOLE, *s1);
-		// uart_putc(CONSOLE, *s2);
-		// // uart_printf(CONSOLE, "\r\n");
 		if(*s1 != *s2){
 			*ret = 0;
-            return;
+      return;
 		}
-		
 		s1++;
 		s2++;
+    *ret = (*s1 == *s2);
 	}
-		// // uart_printf(CONSOLE, "compairing last char: ");
-		// uart_putc(CONSOLE, *s1);
-		// uart_putc(CONSOLE, *s2);
+
+
+
 	*ret = (*s1 == *s2);
 }
 // with inplace return again
 int strcmp_ret(char* s1, char* s2){
 	while(*s1 && *s2){
-		// // uart_printf(CONSOLE, "Addr: %x, %x compsiring: ", s1, s2);
-		// uart_putc(CONSOLE, *s1);
-		// uart_putc(CONSOLE, *s2);
-		// // uart_printf(CONSOLE, "\r\n");
 		if(*s1 != *s2){
-            return 0;
+      return 0;
 		}
-		
 		s1++;
 		s2++;
 	}
-		// // uart_printf(CONSOLE, "compairing last char: ");
-		// uart_putc(CONSOLE, *s1);
-		// uart_putc(CONSOLE, *s2);
 	return (*s1 == *s2);
 }
 int stringconcat(char* dest, const char* src) {
 	int newsz = 0;
     while (*dest) {
-        // uart_putc(CONSOLE, *dest);
+
         dest++;
 		newsz++;
     }
     while (*src) {
         *dest = *src;
-        // uart_putc(CONSOLE, *dest);
+
         dest++;
         src++;
 		newsz++;

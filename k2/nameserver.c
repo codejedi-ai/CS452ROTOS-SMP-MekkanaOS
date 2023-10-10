@@ -37,12 +37,13 @@ void nameserver(){
 	{
 		pid_names[i][0] = 0;
 	}
+	strcpy(pid_names[0], 50, "nameserver", 50);
 	while (1)
 	{
 
 		int recret = Receive(&tid, msg, msglen);
 		// strflush(msg, 50);
-		// uart_printf(CONSOLE, "nameserver: Message recieved: [%s], recret = %d\r\n", msg, recret);
+
 		char command[50];
 		char name[50];
 
@@ -50,50 +51,39 @@ void nameserver(){
 		parsestring(command, 50, msg, 1);
 		parsestring(name, 50 , msg, 2);
 
-		// print the mem address of name
-		uart_printf(CONSOLE, "nameserver: name = %x\r\n", name);
-
 
 		// now print the compair
 		char *command_cand = "REGISTER";
 		int cmp;
 		// strcmp(&cmp, command, command_cand);
 		cmp = strcmp_ret(command, command_cand);
-		// uart_printf(CONSOLE, "nameserver: strcmp = %d\r\n", cmp);
+
 		if (cmp){
 			strcpy(pid_names[tid], 50, name, 50);
 			// this registers a PID with a name
 			// change font to blue
-			uart_printf(CONSOLE, "\033[34m");
-		   	uart_printf(CONSOLE, "nameserver: pid_names[%u] = %s\r\n", tid, pid_names[tid]);
+
+
 			// change font to white
-			uart_printf(CONSOLE, "\033[37m");
+
 			int repret = Reply(tid, "PID Registered", 25);
 		}
 		command_cand = "WHOIS";
 		strcmp(&cmp, command, command_cand);
-		// uart_printf(CONSOLE, "nameserver: strcmp = %d\r\n", cmp);
+
 		if (cmp){
-			// uart_printf(CONSOLE, "nameserver: WHOIS\r\n");
+
 			// this registers a PID with a name
 			int ret = 0;
 			while (ret < NUMPROCS)
 			{
-				// uart_printf(CONSOLE, "nameserver: pid_names[%u] = %s\r\n", ret, pid_names[ret]);
+
 				if (strcmp_ret(pid_names[ret], name))
 				{
 					break;
 				}
 				ret++;
 			}
-			
-			// change font to green
-			// uart_printf(CONSOLE, "\033[32m");
-		   	// uart_printf(CONSOLE, "%s have PID of %u\r\n", pid_names[tid], ret);
-			// change font to white
-			// uart_printf(CONSOLE, "\033[37m");
-
-			
 			// unsigned int to ascii string
 			char bf[10] = "";
 			ui2a(ret, 10, bf);
@@ -104,20 +94,22 @@ void nameserver(){
 		strcmp(&cmp, command, command_cand);
 		if (cmp){
 			// this registers a PID with a name
-			
-			// change font to red
+			// print the deregistered in red
 			uart_printf(CONSOLE, "\033[31m");
-		   	uart_printf(CONSOLE, "DEREGISTER nameserver: pid_names[%u] = %s\r\n", tid, pid_names[tid]);
+			uart_printf(CONSOLE, "DEREGISTERD PID: %u, Name: %s\r\n", tid, pid_names[tid]);
+			uart_printf(CONSOLE, "\033[37m");
 			pid_names[tid][0] = 0;
 			int repret = Reply(tid, "PID Deregistered", 25);
 		}
-		// set coulor to green
+		// print the registered table in green
 		uart_printf(CONSOLE, "\033[32m");
+		uart_printf(CONSOLE, "Registered Table:\r\n");
 		for (int i = 0; i < NUMPROCS; i++)
 		{
-			uart_printf(CONSOLE, "nameserver: pid_names[%u] = %s\r\n", i, pid_names[i]);
+			
+			uart_printf(CONSOLE, "PID: %u, Name: %s\r\n", i, pid_names[i]);
 		}
-		// set coulor to white
+		
 		uart_printf(CONSOLE, "\033[37m");
 	}
 	Exit();
@@ -138,11 +130,11 @@ int Deregister(){
 	int tid = MyTid();
 	char rep[50];
 	char sendmsg[50] = "DEREGISTER ";
-	char tid_str[10] = "LOLOLOL";
-	//i2a(tid, tid_str);
+	char tid_str[10] = "";
+	i2a(tid, tid_str);
 	int msgsz = 50;
 	msgsz = stringconcat((char* )sendmsg, (char *)tid_str);
-	//// strflush(sendmsg, msgsz);
+	// strflush(sendmsg, msgsz);
 	return Send(1, sendmsg, 50, rep, 50);
 }
 int WhoIs(const char *name){

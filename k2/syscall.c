@@ -103,6 +103,7 @@ void InitSys(void* reg)
 		READY_QUEUE[idx].pid = 0;
 		READY_QUEUE[idx].ready = 0;
 		READY_QUEUE[idx].priority = 0;
+
 		
 	}
 	return 0;
@@ -216,7 +217,7 @@ void recieve_helper(int PID){
 		PROCS[PID - 1].waiting_send = 1;
 		return;
 	}
-
+	PROCS[PID - 1].waiting_send = 0;
 	// unblock the task I really do not know how to unblock the task. If it was just blankly unblocked it would just return 
 	// and keep running with no message
 	
@@ -246,7 +247,7 @@ void recieve_helper(int PID){
 		strflush(curread_msg, curread_message_length); 
 	# endif
 	// msg is the destination curread_msg is the source
-	msglen = strcpy(msg, msglen, curread_msg, curread_message_length);
+	msglen = strcpy(msg, msglen - 1, curread_msg, curread_message_length - 1) + 1;
 	# if DEBUG == 2 
 		strflush(msg, msglen); 
 	# endif
@@ -300,11 +301,11 @@ void reply_helper(){
 
 	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
 	int i = 0;
-	replylen = strcpy(reply_buffer, reply_buffer_len, reply, replylen);
+	replylen = strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
 	// 
 	// now unblock the target task
 	queue_unblock(tid, PROCS[tid - 1].priority, READY);
-	// return a 0 for the send function
+	// return a reply length for the send function
 	PROCS[tid - 1].registervalues[0] = replylen;
 	PROCS[tid - 1].waiting_reply = 0;
 	// return for the reply function
@@ -338,6 +339,9 @@ void Exception(uint64_t esr_el1)
 			break;
 		case 2: // Create
 			scrSchedule(PID, PROCS[p].priority, READY);
+			for (int j = 0; j < 31; j++) {
+				uart_printf(CONSOLE, "Reg %u: %x\n\r", j, PROCS[p].registervalues[j]);
+			}
 			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
 			PROCS[p].registervalues[0] = ret;
 			break;
@@ -409,8 +413,6 @@ void Exception(uint64_t esr_el1)
 		case 8: // unblock
 			scrSchedule(PID, PROCS[p].priority, READY);
 			int tid_unblock = PROCS[p].registervalues[0];
-			PROCS[tid_unblock - 1].waiting_reply = 0;
-			PROCS[tid_unblock - 1].waiting_send = 1;
 			queue_unblock(tid_unblock, PROCS[tid_unblock - 1].priority, READY);
 			break;
 		default:
@@ -427,6 +429,10 @@ void Exception(uint64_t esr_el1)
 	*/
 	#if DEBUG >= 1
 	uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+	// print the queue of all tasks, print by PID: state
+	for (int i = 0; i < NUMPROCS; i++) {
+		uart_printf(CONSOLE, "PID: %u, State: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready);
+	}
 	uart_getc(1);
 	#endif
 	
@@ -476,10 +482,8 @@ int KernelCreate(int priority, void (*function)(), int parent)
 			PROCS[p].waiting_send = 0;
 			PROCS[p].waiting_recieve_head = 0;
 			PROCS[p].waiting_recieve_tail = 0;
-			#if DEBUG == 1
-			// uart_printf(CONSOLE, "Process registervalues: %x, PCPointer: %x, stackpointer: %x parentpid: %x PID: %x created\r\n", &PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].parentpid, PROCS[p].pid); // DEBUG
-			#endif
-			
+			// void* memcpy(void* restrict dest, const void* restrict src, size_t n) 
+			// this could be used to start a task with certain parameters. 
 			scrSchedule(p + 1, PROCS[p].priority, READY);
 			
 			return p + 1;
