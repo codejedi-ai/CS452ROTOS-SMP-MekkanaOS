@@ -24,7 +24,7 @@ int kmain(void *reg) {
 	uart_printf(CONSOLE,"nameserver Created: %u\r\n", tid);
   tid = KernelCreate(10, gameserver, 0);
 	uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
-  KernelCreate(3, first_task, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
+  KernelCreate(3, k2, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
   // uart_printf(CONSOLE, "Process %u %u\r\n", p, p_1);
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging

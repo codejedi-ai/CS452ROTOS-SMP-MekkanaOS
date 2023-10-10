@@ -97,9 +97,7 @@ void player2(){
 	quit();
 	Exit();
 }
-void print_int(int i){
-	uart_printf(CONSOLE, "print_int: %u\r\n", i);
-}
+
 void first_task() // First task as dictated in the reqs
 {
 	// We are assuming that first_task has a priority of 2
@@ -107,18 +105,3 @@ void first_task() // First task as dictated in the reqs
 	Exit();
 }
 
-void iotest(){
-  unsigned int counter=1;
-  uart_printf(CONSOLE, "PI[%u]> ", counter++);
-  char c = ' ';
-  while (c != 'q') {
-    c = uart_getc(CONSOLE);
-    if (c == '\r') {
-      uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
-    } else {
-      uart_putc(CONSOLE, c);
-    }
-  }
-  uart_puts(CONSOLE, "\r\n");
-  Exit();
-}

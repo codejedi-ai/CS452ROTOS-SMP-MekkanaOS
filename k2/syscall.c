@@ -343,6 +343,13 @@ void Exception(uint64_t esr_el1)
 				uart_printf(CONSOLE, "Reg %u: %x\n\r", j, PROCS[p].registervalues[j]);
 			}
 			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
+			if (PROCS[p].registervalues[2] != 0) {
+				// // uart_printf(CONSOLE, "Reg 3: %x\n\r", PROCS[p].registervalues[3
+				int *ret_ptr = (int *)PROCS[p].registervalues[3];
+				PROCS[ret - 1].registervalues[0] = ret_ptr[0];
+				uart_printf(CONSOLE, "Reg 0: %x\n\r", PROCS[ret - 1].registervalues[0]);
+				uart_printf(CONSOLE, "Reg 0: %u\n\r", PROCS[ret - 1].registervalues[0]);
+			}
 			PROCS[p].registervalues[0] = ret;
 			break;
 		case 3: // mytid
@@ -534,6 +541,11 @@ int MyParentTid()
 }
 
 int Create(int priority, void (*function)()) { // Returns to the Kernel, then calls KernelCreate
+	asm("svc 2"); // The Kernel needs to put the pid in x0
+	return;
+}
+
+int CreateArgs(int priority, void (*function)(), int8_t argsno, int64_t *args) { // Returns to the Kernel, then calls KernelCreate
 	asm("svc 2"); // The Kernel needs to put the pid in x0
 	return;
 }

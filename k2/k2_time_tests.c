@@ -1,6 +1,7 @@
 #include "rpi.h"
 #include "util.h"
 #include "nameserver.h"
+#include "custstr.h"
 /*
 For this test I would be conducting
 opt or noopt - indicating whether optimization enabled or not
@@ -74,8 +75,91 @@ void send_first_recieve_second(){
     uart_printf(CONSOLE,"Created: %u\r\n", tid);
     Exit();
 }
+
+void CreateArgsTest(int i){
+	RegisterAs("CreateArgsTest");
+	uart_printf(CONSOLE, "CreateArgsTest: %u\r\n", i);
+	Exit();
+}
+
+void parse_char_array(char *arr) {
+  
+  char *ptr; // pointer to traverse the array
+  char *num[100]; // array to store the numbers
+  int i = 1; // index for the array
+  int used_length = 0;
+  num[0] = arr;
+  ptr = arr; // point to the first element of the array
+  while (*ptr != '\0') { // loop until the end of the array
+    if (*ptr == ' ') { // check if the character is a space
+      *ptr = 0;
+      num[i++] = ptr + 1; // store the value in the array
+     // increment the index
+    }
+    ptr++; // move to the next character
+    used_length++;
+  }
+  for (int j = 0; j < i; j++) {
+	uart_printf(CONSOLE, "num[%d] = %s\r\n", j, num[j]);
+  }
+  
+  //string compair
+  char *command_cand = "CreateArgs";
+  int cmp;
+  strcmp(&cmp, num[0], "CreateArgs");
+  if (cmp){
+	  // this is a create args command
+	  // the first argument is the priority
+	  // the second argument is the function pointer
+	  // the third argument is the number of arguments
+	  // the fourth argument is the arguments
+	  int argsno = 100;
+	  int64_t args[100];
+	  args[0] = 1768;
+	  uart_printf(CONSOLE, "argsno: %x\r\n", argsno);
+	  uart_printf(CONSOLE, "args: %x\r\n", args);
+	  int tid = CreateArgs(5, CreateArgsTest, 100, args);
+	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
+	  return;
+  }
+  
+}
+void recieve_task(){
+	RegisterAs(".");
+	// first it would await for a message to arrive that would ultimatelly be a command to initialize the task
+
+}
 void k2(){
-    // recieve_first_send_second();
-    send_first_recieve_second();
-    Exit();
+	// register the k2
+	RegisterAs("K2");
+	unsigned int counter=1;
+	char command[50];
+	int command_length = 0;
+	command[0] = '\0';
+	uart_printf(CONSOLE, "PI[%u]> ", counter++);
+	char c = ' ';
+	while (c != 'q') {
+		c = uart_getc(CONSOLE);
+		if (c == '\r') {
+			uart_printf(CONSOLE, "\r\n");
+			parse_char_array(command);
+			command_length = 0;
+			command[0] = '\0';
+			uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
+			Yield();
+		}else if (c == '\b'){
+			if (command_length > 0){
+				command_length--;
+				command[command_length] = '\0';
+				uart_printf(CONSOLE, "\b \b");
+			}
+		}else {
+			command[command_length] = c;
+			command_length++;
+			command[command_length] = '\0';
+			uart_putc(CONSOLE, c);
+		}
+	}
+	uart_puts(CONSOLE, "\r\n");
+	Exit();
 }

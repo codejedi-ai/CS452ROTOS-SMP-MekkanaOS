@@ -12,6 +12,7 @@ void Exception(uint64_t esr_el1);
 void Kill(int p);
 int KernelCreate(int priority, void (*function)(), int parent);
 int Create(int priority, void (*function)());
+int CreateArgs(int priority, void (*function)(), int8_t argsno, int64_t *args);
 void Schedule();
 
 int MyTid();
