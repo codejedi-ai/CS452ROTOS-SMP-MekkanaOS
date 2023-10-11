@@ -9,9 +9,8 @@ char hexstr_to_int(char *str);
 void strcmp(int* ret, char* s1, char* s2);
 int strcmp_ret(char* s1, char* s2);
 int stringconcat(char* dest, const char* src);
-
-char* parse_char_arr();
 // this fiunction would
+int parse_char_arr(char *arr, char **num, int num_size);
 // return strings in place
 void parsestring(char * str, int part, char *retarr, int size);
 

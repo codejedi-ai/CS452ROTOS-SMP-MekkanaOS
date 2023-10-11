@@ -17,11 +17,11 @@ static struct process PROCS[NUMPROCS];
 int heap_size = 0;
 static struct state READY_QUEUE[NUMPROCS];
 static struct state BLOCKED_QUEUE[NUMPROCS];
-#define DEBUG 3
+#define DEBUG 2
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
-
+uint8_t NO_PARAMS = 0;
 // scrSchedule(pid, priority, ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 void scrSchedule(int pid, int priority, int ready)
@@ -244,12 +244,16 @@ void recieve_helper(int PID){
 	int sender_tid = PROCS[p].message_recieved[head].tid;
 	*tid = sender_tid;
 	# if DEBUG == 2 
-		strflush(curread_msg, curread_message_length); 
+		// strflush(curread_msg, curread_message_length); 
 	# endif
 	// msg is the destination curread_msg is the source
-	msglen = strcpy(msg, msglen - 1, curread_msg, curread_message_length - 1) + 1;
+	// msglen = strcpy(msg, msglen - 1, curread_msg, curread_message_length - 1) + 1;
+	msglen = min(msglen, curread_message_length);
+	memcpy(msg, curread_msg, msglen);
+	
 	# if DEBUG == 2 
-		strflush(msg, msglen); 
+		// strflush(msg, msglen); 
+		// uart_printf(CONSOLE, "recieve_buffer length is %d\r\n", msglen);
 	# endif
 	// DEBUG
 	# if DEBUG == 2
@@ -270,11 +274,14 @@ void recieve_helper(int PID){
 	// uart_printf(CONSOLE, "curread_msg is %s\r\n", curread_msg);
 	// uart_printf(CONSOLE, "MSGLEN is %u\r\n ===============\r\n ", msglen);
 	# endif
+	// p is the current process, the process that is recieving
 	PROCS[p].waiting_recieve_head++;
 	PROCS[p].waiting_recieve_head %= 50;
+	PROCS[p].registervalues[0] = msglen;
 	queue_unblock(PID, PROCS[PID - 1].priority, READY);
 	// return msglen;
-	PROCS[PID - 1].registervalues[0] = msglen;
+	
+	// this is the sender process. The sender is ready for a reply
 }
 void reply_helper(){
 	# if DEBUG == 2
@@ -288,7 +295,19 @@ void reply_helper(){
 	char *reply_buffer = PROCS[tid - 1].message_sent.reply;
 	int reply_buffer_len = PROCS[tid - 1].message_sent.replylen;
 	// Have the kernel copy the reply into the messageDS of the target task
+
+	// PROCS[tid - 1].message_sent.reply[replylen] = 0;
+
+
+	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
+	int i = 0;
+	replylen = min(reply_buffer_len, replylen);
+	memcpy(reply_buffer, reply, replylen);
+	// replylen = strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
+
+	
 	# if DEBUG == 2
+	// uart_printf(CONSOLE, "reply_buffer length is %d\r\n", replylen);
 	// Print the recieved message
 	// uart_printf(CONSOLE, "TID is %u\r\n", tid);
 	// uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
@@ -296,12 +315,6 @@ void reply_helper(){
 	// uart_printf(CONSOLE, "replying to PID is %u, reply PID is %u\r\n", tid , PID );
 	// uart_printf(CONSOLE, "reply_buffer is %x, *reply is %x\r\n", reply_buffer, reply);
 	# endif
-	// PROCS[tid - 1].message_sent.reply[replylen] = 0;
-
-
-	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
-	int i = 0;
-	replylen = strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
 	// 
 	// now unblock the target task
 	queue_unblock(tid, PROCS[tid - 1].priority, READY);
@@ -339,34 +352,7 @@ void Exception(uint64_t esr_el1)
 			break;
 		case 2: // Create
 			scrSchedule(PID, PROCS[p].priority, READY);
-			for (int j = 0; j < 31; j++) {
-				uart_printf(CONSOLE, "Reg %u: %x\n\r", j, PROCS[p].registervalues[j]);
-			}
 			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
-			if (PROCS[p].registervalues[2] != 0) {
-				// theis is create with arguments
-				// // uart_printf(CONSOLE, "Reg 3: %x\n\r", PROCS[p].registervalues[3
-				// copy the first 8 registers from retptr to the registervalues
-				for (int j = 0; j < 8; j++) {
-					PROCS[ret - 1].registervalues[j] = ((int64_t *)PROCS[p].registervalues[3])[j];
-					uart_printf(CONSOLE, "Reg %u: %x\n\r",j, PROCS[ret - 1].registervalues[j]);
-				}
-				// the rest of the parameters would be stored on the stack of the new process
-				// remember the stack is a uint64_t array
-				// store all the elements in args that cannot be stored in the registers into the stack
-				int64_t *newsp = (int64_t *)PROCS[ret - 1].stackpointer;
-				uint8_t stack_offset = PROCS[p].registervalues[2] - 8;
-				newsp = newsp - (PROCS[p].registervalues[2] - 8); 
-				if (stack_offset > 0){
-					for (int j = 0; j < stack_offset; j++) {
-						newsp[j] = ((int64_t *)PROCS[p].registervalues[3])[j + 8];
-						uart_printf(CONSOLE, "Stack Reg %u: %x\n\r", j, newsp[j]);
-					}
-					uart_printf(CONSOLE, "Stack Reg before%x: After %x\n\r", PROCS[ret - 1].stackpointer, (int64_t)newsp);
-					PROCS[ret - 1].stackpointer = (int64_t)newsp;
-				}
-				
-			}
 			PROCS[p].registervalues[0] = ret;
 			break;
 		case 3: // mytid
@@ -423,13 +409,19 @@ void Exception(uint64_t esr_el1)
 				//-1	tid is not the task id of an existing task.
 				PROCS[p].registervalues[0] = -1;
 			}
-			else if(PROCS[tid_dest - 1].waiting_reply == 0){
+			else if(PROCS[tid_dest - 1].waiting_reply != 1){
+				// the message is not recieved, thus reply is not possible
+				// messsage is in three statges
+				// sent, recieved, reply
+				// not-sent 0 returns -2
+				// sent 1 returns -3
+				// recieved 2
 				# if DEBUG == 2
 				// print apparentlly tid_dest is dead
 				// uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
 				# endif
 				//-2	tid is not the task id of a reply-blocked task.
-				PROCS[p].registervalues[0] = -2;
+				PROCS[p].registervalues[0] = -2 - PROCS[tid_dest - 1].waiting_reply;
 			}
 			else 
 				reply_helper();
@@ -437,6 +429,41 @@ void Exception(uint64_t esr_el1)
 		case 8: // MyPriority
 			scrSchedule(PID, PROCS[p].priority, READY);
 			PROCS[p].registervalues[0] = PROCS[p].priority;
+			break;
+		case 9: // Create args
+			scrSchedule(PID, PROCS[p].priority, READY);
+			for (int j = 0; j < 31; j++) {
+				// uart_printf(CONSOLE, "Reg %u: %x\n\r", j, PROCS[p].registervalues[j]);
+			}
+			ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
+			
+			if (PROCS[p].registervalues[2] > 0) {
+				// theis is create with arguments
+				// // uart_printf(CONSOLE, "Reg 3: %x\n\r", PROCS[p].registervalues[3
+				// copy the first 8 registers from retptr to the registervalues
+				for (int j = 0; j < 8; j++) {
+					PROCS[ret - 1].registervalues[j] = ((int64_t *)PROCS[p].registervalues[3])[j];
+					// uart_printf(CONSOLE, "Reg %u: %x\n\r",j, PROCS[ret - 1].registervalues[j]);
+				}
+				// the rest of the parameters would be stored on the stack of the new process
+				// remember the stack is a uint64_t array
+				// store all the elements in args that cannot be stored in the registers into the stack
+				if (PROCS[p].registervalues[2] > 8){
+					int64_t *newsp = (int64_t *)PROCS[ret - 1].stackpointer;
+					uint8_t stack_offset = PROCS[p].registervalues[2] - 8;
+					newsp = newsp - (PROCS[p].registervalues[2] - 8); 
+					if (stack_offset > 0){
+						for (int j = 0; j < stack_offset; j++) {
+							newsp[j] = ((int64_t *)PROCS[p].registervalues[3])[j + 8];
+							// uart_printf(CONSOLE, "Stack Reg %u: %x\n\r", j, newsp[j]);
+						}
+						// uart_printf(CONSOLE, "Stack Reg before%x: After %x\n\r", PROCS[ret - 1].stackpointer, (int64_t)newsp);
+						PROCS[ret - 1].stackpointer = (int64_t)newsp;
+					}
+				}
+			}
+		
+			PROCS[p].registervalues[0] = ret;
 			break;
 		default:
 			#if DEBUG == 1
@@ -451,10 +478,10 @@ void Exception(uint64_t esr_el1)
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	*/
 	#if DEBUG >= 1
-	uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+	// uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
 	// print the queue of all tasks, print by PID: state
 	for (int i = 0; i < NUMPROCS; i++) {
-		uart_printf(CONSOLE, "PID: %u, State: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready);
+		// uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
 	}
 	uart_getc(1);
 	#endif
@@ -562,8 +589,8 @@ int Create(int priority, void (*function)()) { // Returns to the Kernel, then ca
 	return;
 }
 
-int CreateArgs(int priority, void (*function)(), int8_t argsno, int64_t *args) { // Returns to the Kernel, then calls KernelCreate
-	asm("svc 2"); // The Kernel needs to put the pid in x0
+int CreateArgs(int priority, void (*function)(), uint64_t argsno, uint64_t *args) { // Returns to the Kernel, then calls KernelCreate
+	asm("svc 9"); // The Kernel needs to put the pid in x0
 	return;
 }
 

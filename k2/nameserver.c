@@ -5,6 +5,7 @@
 #include "util.h"
 #include "nameserver.h"
 #include "custstr.h"
+#define DEBUG 2
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -28,6 +29,7 @@ Code	Effect
 "\033[37m"	White text.
 
 */
+
 void nameserver(){
 	char* pid_names[NUMPROCS][50];
 	int tid;
@@ -95,12 +97,15 @@ void nameserver(){
 		if (cmp){
 			// this registers a PID with a name
 			// print the deregistered in red
+			# if DEBUG == 2
 			uart_printf(CONSOLE, "\033[31m");
 			uart_printf(CONSOLE, "DEREGISTERD PID: %u, Name: %s\r\n", tid, pid_names[tid]);
 			uart_printf(CONSOLE, "\033[37m");
+			# endif
 			pid_names[tid][0] = 0;
 			int repret = Reply(tid, "PID Deregistered", 25);
 		}
+		# if DEBUG == 2
 		// print the registered table in green
 		uart_printf(CONSOLE, "\033[32m");
 		uart_printf(CONSOLE, "Registered Table:\r\n");
@@ -109,8 +114,8 @@ void nameserver(){
 			
 			uart_printf(CONSOLE, "PID: %u, Name: %s\r\n", i, pid_names[i]);
 		}
-		
 		uart_printf(CONSOLE, "\033[37m");
+		# endif
 	}
 	Exit();
 }

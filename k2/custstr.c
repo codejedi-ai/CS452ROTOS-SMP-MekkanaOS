@@ -83,9 +83,21 @@ int stringconcat(char* dest, const char* src) {
 	return newsz;
 }
 
-char* parse_char_arr(){
-	char* ret = "";
-	return ret;
+int parse_char_arr(char *arr, char **num, int num_size){
+  char *ptr; // pointer to traverse the array
+  int i = 1; // index for the array
+  num[0] = arr;
+  ptr = arr; // point to the first element of the array
+  while (*ptr != '\0') { // loop until the end of the array
+    if (*ptr == ' ') { // check if the character is a space
+      *ptr = 0;
+      num[i++] = ptr + 1; // store the value in the array
+      if (i >= num_size) {return i;}
+      // increment the index
+    }
+    ptr++; // move to the next character
+  }
+  return i;
 }
 // this fiunction would
 // return strings in place

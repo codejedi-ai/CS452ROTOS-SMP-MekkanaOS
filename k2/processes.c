@@ -6,7 +6,6 @@
 #include "custstr.h"
 #include "gameserver.h"
 #include "systimer.h"
-#include "k2_time_tests.h"
 #define DISPLAY 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -97,11 +96,64 @@ void player2(){
 	quit();
 	Exit();
 }
+void sender(){
+	int msglen = 10;
+	int tid = MyTid();
+    // Register
+    RegisterAs("SENDER");
+	// write a message
+	uart_printf(CONSOLE, "k2_sender: My tid is %u\r\n", tid);
+	char msg[msglen];
+	for (int i = 0; i < msglen; i++)
+	{
+		msg[i] = 'B' + i;
+	}
+	msg[msglen - 1] = 0;
+	// define the send message here
+	tid = WhoIs("RECEIVER");
+	char msgreply[msglen];
+	
+	// begin of the send
+	int ret_code = Send(tid, msg, msglen, msgreply, msglen);
+	uart_printf(CONSOLE, "k2_sender: Message sent, my reply is [%s] ret_code = %d \r\n", msgreply, ret_code);
+	// end of the send
+	Exit();
+}
+void receiver(){
+	int msglen = 10;
+	// initially this task should have tid of 3
+	// recieve a message
+	int mytid = MyTid();
+    RegisterAs("RECEIVER");
+	int tid;
+	char msg[msglen];
+	char reply[msglen];
+	for (int i = 0; i < msglen; i++)
+	{
+		reply[i] = 'A' + i;
+	}
+	msg[msglen - 1] = 0;
+	uart_printf(CONSOLE, "k2_receiver: My tid is %u\r\n", mytid);
+	int recret = Receive(&tid, msg, msglen);
+	uart_printf(CONSOLE, "k2_receiver: Message recieved: [%s], recret = %d\r\n", msg, recret);
+	for (int i = 0; i < msglen; i++)
+	{
+		uart_putc(CONSOLE, reply[i]);
+	}
+	uart_printf(CONSOLE, "\r\n");
 
+	// define the reply message here
+	int repret = Reply(tid, reply, msglen);
+	uart_printf(CONSOLE, "k2_receiver: Reply sent Repret = %d\r\n", repret);
+	Exit();	
+}
 void first_task() // First task as dictated in the reqs
 {
 	// We are assuming that first_task has a priority of 2
-	int tid;
+	int tid = Create(1, sender);
+	uart_printf(CONSOLE, "Created: %u\r\n", tid);
+	tid = Create(1, receiver);
+	uart_printf(CONSOLE, "Created: %u\r\n", tid);
 	Exit();
 }
 
