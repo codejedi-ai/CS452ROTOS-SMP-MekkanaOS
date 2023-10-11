@@ -186,9 +186,11 @@ void turnaround_test_parse_command(char *arr) {
     ptr++; // move to the next character
     used_length++;
   }
+  /*  
   for (int j = 0; j < iter_no; j++) {
 	uart_printf(CONSOLE, "num[%d] = %s\r\n", j, num[j]);
   }
+  */
   int cmp;
   strcmp(&cmp, num[0], "yield");
   if (cmp){
@@ -214,7 +216,7 @@ void turnaround_test_parse_command(char *arr) {
 
 	// Init the reciever
 	int tid = Create(2, k2_receiver);
-	uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	//uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
 	// int tid = CreateArgs(5, k2_receiver, 1, args);
@@ -290,7 +292,7 @@ void turnaround_test_parse_command(char *arr) {
 	Yield();
 	// Init the reciever
 	int tid = Create(1, k2_receiver);
-	uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	//uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
 
