@@ -39,7 +39,8 @@ void nameserver(){
 	{
 		pid_names[i][0] = 0;
 	}
-	strcpy(pid_names[0], 50, "nameserver", 50);
+	strcpy(pid_names[1], 50, "nameserver", 50);
+	strcpy(pid_names[0], 50, "kernel", 50);
 	while (1)
 	{
 
@@ -64,7 +65,11 @@ void nameserver(){
 			strcpy(pid_names[tid], 50, name, 50);
 			// this registers a PID with a name
 			// change font to blue
-
+			# if DEBUG == 2
+			uart_printf(CONSOLE, "\033[32m");
+			uart_printf(CONSOLE, "REGISTERD PID: %u, Name: %s\r\n", tid, pid_names[tid]);
+			uart_printf(CONSOLE, "\033[37m");
+			# endif
 
 			// change font to white
 
@@ -107,7 +112,7 @@ void nameserver(){
 		}
 		# if DEBUG == 2
 		// print the registered table in green
-		uart_printf(CONSOLE, "\033[32m");
+		uart_printf(CONSOLE, "\033[34m");
 		uart_printf(CONSOLE, "Registered Table:\r\n");
 		for (int i = 0; i < NUMPROCS; i++)
 		{

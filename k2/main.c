@@ -15,7 +15,8 @@ int kmain(void *reg) {
   uart_config_and_enable(CONSOLE, 115200, 0);
   uart_config_and_enable(TRAIN, 2400, 1);
   
-
+  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
+  uart_printf(CONSOLE, "%s\r\n", logo);
   uart_printf(CONSOLE, "DEBUG: //pid_names[tid] = name; , ONE SEND AND MANY RECIEVES\r\nHello World I am d273liu\r\n");
   // test adder
   // uart_printf(CONSOLE, "%u\r\n", &STACK_EL0_START);
@@ -24,7 +25,7 @@ int kmain(void *reg) {
 	uart_printf(CONSOLE,"nameserver Created: %u\r\n", tid);
   tid = KernelCreate(10, gameserver, 0);
 	uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
-  KernelCreate(3, k2, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
+  KernelCreate(1, k2, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
   // uart_printf(CONSOLE, "Process %u %u\r\n", p, p_1);
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging

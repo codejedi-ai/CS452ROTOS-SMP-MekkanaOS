@@ -60,7 +60,7 @@ void k2_receiver(){
 	uart_printf(CONSOLE, "k2_receiver: My tid is %u\r\n", mytid);
 	for (int i = 0; i < N; i++){
 		// define the reply message here
-
+		//uart_printf(CONSOLE, "k2_receiver: Waiting for message %u\r\n", i);
 		// begin of the send
 		// uart_printf(CONSOLE, "k2_receiver: Waiting for message %u\r\n", i);
 		int recret = Receive(&tid, msg, msglen);
@@ -68,9 +68,6 @@ void k2_receiver(){
 		int repret = Reply(tid, reply, msglen);
 		// uart_printf(CONSOLE, "k2_receiver: Reply sent Repret = %d\r\n", repret);
 	}
-	uart_printf(CONSOLE, "k2_receiver: Done\r\n");
-	Receive(&tid, msg, msglen);
-	Reply(tid, "DONE", msglen);
 	Exit();	
 }
 
@@ -113,6 +110,12 @@ void parse_command(char *arr) {
 	uart_printf(CONSOLE, "num[%d] = %s\r\n", j, num[j]);
   }
   int cmp;
+  strcmp(&cmp, num[0], "yield");
+  if (cmp){
+	  Yield();
+	  return;
+  }
+  Yield();
   //string compair
   strcmp(&cmp, num[0], "testsendRF");
   if (cmp){
@@ -130,7 +133,7 @@ void parse_command(char *arr) {
 	int str_length = str_to_int(num[2]);
 
 	// Init the reciever
-	int tid = Create(4, k2_receiver);
+	int tid = Create(2, k2_receiver);
 	uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
@@ -155,11 +158,12 @@ void parse_command(char *arr) {
 		//uart_printf(CONSOLE, "K2: Message sent, my reply is [%s] \r\n", msgreply);
 
 	}
+	
 	unsigned int end = get_timerLO();
 	unsigned int avgtime = (end - start) / N;
-
-		// recreate the reciever task
-	tid = Create(4, k2_receiver);
+	// recreate the reciever task
+	
+	tid = Create(2, k2_receiver);
 	// uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
@@ -174,17 +178,21 @@ void parse_command(char *arr) {
 		unsigned int time = end - start;
 		readings[i] = time;
 	}
+	
 	// calculate the variance
 	for (int i = 0; i < N; i++){
 		variance += (readings[i] - avgtime) * (readings[i] - avgtime);
 	}
 	variance = variance / N;
+	Yield();
 	uart_printf(CONSOLE, "Average Time taken for %d characters is %u ", str_length, avgtime);
+	Yield();
 	uart_printf(CONSOLE, "Variance is %u\r\n", variance);
-
-	Send(tid, msg, str_length, msg, str_length); // unblocking mechanism
+	Yield();
+	
 	return;
   }
+  Yield();
   strcmp(&cmp, num[0], "testsendSF");
   if (cmp){
 	// this is a send command
@@ -199,9 +207,9 @@ void parse_command(char *arr) {
 
 	int N = str_to_int(num[1]);
 	int str_length = str_to_int(num[2]);
-
+	Yield();
 	// Init the reciever
-	int tid = Create(3, k2_receiver);
+	int tid = Create(1, k2_receiver);
 	uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
@@ -228,11 +236,14 @@ void parse_command(char *arr) {
 		//uart_printf(CONSOLE, "K2: Message sent, my reply is [%s] \r\n", msgreply);
 
 	}
+	//Send(tid, msg, str_length, msgreply, str_length);
 	unsigned int end = get_timerLO();
 	unsigned int avgtime = (end - start) / N;
-	
+	// print calculating variance
+	uart_printf(CONSOLE, "Calculating variance\r\n");
 	// recreate the reciever task
-	tid = Create(3, k2_receiver);
+	Yield();
+	tid = Create(1, k2_receiver);
 	// uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
@@ -247,20 +258,21 @@ void parse_command(char *arr) {
 		unsigned int time = end - start;
 		readings[i] = time;
 	}
-	// calculate the variance
 	for (int i = 0; i < N; i++){
 		variance += (readings[i] - avgtime) * (readings[i] - avgtime);
 	}
 	variance = variance / N;
+
 	uart_printf(CONSOLE, "Average Time taken for %d characters is %u ", str_length, avgtime);
 	uart_printf(CONSOLE, "Variance is %u\r\n", variance);
+	Yield();
 	
 	
 	
 	
-	Send(tid, msg, str_length, msg, str_length); // unblocking mechanism
 	return;
   }
+  Yield();
   strcmp(&cmp, num[0], "first_task");
   if (cmp){
 	  // this is a recieve command
@@ -277,6 +289,7 @@ void parse_command(char *arr) {
 	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
 	  return;
   }
+  Yield();
   strcmp(&cmp, num[0], "CreateArgs");
   if (cmp){
 	  // this is a create args command
@@ -298,6 +311,7 @@ void parse_command(char *arr) {
 	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
 	  return;
   }
+  Yield();
   // ad the adder test with predefined params of 1 - 10
   strcmp(&cmp, num[0], "adder");
   if (cmp){
@@ -338,6 +352,8 @@ void parse_command(char *arr) {
 	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
 	  return;
   }
+  Yield();
+  uart_printf(CONSOLE, "Command not found\r\n");
 }
 void recieve_task(){
 	RegisterAs(".");
@@ -362,6 +378,7 @@ void k2(){
 			parse_command(command);
 			command_length = 0;
 			command[0] = '\0';
+			Yield();
 			uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
 			Yield();
 		}else if (c == '\b'){
