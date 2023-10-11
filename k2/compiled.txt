@@ -68,39 +68,39 @@ Disassembly of section .text:
    80820:	910043ff 	add	sp, sp, #0x10
    80824:	d65f03c0 	ret
 
-0000000000080828 <is_Hex>:
+0000000000080828 <hex_atoi>:
    80828:	d10043ff 	sub	sp, sp, #0x10
    8082c:	f90007e0 	str	x0, [sp, #8]
    80830:	f94007e0 	ldr	x0, [sp, #8]
    80834:	39400000 	ldrb	w0, [x0]
    80838:	7100001f 	cmp	w0, #0x0
-   8083c:	54000061 	b.ne	80848 <is_Hex+0x20>  // b.any
+   8083c:	54000061 	b.ne	80848 <hex_atoi+0x20>  // b.any
    80840:	52800000 	mov	w0, #0x0                   	// #0
-   80844:	14000015 	b	80898 <is_Hex+0x70>
+   80844:	14000015 	b	80898 <hex_atoi+0x70>
    80848:	f94007e0 	ldr	x0, [sp, #8]
    8084c:	91000400 	add	x0, x0, #0x1
    80850:	39400000 	ldrb	w0, [x0]
    80854:	7100001f 	cmp	w0, #0x0
-   80858:	54000061 	b.ne	80864 <is_Hex+0x3c>  // b.any
+   80858:	54000061 	b.ne	80864 <hex_atoi+0x3c>  // b.any
    8085c:	52800000 	mov	w0, #0x0                   	// #0
-   80860:	1400000e 	b	80898 <is_Hex+0x70>
+   80860:	1400000e 	b	80898 <hex_atoi+0x70>
    80864:	f94007e0 	ldr	x0, [sp, #8]
    80868:	39400000 	ldrb	w0, [x0]
    8086c:	7100c01f 	cmp	w0, #0x30
-   80870:	54000101 	b.ne	80890 <is_Hex+0x68>  // b.any
+   80870:	54000101 	b.ne	80890 <hex_atoi+0x68>  // b.any
    80874:	f94007e0 	ldr	x0, [sp, #8]
    80878:	91000400 	add	x0, x0, #0x1
    8087c:	39400000 	ldrb	w0, [x0]
    80880:	7101e01f 	cmp	w0, #0x78
-   80884:	54000061 	b.ne	80890 <is_Hex+0x68>  // b.any
+   80884:	54000061 	b.ne	80890 <hex_atoi+0x68>  // b.any
    80888:	52800020 	mov	w0, #0x1                   	// #1
-   8088c:	14000002 	b	80894 <is_Hex+0x6c>
+   8088c:	14000002 	b	80894 <hex_atoi+0x6c>
    80890:	52800000 	mov	w0, #0x0                   	// #0
    80894:	13001c00 	sxtb	w0, w0
    80898:	910043ff 	add	sp, sp, #0x10
    8089c:	d65f03c0 	ret
 
-00000000000808a0 <str_to_int>:
+00000000000808a0 <atoi>:
    808a0:	a9bd7bfd 	stp	x29, x30, [sp, #-48]!
    808a4:	910003fd 	mov	x29, sp
    808a8:	f9000fe0 	str	x0, [sp, #24]
@@ -108,14 +108,14 @@ Disassembly of section .text:
    808b0:	f9400fe0 	ldr	x0, [sp, #24]
    808b4:	39400000 	ldrb	w0, [x0]
    808b8:	7100b41f 	cmp	w0, #0x2d
-   808bc:	540000c1 	b.ne	808d4 <str_to_int+0x34>  // b.any
+   808bc:	540000c1 	b.ne	808d4 <atoi+0x34>  // b.any
    808c0:	52800020 	mov	w0, #0x1                   	// #1
    808c4:	3900bbe0 	strb	w0, [sp, #46]
    808c8:	f9400fe0 	ldr	x0, [sp, #24]
    808cc:	91000400 	add	x0, x0, #0x1
    808d0:	f9000fe0 	str	x0, [sp, #24]
    808d4:	3900bfff 	strb	wzr, [sp, #47]
-   808d8:	14000011 	b	8091c <str_to_int+0x7c>
+   808d8:	14000011 	b	8091c <atoi+0x7c>
    808dc:	3940bfe1 	ldrb	w1, [sp, #47]
    808e0:	2a0103e0 	mov	w0, w1
    808e4:	531e1400 	ubfiz	w0, w0, #2, #6
@@ -135,12 +135,12 @@ Disassembly of section .text:
    8091c:	f9400fe0 	ldr	x0, [sp, #24]
    80920:	39400000 	ldrb	w0, [x0]
    80924:	7100001f 	cmp	w0, #0x0
-   80928:	54fffda1 	b.ne	808dc <str_to_int+0x3c>  // b.any
+   80928:	54fffda1 	b.ne	808dc <atoi+0x3c>  // b.any
    8092c:	3940bfe0 	ldrb	w0, [sp, #47]
    80930:	a8c37bfd 	ldp	x29, x30, [sp], #48
    80934:	d65f03c0 	ret
 
-0000000000080938 <hexstr_to_int>:
+0000000000080938 <hexatoi>:
    80938:	a9bd7bfd 	stp	x29, x30, [sp, #-48]!
    8093c:	910003fd 	mov	x29, sp
    80940:	f9000fe0 	str	x0, [sp, #24]
@@ -151,7 +151,7 @@ Disassembly of section .text:
    80954:	f9400fe0 	ldr	x0, [sp, #24]
    80958:	91000400 	add	x0, x0, #0x1
    8095c:	f9000fe0 	str	x0, [sp, #24]
-   80960:	1400000e 	b	80998 <hexstr_to_int+0x60>
+   80960:	1400000e 	b	80998 <hexatoi+0x60>
    80964:	3940bfe0 	ldrb	w0, [sp, #47]
    80968:	531c0c00 	ubfiz	w0, w0, #4, #4
    8096c:	3900bfe0 	strb	w0, [sp, #47]
@@ -168,7 +168,7 @@ Disassembly of section .text:
    80998:	f9400fe0 	ldr	x0, [sp, #24]
    8099c:	39400000 	ldrb	w0, [x0]
    809a0:	7100001f 	cmp	w0, #0x0
-   809a4:	54fffe01 	b.ne	80964 <hexstr_to_int+0x2c>  // b.any
+   809a4:	54fffe01 	b.ne	80964 <hexatoi+0x2c>  // b.any
    809a8:	3940bfe0 	ldrb	w0, [sp, #47]
    809ac:	a8c37bfd 	ldp	x29, x30, [sp], #48
    809b0:	d65f03c0 	ret
@@ -262,12 +262,12 @@ Disassembly of section .text:
    80b00:	910043ff 	add	sp, sp, #0x10
    80b04:	d65f03c0 	ret
 
-0000000000080b08 <stringconcat>:
+0000000000080b08 <strcat>:
    80b08:	d10083ff 	sub	sp, sp, #0x20
    80b0c:	f90007e0 	str	x0, [sp, #8]
    80b10:	f90003e1 	str	x1, [sp]
    80b14:	b9001fff 	str	wzr, [sp, #28]
-   80b18:	14000007 	b	80b34 <stringconcat+0x2c>
+   80b18:	14000007 	b	80b34 <strcat+0x2c>
    80b1c:	f94007e0 	ldr	x0, [sp, #8]
    80b20:	91000400 	add	x0, x0, #0x1
    80b24:	f90007e0 	str	x0, [sp, #8]
@@ -277,8 +277,8 @@ Disassembly of section .text:
    80b34:	f94007e0 	ldr	x0, [sp, #8]
    80b38:	39400000 	ldrb	w0, [x0]
    80b3c:	7100001f 	cmp	w0, #0x0
-   80b40:	54fffee1 	b.ne	80b1c <stringconcat+0x14>  // b.any
-   80b44:	1400000e 	b	80b7c <stringconcat+0x74>
+   80b40:	54fffee1 	b.ne	80b1c <strcat+0x14>  // b.any
+   80b44:	1400000e 	b	80b7c <strcat+0x74>
    80b48:	f94003e0 	ldr	x0, [sp]
    80b4c:	39400001 	ldrb	w1, [x0]
    80b50:	f94007e0 	ldr	x0, [sp, #8]
@@ -295,7 +295,7 @@ Disassembly of section .text:
    80b7c:	f94003e0 	ldr	x0, [sp]
    80b80:	39400000 	ldrb	w0, [x0]
    80b84:	7100001f 	cmp	w0, #0x0
-   80b88:	54fffe01 	b.ne	80b48 <stringconcat+0x40>  // b.any
+   80b88:	54fffe01 	b.ne	80b48 <strcat+0x40>  // b.any
    80b8c:	f94007e0 	ldr	x0, [sp, #8]
    80b90:	3900001f 	strb	wzr, [x0]
    80b94:	b9401fe0 	ldr	w0, [sp, #28]
@@ -1573,12 +1573,12 @@ Disassembly of section .text:
    81edc:	52800c80 	mov	w0, #0x64                  	// #100
    81ee0:	b9066fe0 	str	w0, [sp, #1644]
    81ee4:	f941abe0 	ldr	x0, [sp, #848]
-   81ee8:	97fffa6e 	bl	808a0 <str_to_int>
+   81ee8:	97fffa6e 	bl	808a0 <atoi>
    81eec:	12001c00 	and	w0, w0, #0xff
    81ef0:	92401c00 	and	x0, x0, #0xff
    81ef4:	f90013e0 	str	x0, [sp, #32]
    81ef8:	f941afe0 	ldr	x0, [sp, #856]
-   81efc:	97fffa69 	bl	808a0 <str_to_int>
+   81efc:	97fffa69 	bl	808a0 <atoi>
    81f00:	12001c00 	and	w0, w0, #0xff
    81f04:	92401c00 	and	x0, x0, #0xff
    81f08:	f90017e0 	str	x0, [sp, #40]
@@ -2051,7 +2051,7 @@ Disassembly of section .text:
    82624:	b9008fe0 	str	w0, [sp, #140]
    82628:	910083e0 	add	x0, sp, #0x20
    8262c:	f9400fe1 	ldr	x1, [sp, #24]
-   82630:	97fff936 	bl	80b08 <stringconcat>
+   82630:	97fff936 	bl	80b08 <strcat>
    82634:	b9008fe0 	str	w0, [sp, #140]
    82638:	910163e1 	add	x1, sp, #0x58
    8263c:	910083e0 	add	x0, sp, #0x20
@@ -2093,7 +2093,7 @@ Disassembly of section .text:
    826c4:	b9009be0 	str	w0, [sp, #152]
    826c8:	910063e1 	add	x1, sp, #0x18
    826cc:	9100a3e0 	add	x0, sp, #0x28
-   826d0:	97fff90e 	bl	80b08 <stringconcat>
+   826d0:	97fff90e 	bl	80b08 <strcat>
    826d4:	b9009be0 	str	w0, [sp, #152]
    826d8:	910183e1 	add	x1, sp, #0x60
    826dc:	9100a3e0 	add	x0, sp, #0x28
@@ -2122,7 +2122,7 @@ Disassembly of section .text:
    82730:	b9008fe0 	str	w0, [sp, #140]
    82734:	910083e0 	add	x0, sp, #0x20
    82738:	f9400fe1 	ldr	x1, [sp, #24]
-   8273c:	97fff8f3 	bl	80b08 <stringconcat>
+   8273c:	97fff8f3 	bl	80b08 <strcat>
    82740:	b9008fe0 	str	w0, [sp, #140]
    82744:	910163e1 	add	x1, sp, #0x58
    82748:	910083e0 	add	x0, sp, #0x20
@@ -2133,7 +2133,7 @@ Disassembly of section .text:
    8275c:	52800020 	mov	w0, #0x1                   	// #1
    82760:	940009cd 	bl	84e94 <Send>
    82764:	910163e0 	add	x0, sp, #0x58
-   82768:	97fff84e 	bl	808a0 <str_to_int>
+   82768:	97fff84e 	bl	808a0 <atoi>
    8276c:	12001c00 	and	w0, w0, #0xff
    82770:	a8c97bfd 	ldp	x29, x30, [sp], #144
    82774:	d65f03c0 	ret
@@ -11463,7 +11463,7 @@ Disassembly of section .debug_abbrev:
      a48:	3b01213a 	.inst	0x3b01213a ; undefined
      a4c:	0621390b 	.inst	0x0621390b ; undefined
      a50:	01111927 	.inst	0x01111927 ; undefined
-     a54:	18400712 	ldr	w18, 80b34 <stringconcat+0x2c>
+     a54:	18400712 	ldr	w18, 80b34 <strcat+0x2c>
      a58:	1301197c 	sbfx	w28, w11, #1, #6
      a5c:	2e0d0000 	ext	v0.8b, v0.8b, v13.8b, #0
      a60:	03193f01 	.inst	0x03193f01 ; undefined

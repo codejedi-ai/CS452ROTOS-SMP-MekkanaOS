@@ -18,6 +18,7 @@ int heap_size = 0;
 static struct state READY_QUEUE[NUMPROCS];
 static struct state BLOCKED_QUEUE[NUMPROCS];
 #define DEBUG 2
+
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
@@ -137,9 +138,9 @@ void send_helper(){
 	int p = PID - 1;
 	int tid = PROCS[p].registervalues[0];
 	char *msg = PROCS[p].registervalues[1];
-	int msglen = PROCS[p].registervalues[2];
+	uint64_t msglen = PROCS[p].registervalues[2];
 	char *reply = PROCS[p].registervalues[3];
-	int replylen = PROCS[p].registervalues[4];
+	uint64_t replylen = PROCS[p].registervalues[4];
 
 	// This puts the message into the messageDS of the target task
 	PROCS[p].message_sent.tid = tid;
@@ -158,7 +159,8 @@ void send_helper(){
 	PROCS[p].message_recieved[tail].replylen = replylen;
 	// // uart_printf(CONSOLE, "reply addr is %x\r\n", reply);
 	PROCS[p].waiting_recieve_tail++;
-	PROCS[p].waiting_recieve_tail %= 50;
+	PROCS[p].waiting_recieve_tail %= QUEUESIZE;
+	PROCS[p].queuesize++;
 	
 	# if DEBUG == 2
 	// print the function called
@@ -239,7 +241,7 @@ void recieve_helper(int PID){
 	// The mailbox is the messageDS of the process
 	// The mailbox is a circular READY_QUEUE
 
-	int  curread_message_length = PROCS[p].message_recieved[head].msglen;
+	uint64_t  curread_message_length = PROCS[p].message_recieved[head].msglen;
 	char *curread_msg = PROCS[p].message_recieved[head].msg;
 	int sender_tid = PROCS[p].message_recieved[head].tid;
 	*tid = sender_tid;
@@ -276,7 +278,8 @@ void recieve_helper(int PID){
 	# endif
 	// p is the current process, the process that is recieving
 	PROCS[p].waiting_recieve_head++;
-	PROCS[p].waiting_recieve_head %= 50;
+	PROCS[p].queuesize--;
+	PROCS[p].waiting_recieve_head %= QUEUESIZE;
 	PROCS[p].registervalues[0] = msglen;
 	queue_unblock(PID, PROCS[PID - 1].priority, READY);
 	// return msglen;
@@ -291,16 +294,15 @@ void reply_helper(){
 	int p = PID - 1;
 	int tid = PROCS[p].registervalues[0];
 	char *reply = (char *)PROCS[p].registervalues[1];
-	int replylen = PROCS[p].registervalues[2];
+	uint64_t replylen = PROCS[p].registervalues[2];
 	char *reply_buffer = PROCS[tid - 1].message_sent.reply;
-	int reply_buffer_len = PROCS[tid - 1].message_sent.replylen;
+	uint64_t reply_buffer_len = PROCS[tid - 1].message_sent.replylen;
 	// Have the kernel copy the reply into the messageDS of the target task
 
 	// PROCS[tid - 1].message_sent.reply[replylen] = 0;
 
 
 	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
-	int i = 0;
 	replylen = min(reply_buffer_len, replylen);
 	memcpy(reply_buffer, reply, replylen);
 	// replylen = strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
@@ -377,6 +379,10 @@ void Exception(uint64_t esr_el1)
 				// The destination task does not exist
 				scrSchedule(PID, PROCS[p].priority, READY);
 				PROCS[p].registervalues[0] = -1;
+			} else if (PROCS[tid_dest].queuesize >= QUEUESIZE){
+				// the message failed to send due to the queue size being over QUEUESIZE
+				scrSchedule(PID, PROCS[p].priority, READY);
+				PROCS[p].registervalues[0] = -2;
 			}
 			
 			else
@@ -478,11 +484,11 @@ void Exception(uint64_t esr_el1)
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	*/
 	#if DEBUG >= 1
-	// uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
-	// print the queue of all tasks, print by PID: state
-	for (int i = 0; i < NUMPROCS; i++) {
-		// uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
-	}
+		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+		// print the queue of all tasks, print by PID: state
+		for (int i = 0; i < NUMPROCS; i++) {
+			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
+		}
 	uart_getc(1);
 	#endif
 	
@@ -532,6 +538,7 @@ int KernelCreate(int priority, void (*function)(), int parent)
 			PROCS[p].waiting_send = 0;
 			PROCS[p].waiting_recieve_head = 0;
 			PROCS[p].waiting_recieve_tail = 0;
+			PROCS[p].queuesize = 0;
 			// void* memcpy(void* restrict dest, const void* restrict src, size_t n) 
 			// this could be used to start a task with certain parameters. 
 			scrSchedule(p + 1, PROCS[p].priority, READY);

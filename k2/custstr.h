@@ -1,14 +1,14 @@
 #include "util.h"
 #include "syscall.h"
-int8_t is_Hex(char *switch_number);
+int8_t hex_atoi(char *switch_number);
 
-char str_to_int(char *str);
+int64_t atoi(char *str);
 
-char hexstr_to_int(char *str);
+int64_t hexatoi(char *str);
 
 void strcmp(int* ret, char* s1, char* s2);
 int strcmp_ret(char* s1, char* s2);
-int stringconcat(char* dest, const char* src);
+int strcat(char* dest, const char* src);
 // this fiunction would
 int parse_char_arr(char *arr, char **num, int num_size);
 // return strings in place

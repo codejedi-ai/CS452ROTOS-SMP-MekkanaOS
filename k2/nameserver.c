@@ -5,7 +5,7 @@
 #include "util.h"
 #include "nameserver.h"
 #include "custstr.h"
-#define DEBUG 2
+#define DEBUG 0
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -93,7 +93,7 @@ void nameserver(){
 			}
 			// unsigned int to ascii string
 			char bf[10] = "";
-			ui2a(ret, 10, bf);
+			i2a(ret, bf);
 
 			int repret = Reply(tid, bf, 25);
 		}
@@ -110,6 +110,7 @@ void nameserver(){
 			pid_names[tid][0] = 0;
 			int repret = Reply(tid, "PID Deregistered", 25);
 		}
+		command_cand = "GETNAME";
 		# if DEBUG == 2
 		// print the registered table in green
 		uart_printf(CONSOLE, "\033[34m");
@@ -129,9 +130,9 @@ int RegisterAs(const char *name){
 	char sendmsg[50] = "REGISTER ";
 	//// strflush(command_cand, 6);
 	int msgsz = 50;
-	//msgsz = stringconcat((char* )sendmsg, command_cand);
+	//msgsz = strcat((char* )sendmsg, command_cand);
 	//// strflush(sendmsg, msgsz);
-	msgsz = stringconcat((char* )sendmsg, name);
+	msgsz = strcat((char* )sendmsg, name);
 	//// strflush(sendmsg, msgsz);
 	Send(1, sendmsg, 50, rep, 50);
 	return 0;
@@ -143,7 +144,7 @@ int Deregister(){
 	char tid_str[10] = "";
 	i2a(tid, tid_str);
 	int msgsz = 50;
-	msgsz = stringconcat((char* )sendmsg, (char *)tid_str);
+	msgsz = strcat((char* )sendmsg, (char *)tid_str);
 	// strflush(sendmsg, msgsz);
 	return Send(1, sendmsg, 50, rep, 50);
 }
@@ -153,12 +154,12 @@ int WhoIs(const char *name){
 
 	//// strflush(command_cand, 6);
 	int msgsz = 50;
-	// msgsz = stringconcat((char* )sendmsg, command_cand);
+	// msgsz = strcat((char* )sendmsg, command_cand);
 	//// strflush(sendmsg, msgsz);
-	msgsz = stringconcat((char* )sendmsg, name);
+	msgsz = strcat((char* )sendmsg, name);
 	// strflush(sendmsg, msgsz);
 	
 	//int ret_code = Send(tid, msg, msglen, msgreply, 25);
 	Send(1, sendmsg, 50, rep, 50);
-	return str_to_int(rep);
+	return atoi(rep);
 }

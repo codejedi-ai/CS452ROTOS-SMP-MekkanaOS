@@ -8,6 +8,8 @@
 #define CONSOLE 1
 #define TRAIN 2
 
+unsigned char uart_getc_modified(size_t line);
+unsigned char uart_getc_queue(size_t line);
 void uart_putc(size_t line, unsigned char c);
 unsigned char uart_getc(size_t line);
 void uart_putl(size_t line, const char *buf, size_t blen);

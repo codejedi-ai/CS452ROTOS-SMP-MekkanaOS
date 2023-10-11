@@ -5,19 +5,19 @@
 int8_t is_empty(char *str){
   return (*str == '\0');
 }
-int8_t is_Hex(char *switch_number){
+int8_t hex_atoi(char *switch_number){
 	if (switch_number[0] == '\0') return 0;
 	if (switch_number[1] == '\0') return 0;
 	return(switch_number[0] == '0' && switch_number[1] == 'x');
 }
 
-char str_to_int(char *str){
+int64_t atoi(char *str){
     uint8_t is_neg = 0;
     if (str[0] == '-') {
       is_neg = 1;
       str++;
     }
-    char ret = 0; 
+    uint64_t ret = 0; 
     while (*str != '\0') { // loop until the end of the array
         ret = 10 * ret;
         ret += a2d(*str);
@@ -26,8 +26,8 @@ char str_to_int(char *str){
     return ret;
 }
 
-char hexstr_to_int(char *str){
-    char ret = 0; 
+int64_t hexatoi(char *str){
+    uint64_t ret = 0; 
     str++;
     str++;
     while (*str != '\0') { // loop until the end of the array
@@ -64,7 +64,7 @@ int strcmp_ret(char* s1, char* s2){
 	}
 	return (*s1 == *s2);
 }
-int stringconcat(char* dest, const char* src) {
+int strcat(char* dest, const char* src) {
 	int newsz = 0;
     while (*dest) {
 

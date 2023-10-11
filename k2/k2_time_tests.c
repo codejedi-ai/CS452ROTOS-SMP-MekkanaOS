@@ -3,6 +3,86 @@
 #include "nameserver.h"
 #include "custstr.h"
 #include "processes.h"
+#include "processes.h"
+#include "rpi.h"
+#include "asm.h"
+#include "syscall.h"
+#include "util.h"
+#include "nameserver.h"
+#include "custstr.h"
+#include "systimer.h"
+/*
+These are the most essential terminal control sequences that you will need for your train program.
+
+Code	Effect
+"\033[2J"	Clear the screen.
+"\033[H"	Move the cursor to the upper-left corner of the screen.
+"\033[r;cH"	Move the cursor to row r, column c. Note that both the rows and columns are indexed starting at 1.
+"\033[?25l"	Hide the cursor.
+"\033[K"	Delete everything from the cursor to the end of the line.
+These control sequences can help make your program's display more lively.
+
+Code	Effect
+"\033[0m"	Reset special formatting (such as colour).
+"\033[30m"	Black text.
+"\033[31m"	Red text.
+"\033[32m"	Green text.
+"\033[33m"	Yellow text.
+"\033[34m"	Blue text.
+"\033[35m"	Magenta text.
+"\033[36m"	Cyan text.
+"\033[37m"	White text.
+
+*/
+/*
+
+5.2.1. Measure multiple times
+for (i=0;i<N;i++) {
+  clock()
+  something()
+  clock()
+}
+gives you N measurements instead of 1
+can use this to quantify/understand variability, or smooth it
+e.g, compute variance, look for outliers
+doesn’t help with overhead problem
+doesn’t help with precision problem
+void Measure_multiple_times(int N, void (*functionPtr) ()){
+    int i;
+    for (i = 0; i < N; i++){
+        unsigned int start = get_timerLO();
+        functionPtr();
+        unsigned int end = get_timerLO();
+        unsigned int time = end - start;
+        uart_printf(CONSOLE, "Time taken for iteration %d is %u\r\n", i, time);
+    }
+    Exit();
+}
+/*
+5.2.2. Measure something larger
+start = clock()
+for (i=0;i<N;i++) {
+  something()
+}
+end = clock()
+can smooth variability (via averaging) but does not help you measure/understand it
+helps with overhead - increase N until overhead is insignificant
+helps with precision - increase N until what you’re measuring is much slower than your clock
+
+void Measure_something_larger(int N, void (*functionPtr) ()){
+    unsigned int start = get_timerLO();
+    int i;
+    for (i = 0; i < N; i++){
+        functionPtr();
+    }
+    unsigned int end = get_timerLO();
+    unsigned int time = end - start;
+    uart_printf(CONSOLE, "Time taken for iteration %d is %u\r\n", i, time);
+    Exit();
+}
+*/
+
+
 /*
 For this test I would be conducting
 opt or noopt - indicating whether optimization enabled or not
@@ -20,7 +100,7 @@ the measured time per SRR operation in microseconds
 void k2_receiver(){
 	// initially this task should have tid of 3
 	// recieve a message
-	int msglen = 10;
+	
 	// initially this task should have tid of 3
 	// recieve a message
 	int mytid = MyTid();
@@ -35,18 +115,18 @@ void k2_receiver(){
 	// READ THE N
 	int init_rec = Receive(&mytid, init_msg, 8);
 	// int parse_char_arr(char *arr, char **num, int num_size);
-	int N = str_to_int(init_msg);
+	int64_t N = atoi(init_msg);
 	Reply(mytid, "INIT", 4);
 
 	// READ THE MSGLEN
 	init_rec = Receive(&mytid, init_msg, 8);
 	// int parse_char_arr(char *arr, char **num, int num_size);
-	msglen = str_to_int(init_msg);
+	int64_t msglen = atoi(init_msg);
 	Reply(mytid, "INIT", 4);
 
 
 	mytid = MyTid();
-	uart_printf(CONSOLE, "k2_receiver: My tid is %u, N = %u, msglen = %u\r\n", mytid, N, msglen);
+	// uart_printf(CONSOLE, "k2_receiver: My tid is %u, N = %u, msglen = %u\r\n", mytid, N, msglen);
 
 	int tid;
 	char msg[msglen];
@@ -57,7 +137,7 @@ void k2_receiver(){
 	}
 	reply[msglen - 1] = 0;
 
-	uart_printf(CONSOLE, "k2_receiver: My tid is %u\r\n", mytid);
+	// uart_printf(CONSOLE, "k2_receiver: My tid is %u\r\n", mytid);
 	for (int i = 0; i < N; i++){
 		// define the reply message here
 		//uart_printf(CONSOLE, "k2_receiver: Waiting for message %u\r\n", i);
@@ -89,7 +169,7 @@ void adderTask(int64_t a, int64_t b, int64_t c, int64_t d, int64_t e, int64_t f,
 }
 
 
-void parse_command(char *arr) {
+void turnaround_test_parse_command(char *arr) {
   
   char *ptr; // pointer to traverse the array
   char *num[100]; // array to store the numbers
@@ -129,8 +209,8 @@ void parse_command(char *arr) {
 	}
 	char args[1];
 
-	int N = str_to_int(num[1]);
-	int str_length = str_to_int(num[2]);
+	int64_t N = atoi(num[1]);
+	int64_t str_length = atoi(num[2]);
 
 	// Init the reciever
 	int tid = Create(2, k2_receiver);
@@ -205,8 +285,8 @@ void parse_command(char *arr) {
 	}
 	char args[1];
 
-	int N = str_to_int(num[1]);
-	int str_length = str_to_int(num[2]);
+	int64_t N = atoi(num[1]);
+	int64_t str_length = atoi(num[2]);
 	Yield();
 	// Init the reciever
 	int tid = Create(1, k2_receiver);
@@ -240,7 +320,7 @@ void parse_command(char *arr) {
 	unsigned int end = get_timerLO();
 	unsigned int avgtime = (end - start) / N;
 	// print calculating variance
-	uart_printf(CONSOLE, "Calculating variance\r\n");
+	//uart_printf(CONSOLE, "Calculating variance\r\n");
 	// recreate the reciever task
 	Yield();
 	tid = Create(1, k2_receiver);
@@ -263,7 +343,7 @@ void parse_command(char *arr) {
 	}
 	variance = variance / N;
 
-	uart_printf(CONSOLE, "Average Time taken for %d characters is %u ", str_length, avgtime);
+	uart_printf(CONSOLE, "Average Time taken for %u characters is %u ", str_length, avgtime);
 	uart_printf(CONSOLE, "Variance is %u\r\n", variance);
 	Yield();
 	
@@ -271,23 +351,6 @@ void parse_command(char *arr) {
 	
 	
 	return;
-  }
-  Yield();
-  strcmp(&cmp, num[0], "first_task");
-  if (cmp){
-	  // this is a recieve command
-	  // the first argument is the tid
-	  // the second argument is the message
-	  // create tasks
-	  if (iter_no < 1){
-		  uart_printf(CONSOLE, "Not enough arguments\r\n");
-		  return;
-	  }
-	  int tid = Create(5, first_task);
-	  // int tid = CreateArgs(5, k2_sender, 1, args);
-	  //k2_receiver();
-	  uart_printf(CONSOLE, "Created: %u\r\n", tid);
-	  return;
   }
   Yield();
   strcmp(&cmp, num[0], "CreateArgs");
@@ -303,8 +366,8 @@ void parse_command(char *arr) {
 	  }
 	  int argsno = 2;
 	  int64_t args[argsno];
-	  args[0] = (int64_t)str_to_int(num[1]);
-	  args[1] = (int64_t)str_to_int(num[2]);
+	  args[0] = (int64_t)atoi(num[1]);
+	  args[1] = (int64_t)atoi(num[2]);
 	  uart_printf(CONSOLE, "argsno: %x\r\n", argsno);
 	  uart_printf(CONSOLE, "args: %x\r\n", args);
 	  int tid = CreateArgs(5, CreateArgsTest, argsno, args);
@@ -323,16 +386,16 @@ void parse_command(char *arr) {
 	  int argsno = 10;
 	  int64_t args[10];
 	  /*
-	  args[0] = (int64_t)str_to_int(num[1]);
-	  args[1] = (int64_t)str_to_int(num[2]);
-	  args[2] = (int64_t)str_to_int(num[3]);
-	  args[3] = (int64_t)str_to_int(num[4]);
-	  args[4] = (int64_t)str_to_int(num[5]);
-	  args[5] = (int64_t)str_to_int(num[6]);
-	  args[6] = (int64_t)str_to_int(num[7]);
-	  args[7] = (int64_t)str_to_int(num[8]);
-	  args[8] = (int64_t)str_to_int(num[9]);
-	  args[9] = (int64_t)str_to_int(num[10]);
+	  args[0] = (int64_t)atoi(num[1]);
+	  args[1] = (int64_t)atoi(num[2]);
+	  args[2] = (int64_t)atoi(num[3]);
+	  args[3] = (int64_t)atoi(num[4]);
+	  args[4] = (int64_t)atoi(num[5]);
+	  args[5] = (int64_t)atoi(num[6]);
+	  args[6] = (int64_t)atoi(num[7]);
+	  args[7] = (int64_t)atoi(num[8]);
+	  args[8] = (int64_t)atoi(num[9]);
+	  args[9] = (int64_t)atoi(num[10]);
 	  */
 	 // the args are predetermined from 1 - 10
 	  args[0] = 1;
@@ -361,39 +424,21 @@ void recieve_task(){
 	Exit();
 }
 
+void Turnaround_tests(){
+	/*
+	R or S - indicating receiver first or sender first
+	4, 64, or 256 - indicating message size
+	the measured time per SRR operation in microseconds
+	N = 100
+	R is testsenderRF
+	S is testsenderSF
+	*/
+	turnaround_test_parse_command("testsendRF 100 4");
+	turnaround_test_parse_command("testsendRF 100 64");
+	turnaround_test_parse_command("testsendRF 100 256");
+	turnaround_test_parse_command("testsendSF 100 4");
+	turnaround_test_parse_command("testsendSF 100 64");
+	turnaround_test_parse_command("testsendSF 100 256");
 
-void k2(){
-	// register the k2
-	RegisterAs("K2");
-	unsigned int counter=1;
-	char command[50];
-	int command_length = 0;
-	command[0] = '\0';
-	uart_printf(CONSOLE, "PI[%u]> ", counter++);
-	char c = ' ';
-	while (c != 'q') {
-		c = uart_getc(CONSOLE);
-		if (c == '\r') {
-			uart_printf(CONSOLE, "\r\n");
-			parse_command(command);
-			command_length = 0;
-			command[0] = '\0';
-			Yield();
-			uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
-			Yield();
-		}else if (c == '\b'){
-			if (command_length > 0){
-				command_length--;
-				command[command_length] = '\0';
-				uart_printf(CONSOLE, "\b \b");
-			}
-		}else {
-			command[command_length] = c;
-			command_length++;
-			command[command_length] = '\0';
-			uart_putc(CONSOLE, c);
-		}
-	}
-	uart_puts(CONSOLE, "\r\n");
-	Exit();
+
 }

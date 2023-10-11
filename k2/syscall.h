@@ -3,7 +3,7 @@
 #include "asm.h"
 #include <stdint.h>
 #define NUMPROCS 20
-
+#define QUEUESIZE 50
 
 void InitSys(void* reg);
 void Handle();
@@ -28,9 +28,9 @@ int Reply( int tid, void *reply, int replylen );
 struct message{
     int tid; // to which task
     char *msg;
-    int msglen;
+    uint64_t msglen;
     char *reply;
-    int replylen;
+    uint64_t replylen;
 };
 
 struct process {
@@ -44,9 +44,11 @@ struct process {
 	// define an array of messages such would be held in memory for each process.
 	// A kernel call is needed to get the message array for the process.
 	struct message message_sent;
-	struct message message_recieved[50];
+	struct message message_recieved[QUEUESIZE];
 	uint8_t waiting_recieve_head;
 	uint8_t waiting_recieve_tail;
+	uint8_t queuesize;
+	uint8_t waiting_recieve;
 	uint8_t waiting_reply;
 	uint8_t waiting_send;
 };
