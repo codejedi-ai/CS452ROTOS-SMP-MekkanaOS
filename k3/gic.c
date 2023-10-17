@@ -1,0 +1,69 @@
+#include "gic.h"
+#define GIC_BASE 0xff840000
+
+
+#define GICD_BASE GIC_BASE + 0x1000
+// enable the interrupt, the set enable register
+// #define GICD_ISENABLERn = GICD_BASE + 0x100
+#define GICD_ISENABLERn GICD_BASE + 0x100
+// route the interrupt to IRQ on CPU 0
+// #define GICD_ITARGETSRn = GICD_BASE + 0x800
+#define GICD_ITARGETSRn GICD_BASE + 0x800
+
+#define GICC_BASE GIC_BASE + 0x2000
+// GICD_GICC_IAR
+#define GICC_IAR GICC_BASE + 0x0C
+// GICC_EOIR
+#define GICC_EOIR GICC_BASE + 0x10
+
+
+#define GICD_ITARGETSR(n) (*(uint32_t*)(GICD_ITARGETSRn + (4 * n)))
+// enable the interrupt use GICD_ISENABLERn 4-byte registers, with 1 bit per InterruptID
+#define GICD_ISENABLER(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
+
+
+
+/*
+oute the interrupt to IRQ on CPU 0
+use GICD_ITARGETSRn
+each register defines targets for 4 interrupts
+1. Find the register off set use the interrupt_id DIV 4
+2. Get the remainder m which would be the byte offset
+3. Then write the CPU target feild value into the corrusponding byte
+write 0x01 to the byte, that is the 0th cpu
+*/
+void route_interrupt(uint32_t interrupt_id, uint8_t cpu_target){
+    if (cpu_target > 7){
+        return;
+    }
+    uint32_t offset = interrupt_id / 4; // n 
+    uint32_t remainder = interrupt_id % 4;
+    uint32_t target = ((0x01 << cpu_target) << (remainder << 3));
+    // print target in binary
+    for (int i = 31; i >= 0; i--){
+        if (target & (0x01 << i)){
+             uart_printf(CONSOLE, "1");
+         } else {
+             uart_printf(CONSOLE, "0");
+         }
+    }
+    uart_printf(CONSOLE, "\r\n");
+    uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", &GICD_ITARGETSR(offset));
+    uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", GICD_ITARGETSRn + (4 * offset));
+    GICD_ITARGETSR(offset) = target;
+}
+
+/*
+enable the interrupt
+use GICD_ISENABLERn
+4-byte registers, with 1 bit per InterruptID
+For interrupt ID m, when DIV and MOD are the integer division and modulo operations:
+• the corresponding GICD_ISENABLER number, n, is given by n = m DIV 32
+• the offset of the required GICD_ISENABLER is (0x100 + (4*n))
+• the bit number of the required Set-enable bit in this register is m MOD 32.
+*/
+void enable_interrupt(uint32_t interrupt_id){
+    uint32_t offset = interrupt_id / 32; // n 
+    uint32_t remainder = interrupt_id % 32;
+    GICD_ISENABLER(offset) = GICD_ISENABLER(offset) | (0x01 << remainder);
+}
