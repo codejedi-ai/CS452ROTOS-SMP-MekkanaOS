@@ -3,7 +3,7 @@
 #include "processes.h"
 #include "nameserver.h"
 #include "gameserver.h"
-#include "k2_time_tests.h"
+#include "k2TimeTests.h"
 #include "k2rps.h"
 #include "gic.h"
 void* STACK_EL0_START; // Maybe delete this later
@@ -19,7 +19,7 @@ int kmain(void *reg) {
   
   char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   uart_printf(CONSOLE, "%s\r\n", logo);
-  uart_printf(CONSOLE, "Testing inturrupt\r\nHello World I am d273liu\r\n");
+  uart_printf(CONSOLE, "ASYNCSave \r\nHello World I am d273liu\r\n");
   route_interrupt(99, 0);
   enable_interrupt(99);
   set_timerC3(50000000);
@@ -29,7 +29,7 @@ int kmain(void *reg) {
   int tid = KernelCreate(10, nameserver, 0);
 	uart_printf(CONSOLE,"nameserver Created: %u\r\n", tid);
 
-  KernelCreate(1, first_task, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
+  KernelCreate(1, preGuiTest, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
   // uart_printf(CONSOLE, "Process %u %u\r\n", p, p_1);
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging

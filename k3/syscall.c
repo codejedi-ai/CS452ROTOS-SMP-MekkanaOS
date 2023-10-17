@@ -5,18 +5,7 @@
 #include "rpi.h"
 #include "util.h"
 #include "custstr.h"
-static void *STACKSTART;
-// This is the PID of the currentlly running process
-static int PID = 0;
 
-
-
-
-// static const int NUMPROCS = 20; // Deprecated
-static struct process PROCS[NUMPROCS];
-int heap_size = 0;
-static struct state READY_QUEUE[NUMPROCS];
-static struct state BLOCKED_QUEUE[NUMPROCS];
 #define DEBUG 3
 
 // it is time to turn READY_QUEUE into a heap
@@ -109,35 +98,89 @@ void InitSys(void* reg)
 	}
 	return 0;
 }
-// This is the function that is called when a syscall is made
-// This is the contextswitch
+// ============================ Handel Async
 
-void Handle(void* sp) // A helper function to pull some c variables into assembly
-{
-	// We just arrived here, there is stuff on the stack that I do not want to deal with
-	int p = PID - 1;
-	
-	#if DEBUG == 1
-	// uart_printf(CONSOLE, "Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
-	#endif
-	
-	Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
-}
 void HandleASYNC(void* sp) // A helper function to pull some c variables into assembly
 {
 	// We just arrived here, there is stuff on the stack that I do not want to deal with
 	int p = PID - 1;
 	
-	#if DEBUG == 3
-	uart_printf(CONSOLE, "AsyncSystem interrupt occured\r\n");
-	uart_printf(CONSOLE, "Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	#if DEBUG == 3 
+	uart_printf(CONSOLE, "HandleASYNC: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	#endif
 	
-	Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
-
-
-	Schedule();
+	uint64_t ASYNC = Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	ExceptionASYNC(ASYNC);
 }
+
+
+
+void ExceptionASYNC(uint64_t esr_el1){
+    int p = PID - 1;
+    
+    
+	// ExceptionASYNC(esr_el1);
+	
+	/*
+	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
+	*/
+
+	// make switch case for the exception
+	// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+    uint32_t interruptid = readInterruptId();
+    #if DEBUG == 3
+    uart_printf(CONSOLE, "HandleASYNC: ESR is %x\n\r", esr_el1); // DEBUG PRINT
+    uart_printf(CONSOLE, "Asynchronouse SVC Call %x\n\r", interruptid); // DEBUG PRINT
+    uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+    uart_printf(CONSOLE, "PID = %u\n\r", PID); // DEBUG PRINT
+    #endif
+
+    scrSchedule(PID, PROCS[p].priority, READY);
+    Schedule();
+
+    #if DEBUG >= 1
+		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+		// print the queue of all tasks, print by PID: state
+		for (int i = 0; i < NUMPROCS; i++) {
+			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
+		}
+	uart_getc(1);
+	#endif
+	// uart_printf(CONSOLE, "Exiting...\r\n");
+    EXIT();
+}
+
+
+// This is the function that is called when a syscall is made
+// This is the contextswitch
+//==================
+void Handle(void* sp) // A helper function to pull some c variables into assembly
+{
+	// We just arrived here, there is stuff on the stack that I do not want to deal with
+	int p = PID - 1;
+	
+	#if DEBUG == 3
+	// uart_printf(CONSOLE, "Handle: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	#endif
+	
+	uint64_t esr_el1 = Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	handlerExceptionHelper(esr_el1);
+	Schedule();
+	/*
+	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
+	*/
+	#if DEBUG >= 1
+		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+		// print the queue of all tasks, print by PID: state
+		for (int i = 0; i < NUMPROCS; i++) {
+			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
+		}
+	uart_getc(1);
+	#endif
+	
+	EXIT();
+}
+
 int8_t dead(int8_t p){
 	return (PROCS[p].stackpointer == NULL && PROCS[p].pcpointer == NULL);
 }
@@ -341,7 +384,7 @@ void reply_helper(){
 	
 }
 
-void Exception(uint64_t esr_el1)
+void handlerExceptionHelper(uint64_t esr_el1)
 {
 	#if DEBUG == 1
 	// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
@@ -486,28 +529,12 @@ void Exception(uint64_t esr_el1)
 			break;
 		default:
 			scrSchedule(PID, PROCS[p].priority, READY);
-			#if DEBUG == 3
-			uart_printf(CONSOLE, "Asynchronouse SVC Call\n\r"); // DEBUG PRINT
-			uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
-			#endif
+			# if DEBUG == 3
+			uart_printf(CONSOLE, "Unknown SVC Call: %x\n\r", i); // DEBUG PRINT
+			# endif
 			break;
 		}
 	}
-
-	Schedule();
-	/*
-	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
-	*/
-	#if DEBUG >= 1
-		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
-		// print the queue of all tasks, print by PID: state
-		for (int i = 0; i < NUMPROCS; i++) {
-			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
-		}
-	uart_getc(1);
-	#endif
-	
-	EXIT();
 }
 
 void Schedule()

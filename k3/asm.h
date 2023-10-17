@@ -6,7 +6,8 @@
 // the return register os x0
 void Begin(void*, void (*)(), void*, uint32_t); // Register pointer to first reg
 // Reg, PC, STACK, PSTATE
-void Save(void*, void*, void (**)(), void**, uint32_t*);
+uint64_t Save(void*, void*, void (**)(), void**, uint32_t*);
+uint64_t ASYNCSave(void*, void*, void (**)(), void**, uint32_t*);
 // stack returnptr, Reg, PC, STACK, PSTATE
 void push_trap_frame();
 void pop_trap_frame();

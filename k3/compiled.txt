@@ -1273,7 +1273,7 @@ Disassembly of section .text:
    81a54:	a8ce7bfd 	ldp	x29, x30, [sp], #224
    81a58:	d65f03c0 	ret
 
-0000000000081a5c <k2_receiver>:
+0000000000081a5c <k2Receiver>:
    81a5c:	a9b17bfd 	stp	x29, x30, [sp, #-240]!
    81a60:	910003fd 	mov	x29, sp
    81a64:	a90153f3 	stp	x19, x20, [sp, #16]
@@ -1324,7 +1324,7 @@ Disassembly of section .text:
    81b18:	91000000 	add	x0, x0, #0x0
    81b1c:	f9006fa0 	str	x0, [x29, #216]
    81b20:	b900efbf 	str	wzr, [x29, #236]
-   81b24:	14000008 	b	81b44 <k2_receiver+0xe8>
+   81b24:	14000008 	b	81b44 <k2Receiver+0xe8>
    81b28:	f9406fa1 	ldr	x1, [x29, #216]
    81b2c:	b980efa0 	ldrsw	x0, [x29, #236]
    81b30:	52800a42 	mov	w2, #0x52                  	// #82
@@ -1335,7 +1335,7 @@ Disassembly of section .text:
    81b44:	b940efa1 	ldr	w1, [x29, #236]
    81b48:	b940afa0 	ldr	w0, [x29, #172]
    81b4c:	6b00003f 	cmp	w1, w0
-   81b50:	54fffecb 	b.lt	81b28 <k2_receiver+0xcc>  // b.tstop
+   81b50:	54fffecb 	b.lt	81b28 <k2Receiver+0xcc>  // b.tstop
    81b54:	b940eba2 	ldr	w2, [x29, #232]
    81b58:	d0000020 	adrp	x0, 87000 <el1_a32_serror+0x80>
    81b5c:	91046001 	add	x1, x0, #0x118
@@ -1610,7 +1610,7 @@ Disassembly of section .text:
    81f70:	911a43ff 	add	sp, sp, #0x690
    81f74:	d65f03c0 	ret
 
-0000000000081f78 <recieve_task>:
+0000000000081f78 <recieveTask>:
    81f78:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
    81f7c:	910003fd 	mov	x29, sp
    81f80:	d0000020 	adrp	x0, 87000 <el1_a32_serror+0x80>
@@ -2208,7 +2208,7 @@ Disassembly of section .text:
    82878:	a8c37bfd 	ldp	x29, x30, [sp], #48
    8287c:	d65f03c0 	ret
 
-0000000000082880 <test_nameserver>:
+0000000000082880 <testNameserver>:
    82880:	a9be7bfd 	stp	x29, x30, [sp, #-32]!
    82884:	910003fd 	mov	x29, sp
    82888:	b0000020 	adrp	x0, 87000 <el1_a32_serror+0x80>
@@ -2346,7 +2346,7 @@ Disassembly of section .text:
    82a88:	a8c27bfd 	ldp	x29, x30, [sp], #32
    82a8c:	d65f03c0 	ret
 
-0000000000082a90 <first_task>:
+0000000000082a90 <preGuiTest>:
    82a90:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
    82a94:	910003fd 	mov	x29, sp
    82a98:	9400093d 	bl	84f8c <Exit>

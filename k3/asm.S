@@ -117,8 +117,75 @@ Save:
 	str x2, [x1], 8 // All 31 saved!!
 	
 	mrs x0, ESR_EL1 // Now we pass the exception code to the next whatever
-	bl Exception
+	ret
+	// bl Exception
+
+.global ASYNCSave
+ASYNCSave:
+	// At this point, there should be important values on the stack, as well as stuff on the
+	// registers being passed in
+	// since the C function and the compiler may have been mean to me, I am going to now reset the stack pointer
+	mov sp, x0 // The stack pointer now should be where we left off
+	// x1 Registers, x2 PC pointer, x3 Stack Pointer, x4 PSTATE
+	// x0 is now free to use
+	mrs x0, elr_el1  // Move the value of elr_el1 into x0 // elr_el1 is the pc
+	str x0, [x2], 0  // Store x0
+	mrs x0, sp_el0  // Move the value of sp_el0 into x0 // sp_el0 is the sp
+	str x0, [x3], 0  // Store x0
+	mrs x0, spsr_el1 // This one is the PSTATE
+	str w0, [x4], 0 // using code w for 32 bit because pstate is only 32 bits. Using 64 would instead write the extra data to parentpid.
+	// Now, x2, x3, x4 are free
+	// We store the registers off the stack into [x1]
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 10 saved
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 20 saved
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 30 saved
+	ldr x2, [sp], #8
+	str x2, [x1], 8 // All 31 saved!!
 	
+	mrs x0, ESR_EL1 // Now we pass the exception code to the next whatever
+	bl ExceptionASYNC
 
 // .global save_stack_pointer
 // generate the code to switch the task. BY switching the task I mean setting the value of the stack pointer at task level to the address of the 

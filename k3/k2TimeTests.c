@@ -3,12 +3,11 @@
 #include "nameserver.h"
 #include "custstr.h"
 #include "processes.h"
-#include "processes.h"
 #include "rpi.h"
 #include "asm.h"
 #include "syscall.h"
 #include "util.h"
-#include "nameserver.h"
+#include "gameserver.h"
 #include "custstr.h"
 #include "systimer.h"
 /*
@@ -96,8 +95,8 @@ the measured time per SRR operation in microseconds
 
 // Send message test. Process one would be sending a message to process two. 
 // The expected output of this test would be seeing the message from process one in process two.
-// The name of process one and process two would be abbreviared as k2_sender and k2_receiver
-void k2_receiver(){
+// The name of process one and process two would be abbreviared as k2_sender and k2Receiver
+void k2Receiver(){
 	// initially this task should have tid of 3
 	// recieve a message
 	
@@ -126,7 +125,7 @@ void k2_receiver(){
 
 
 	mytid = MyTid();
-	// uart_printf(CONSOLE, "k2_receiver: My tid is %u, N = %u, msglen = %u\r\n", mytid, N, msglen);
+	// uart_printf(CONSOLE, "k2Receiver: My tid is %u, N = %u, msglen = %u\r\n", mytid, N, msglen);
 
 	int tid;
 	char msg[msglen];
@@ -137,16 +136,16 @@ void k2_receiver(){
 	}
 	reply[msglen - 1] = 0;
 
-	// uart_printf(CONSOLE, "k2_receiver: My tid is %u\r\n", mytid);
+	// uart_printf(CONSOLE, "k2Receiver: My tid is %u\r\n", mytid);
 	for (int i = 0; i < N; i++){
 		// define the reply message here
-		//uart_printf(CONSOLE, "k2_receiver: Waiting for message %u\r\n", i);
+		//uart_printf(CONSOLE, "k2Receiver: Waiting for message %u\r\n", i);
 		// begin of the send
-		// uart_printf(CONSOLE, "k2_receiver: Waiting for message %u\r\n", i);
+		// uart_printf(CONSOLE, "k2Receiver: Waiting for message %u\r\n", i);
 		int recret = Receive(&tid, msg, msglen);
-		// uart_printf(CONSOLE, "k2_receiver: Message recieved: [%s], recret = %d\r\n", msg, recret);
+		// uart_printf(CONSOLE, "k2Receiver: Message recieved: [%s], recret = %d\r\n", msg, recret);
 		int repret = Reply(tid, reply, msglen);
-		// uart_printf(CONSOLE, "k2_receiver: Reply sent Repret = %d\r\n", repret);
+		// uart_printf(CONSOLE, "k2Receiver: Reply sent Repret = %d\r\n", repret);
 	}
 	Exit();	
 }
@@ -169,7 +168,7 @@ void adderTask(int64_t a, int64_t b, int64_t c, int64_t d, int64_t e, int64_t f,
 }
 
 
-void turnaround_test_parse_command(char *arr) {
+void turnaroundTestParseCommand(char *arr) {
   
   char *ptr; // pointer to traverse the array
   char *num[100]; // array to store the numbers
@@ -215,11 +214,11 @@ void turnaround_test_parse_command(char *arr) {
 	int64_t str_length = atoi(num[2]);
 
 	// Init the reciever
-	int tid = Create(2, k2_receiver);
-	//uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	int tid = Create(2, k2Receiver);
+	//uart_printf(CONSOLE, "Created k2Receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
-	// int tid = CreateArgs(5, k2_receiver, 1, args);
+	// int tid = CreateArgs(5, k2Receiver, 1, args);
 	//k2_sender(N, str_length);
 	// send a message to the reciever
 	// int tid = Create(5, k2_sender);
@@ -245,8 +244,8 @@ void turnaround_test_parse_command(char *arr) {
 	unsigned int avgtime = (end - start) / N;
 	// recreate the reciever task
 	
-	tid = Create(2, k2_receiver);
-	// uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	tid = Create(2, k2Receiver);
+	// uart_printf(CONSOLE, "Created k2Receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
 	// calculate the variance
@@ -291,13 +290,13 @@ void turnaround_test_parse_command(char *arr) {
 	int64_t str_length = atoi(num[2]);
 	Yield();
 	// Init the reciever
-	int tid = Create(1, k2_receiver);
-	//uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	int tid = Create(1, k2Receiver);
+	//uart_printf(CONSOLE, "Created k2Receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
 
 
-	// int tid = CreateArgs(5, k2_receiver, 1, args);
+	// int tid = CreateArgs(5, k2Receiver, 1, args);
 	//k2_sender(N, str_length);
 	// send a message to the reciever
 	// int tid = Create(5, k2_sender);
@@ -325,8 +324,8 @@ void turnaround_test_parse_command(char *arr) {
 	//uart_printf(CONSOLE, "Calculating variance\r\n");
 	// recreate the reciever task
 	Yield();
-	tid = Create(1, k2_receiver);
-	// uart_printf(CONSOLE, "Created k2_receiver: %u\r\n", tid);
+	tid = Create(1, k2Receiver);
+	// uart_printf(CONSOLE, "Created k2Receiver: %u\r\n", tid);
 	Send(tid, num[1], str_length, args, 1); // send the N
 	Send(tid, num[2], str_length, args, 1); // send the msglen
 	// calculate the variance
@@ -420,13 +419,13 @@ void turnaround_test_parse_command(char *arr) {
   Yield();
   uart_printf(CONSOLE, "Command not found\r\n");
 }
-void recieve_task(){
+void recieveTask(){
 	RegisterAs(".");
 	// first it would await for a message to arrive that would ultimatelly be a command to initialize the task
 	Exit();
 }
 
-void Turnaround_tests(){
+void turnaroundTests(){
 	/*
 	R or S - indicating receiver first or sender first
 	4, 64, or 256 - indicating message size
@@ -435,12 +434,199 @@ void Turnaround_tests(){
 	R is testsenderRF
 	S is testsenderSF
 	*/
-	turnaround_test_parse_command("testsendRF 100 4");
-	turnaround_test_parse_command("testsendRF 100 64");
-	turnaround_test_parse_command("testsendRF 100 256");
-	turnaround_test_parse_command("testsendSF 100 4");
-	turnaround_test_parse_command("testsendSF 100 64");
-	turnaround_test_parse_command("testsendSF 100 256");
+	turnaroundTestParseCommand("testsendRF 100 4");
+	turnaroundTestParseCommand("testsendRF 100 64");
+	turnaroundTestParseCommand("testsendRF 100 256");
+	turnaroundTestParseCommand("testsendSF 100 4");
+	turnaroundTestParseCommand("testsendSF 100 64");
+	turnaroundTestParseCommand("testsendSF 100 256");
 
 
+}
+
+
+
+void testNameserver(){
+	char* myname = "testNameserver";
+	// set coulor to green
+	uart_printf(CONSOLE, "\033[32m");
+	uart_printf(CONSOLE, "testNameserver: My name is %s\r\n", myname);
+	// set coulor to white
+	
+	//call register
+	uart_printf(CONSOLE, "testNameserver: Registering my name\r\n");
+	uart_printf(CONSOLE, "\033[37m");
+	RegisterAs(myname);
+	//call whois
+	// set coulor to green
+	uart_printf(CONSOLE, "\033[32m");
+	uart_printf(CONSOLE, "testNameserver: Calling whois on myself\r\n");
+	// set coulor to white
+	uart_printf(CONSOLE, "\033[37m");
+	int tid = WhoIs(myname);
+	// set coulor to green
+	uart_printf(CONSOLE, "\033[32m");
+	uart_printf(CONSOLE, "testNameserver: tid = %u\r\n", tid);
+	// set coulor to white
+	uart_printf(CONSOLE, "\033[37m");
+	Exit();
+
+}
+
+void sender(){
+	int msglen = 10;
+	int tid = MyTid();
+    // Register
+    RegisterAs("SENDER");
+	// write a message
+	uart_printf(CONSOLE, "k2_sender: My tid is %u\r\n", tid);
+	char msg[msglen];
+	for (int i = 0; i < msglen; i++)
+	{
+		msg[i] = 'B' + i;
+	}
+	msg[msglen - 1] = 0;
+	// define the send message here
+	tid = WhoIs("RECEIVER");
+	char msgreply[msglen];
+	
+	// begin of the send
+	int ret_code = Send(tid, msg, msglen, msgreply, msglen);
+	uart_printf(CONSOLE, "k2_sender: Message sent, my reply is [%s] ret_code = %d \r\n", msgreply, ret_code);
+	// end of the send
+	Exit();
+}
+void receiver(){
+	int msglen = 10;
+	// initially this task should have tid of 3
+	// recieve a message
+	int mytid = MyTid();
+    RegisterAs("RECEIVER");
+	int tid;
+	char msg[msglen];
+	char reply[msglen];
+	for (int i = 0; i < msglen; i++)
+	{
+		reply[i] = 'A' + i;
+	}
+	msg[msglen - 1] = 0;
+	uart_printf(CONSOLE, "k2Receiver: My tid is %u\r\n", mytid);
+	int recret = Receive(&tid, msg, msglen);
+	uart_printf(CONSOLE, "k2Receiver: Message recieved: [%s], recret = %d\r\n", msg, recret);
+	for (int i = 0; i < msglen; i++)
+	{
+		uart_putc(CONSOLE, reply[i]);
+	}
+	uart_printf(CONSOLE, "\r\n");
+
+	// define the reply message here
+	int repret = Reply(tid, reply, msglen);
+	uart_printf(CONSOLE, "k2Receiver: Reply sent Repret = %d\r\n", repret);
+	Exit();	
+}
+void rockPlayer(){
+	int tid = MyTid();
+	signup();
+	// play rock paper scissors
+	int play_ret = play("rock");
+	uart_printf(CONSOLE, "Play %u, player:%d have: ",1, tid);
+	uart_putc(CONSOLE, (char)play_ret);
+	uart_printf(CONSOLE, "\r\n");
+	quit();
+	Exit();
+}
+
+
+void k2ExecuteCommands(char *command){
+	int Priority = MyPriority();
+  		char *num[100]; // array to store the numbers
+			// int parse_char_arr(char *arr, char **num, int num_size)
+			int command_part_count = parse_char_arr(command, num, 100);
+			if(strcmp_ret(num[0],"k2pm")){
+				Yield();
+				uart_printf(CONSOLE, "K2: STARTING SEND/RECIEVE/REPLY PERFORMANCE TESTS: %u\r\n");
+				turnaroundTests(); // should this be a process or just some tests?
+			} else if (strcmp_ret(num[0],"k2rps")){
+				Yield();
+				if (strcmp_ret(num[1], "start")){
+				int tid = Create(10, gameserver);
+					uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
+				// uart_printf(CONSOLE, "K2: STARTING Rock Paper Scissors TESTS: %u\r\n");
+				} else if (WhoIs("gameserver") == NUMPROCS){
+					uart_printf(CONSOLE, "K2: ERROR: gameserver is not running, run k2rps start to run the server\r\n");
+					return;
+				} else if (strcmp_ret(num[1], "shutdown")){
+				uart_printf(CONSOLE, "K2: SHUTTING DOWN Rock Paper Scissors TESTS: %u\r\n");
+				RPCShutdown();
+				} else if (strcmp_ret(num[1], "create")){
+				// this is the create command that creates the players
+				// create N 0 rock player
+				// create N 1 paper player
+				// create N 2 scissors player
+				// create N 3 random player
+				if (command_part_count != 4){
+					uart_printf(CONSOLE, "K2: ERROR: create command is not valid k2RPS start N <type>\r\n");
+					return;
+				}
+				uint64_t N = atoi(num[2]);
+				if (N > 10){
+					uart_printf(CONSOLE, "K2: ERROR: N is too large: %u\r\n", N);
+					return;
+				}
+				
+				uint64_t type;
+				if (strcmp_ret(num[3], "rock")){
+					type = 0;
+				} else if (strcmp_ret(num[3], "paper")){
+					type = 1;
+				} else if (strcmp_ret(num[3], "scissors")){
+					type = 2;
+				} else if (strcmp_ret(num[3], "random")){
+					type = 3;
+				} else {
+					uart_printf(CONSOLE, "K2: ERROR: type is not valid: %s\r\n", num[3]);
+					return;
+				}
+				initPlayer(N, type, Priority + 1);
+				
+				} else if(strcmp_ret(num[1], "play")) {
+					char play_ret = play(num[2]);
+					if (play_ret == 'E'){
+						uart_printf(CONSOLE, "K2: ERROR: k2RPS not signed up, please sign up to join game\r\n");
+						return;
+					}
+					
+					uart_printf(CONSOLE, "You have: ");
+					uart_putc(CONSOLE, (char)play_ret);
+					uart_printf(CONSOLE, "\r\n");
+				} else if(strcmp_ret(num[1], "signup")){
+					signup();
+				} else if(strcmp_ret(num[1], "quit")){
+					quit();
+				}else {
+				uart_printf(CONSOLE, "K2: ERROR: k2RPS command is not valid\r\n");
+				}
+			
+
+
+       
+      }
+	  // the command is not found
+	  else {
+		  uart_printf(CONSOLE, "ERROR: command is not valid\r\n");
+	  }
+}
+void k2preGuiTest() // First task as dictated in the reqs
+{
+	// We are assuming that preGuiTest has a priority of 1
+	// start gameserver
+	RegisterAs("preGuiTest");
+	int gameserver_tid = Create(2, gameserver);
+	// int gameserver_tid2 = Create(1, rockPlayer);
+	// int gameserver_tid3 = Create(1, rockPlayer);
+	initPlayer(1, 0, 2);
+	initPlayer(1, 1, 2);
+	RPCShutdown();
+	Create(1, main);
+	Exit();
 }

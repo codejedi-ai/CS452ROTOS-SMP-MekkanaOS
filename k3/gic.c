@@ -12,9 +12,9 @@
 
 #define GICC_BASE GIC_BASE + 0x2000
 // GICD_GICC_IAR
-#define GICC_IAR GICC_BASE + 0x0C
+#define GICC_IAR *(uint32_t*)(GICC_BASE + 0x0C)
 // GICC_EOIR
-#define GICC_EOIR GICC_BASE + 0x10
+#define GICC_EOIR *(uint32_t*)(GICC_BASE + 0x10)
 
 
 #define GICD_ITARGETSR(n) (*(uint32_t*)(GICD_ITARGETSRn + (4 * n)))
@@ -66,4 +66,21 @@ void enable_interrupt(uint32_t interrupt_id){
     uint32_t offset = interrupt_id / 32; // n 
     uint32_t remainder = interrupt_id % 32;
     GICD_ISENABLER(offset) = GICD_ISENABLER(offset) | (0x01 << remainder);
+}
+
+uint32_t readInterruptId(){
+    return GICC_IAR & 0x3FF;
+}
+void endInterrupt(uint16_t interrupt_id){
+    if (interrupt_id > 1023){
+        // print the error message mentioning the interrupt_id is out of range which is 0-1023
+        uart_printf(CONSOLE, "Interrupt ID is out of range must be within 0 - 1023\r\n");
+        return;
+    }
+    uint32_t toBeWritten = GICC_EOIR;
+    toBeWritten = toBeWritten >> 10;
+    toBeWritten = toBeWritten << 10;
+    toBeWritten = toBeWritten | interrupt_id;
+    // would only want to change the last 10 bits
+    GICC_EOIR = toBeWritten;
 }

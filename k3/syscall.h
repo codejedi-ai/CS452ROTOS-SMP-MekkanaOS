@@ -4,6 +4,14 @@
 #include <stdint.h>
 #define NUMPROCS 20
 #define QUEUESIZE 50
+static void *STACKSTART;
+// This is the PID of the currentlly running process
+static uint32_t PID = 0;
+
+
+
+
+// static const int NUMPROCS = 20; // Deprecated
 
 void InitSys(void* reg);
 void Handle();
@@ -60,8 +68,11 @@ struct state {
 	int priority;
 	int ready;
 };
-
+static struct process PROCS[NUMPROCS];
+static struct state READY_QUEUE[NUMPROCS];
+static struct state BLOCKED_QUEUE[NUMPROCS];
 void scrSchedule(int pid, int priority, int ready);
 int scrPick();
-
+void HandleASYNC(void* sp);
+void ExceptionASYNC(uint64_t esr_el1);
 #endif

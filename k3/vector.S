@@ -136,7 +136,7 @@ vector_table_el1: // This is our EL1 exception vector
 	
 	el1_a64_irq:
 	// add x0, x0, x0 // Dummy Code what we need to make the trains off
-	// msr SPSel, #0 // We use the Kernel Stack Pointer
+	// msr ESR_EL1, #10 // same as calling svc 10
 	stp x29,  x30,  [sp, #-16]!
 	stp x27,  x28,  [sp, #-16]!
 	stp x25,  x26,  [sp, #-16]!
