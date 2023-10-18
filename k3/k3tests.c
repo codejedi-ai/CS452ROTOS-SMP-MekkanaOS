@@ -73,7 +73,7 @@ void clock_proc(){
 
     Exit();
 }
-void init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int numberOfDelays){
+int32_t init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int numberOfDelays){
     uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
     char clockname[8];
     for (int i = 0; i < 7; i++){
@@ -83,10 +83,11 @@ void init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int numb
     uart_printf(CONSOLE, "init_clock_proc: tid = %d\r\n", tid);
     clockname[7] = '\0';
     uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
-    Send(tid, clockname, 8, clockname, 8);
+    if (Send(tid, clockname, 8, clockname, 8) < 0) return -1;
     uart_printf(CONSOLE, "init_clock_proc: %s, %s\r\n", clockname, clockname);
-    Send(tid, &delay, 4, &delay, 4);
+    if (Send(tid, &delay, 4, &delay, 4) < 0) return -1;
     uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
-    Send(tid, &numberOfDelays, 4, &numberOfDelays, 4);
+    if (Send(tid, &numberOfDelays, 4, &numberOfDelays, 4)  < 0) return -1;
     uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, numberOfDelays);
+    return 0;
 }

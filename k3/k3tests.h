@@ -12,6 +12,6 @@
 #include "systimer.h"
 #include "clockserver.h"
 
-void init_clock_proc(uint64_t priority, char *clockname, int delay, int numberOfDelays);
+int32_t init_clock_proc(uint64_t priority, char *clockname, int delay, int numberOfDelays);
 int k3ExecuteCommands(char *command, char **num, int command_part_count);
 void clock_proc();

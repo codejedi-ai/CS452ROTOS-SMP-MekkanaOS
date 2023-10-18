@@ -96,9 +96,8 @@ void main(){
 	Exit();
 }
 
-void clock_proc_test(){
-    RegisterAs("clock_proc_test");
-    Exit();
+void idle(){
+	while(1)uart_printf(CONSOLE, "idle: Started\r\n");
 }
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
@@ -108,27 +107,18 @@ void FirstUserTask() // First task as dictated in the reqs
 	
 	// We are assuming that FirstUserTask has a priority of 1
 	// start gameserver
-	RegisterAs("FirstUserTask"); 
-	int tid = MyTid();
-	uart_printf(CONSOLE, "FirstUserTask: tid = %d\r\n", tid);
+	RegisterAs("FirstUserTask");
+  	int tid = KernelCreate(0, clockNotifier, 0);
+	tid = KernelCreate(0, clock_server, 0);
+
 	char clockproc1[8] = "cl10";
-    // init_clock_proc(3, clockproc1, 10, 20);
-	    // uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
-	int priority = 3, numberOfDelays, delay = 100;
-	char clockname[8];
-	tid = Create(priority, clock_proc_test);
-	uart_printf(CONSOLE, "init_clock_proc: tid = %d\r\n", tid);
-	clockname[7] = '\0';
-	uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
-	Send(tid, clockname, 8, clockname, 8);
-	// char clockproc1[8] = "cl23";
-	//init_clock_proc(3, num[1], delay, delaycount);
-	// char clockproc2[8] = "cl23";
-    // init_clock_proc(4, clockproc2, 23, 9);
-	// char clockproc3[8] = "cl33";
-    // init_clock_proc(5, clockproc3, 33, 6);
-	// char clockproc4[8] = "cl71";
-    // init_clock_proc(6, clockproc4, 71, 3);
+    init_clock_proc(3, clockproc1, 10, 20);
+	char clockproc2[8] = "cl23";
+    init_clock_proc(4, clockproc2, 23, 9);
+	char clockproc3[8] = "cl33";
+    init_clock_proc(5, clockproc3, 33, 6);
+	char clockproc4[8] = "cl71";
+    init_clock_proc(6, clockproc4, 71, 3);
 
 	// Create(2000, main);
 	uart_printf(CONSOLE, "FirstUserTask: Started\r\n");
