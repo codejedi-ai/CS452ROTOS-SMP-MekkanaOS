@@ -2,5 +2,5 @@
 #define _processes_h_
 
 void main();
-void preGuiTest();
+void FirstUserTask();
 #endif

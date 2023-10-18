@@ -15,14 +15,17 @@
 #define GICC_IAR *(uint32_t*)(GICC_BASE + 0x0C)
 // GICC_EOIR
 #define GICC_EOIR *(uint32_t*)(GICC_BASE + 0x10)
+// GICC_EOIR
+
 
 
 #define GICD_ITARGETSR(n) (*(uint32_t*)(GICD_ITARGETSRn + (4 * n)))
 // enable the interrupt use GICD_ISENABLERn 4-byte registers, with 1 bit per InterruptID
 #define GICD_ISENABLER(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
-
-
-
+// set active interrupt
+#define GICD_ISACTIVERn(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
+// clear active interrupt
+#define GICD_ICACTIVERn(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
 /*
 oute the interrupt to IRQ on CPU 0
 use GICD_ITARGETSRn
@@ -66,6 +69,25 @@ void enable_interrupt(uint32_t interrupt_id){
     uint32_t offset = interrupt_id / 32; // n 
     uint32_t remainder = interrupt_id % 32;
     GICD_ISENABLER(offset) = GICD_ISENABLER(offset) | (0x01 << remainder);
+}
+
+// set active interrupt
+void setActiveInterrupt(uint32_t interrupt_id){
+    uint32_t offset = interrupt_id / 32; // n 
+    uint32_t remainder = interrupt_id % 32;
+    GICD_ISACTIVERn(offset) = GICD_ISACTIVERn(offset) | (0x01 << remainder);
+}
+// check active interrupt
+uint32_t checkActiveInterrupt(uint32_t interrupt_id){
+    uint32_t offset = interrupt_id / 32; // n 
+    uint32_t remainder = interrupt_id % 32;
+    return GICD_ISACTIVERn(offset) & (0x01 << remainder);
+}
+// clear active interrupt
+void clearActiveInterrupt(uint32_t interrupt_id){
+    uint32_t offset = interrupt_id / 32; // n 
+    uint32_t remainder = interrupt_id % 32;
+    GICD_ICACTIVERn(offset) = GICD_ICACTIVERn(offset) | (0x01 << remainder);
 }
 
 uint32_t readInterruptId(){

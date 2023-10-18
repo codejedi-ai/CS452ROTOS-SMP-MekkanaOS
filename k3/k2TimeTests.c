@@ -537,96 +537,95 @@ void rockPlayer(){
 }
 
 
-void k2ExecuteCommands(char *command){
+int k2ExecuteCommands(char *command, char **num, int command_part_count){
 	int Priority = MyPriority();
-  		char *num[100]; // array to store the numbers
-			// int parse_char_arr(char *arr, char **num, int num_size)
-			int command_part_count = parse_char_arr(command, num, 100);
-			if(strcmp_ret(num[0],"k2pm")){
-				Yield();
-				uart_printf(CONSOLE, "K2: STARTING SEND/RECIEVE/REPLY PERFORMANCE TESTS: %u\r\n");
-				turnaroundTests(); // should this be a process or just some tests?
-			} else if (strcmp_ret(num[0],"k2rps")){
-				Yield();
-				if (strcmp_ret(num[1], "start")){
-				int tid = Create(10, gameserver);
-					uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
-				// uart_printf(CONSOLE, "K2: STARTING Rock Paper Scissors TESTS: %u\r\n");
-				} else if (WhoIs("gameserver") == NUMPROCS){
-					uart_printf(CONSOLE, "K2: ERROR: gameserver is not running, run k2rps start to run the server\r\n");
-					return;
-				} else if (strcmp_ret(num[1], "shutdown")){
-				uart_printf(CONSOLE, "K2: SHUTTING DOWN Rock Paper Scissors TESTS: %u\r\n");
-				RPCShutdown();
-				} else if (strcmp_ret(num[1], "create")){
-				// this is the create command that creates the players
-				// create N 0 rock player
-				// create N 1 paper player
-				// create N 2 scissors player
-				// create N 3 random player
-				if (command_part_count != 4){
-					uart_printf(CONSOLE, "K2: ERROR: create command is not valid k2RPS start N <type>\r\n");
-					return;
-				}
-				uint64_t N = atoi(num[2]);
-				if (N > 10){
-					uart_printf(CONSOLE, "K2: ERROR: N is too large: %u\r\n", N);
-					return;
-				}
-				
-				uint64_t type;
-				if (strcmp_ret(num[3], "rock")){
-					type = 0;
-				} else if (strcmp_ret(num[3], "paper")){
-					type = 1;
-				} else if (strcmp_ret(num[3], "scissors")){
-					type = 2;
-				} else if (strcmp_ret(num[3], "random")){
-					type = 3;
-				} else {
-					uart_printf(CONSOLE, "K2: ERROR: type is not valid: %s\r\n", num[3]);
-					return;
-				}
-				initPlayer(N, type, Priority + 1);
-				
-				} else if(strcmp_ret(num[1], "play")) {
-					char play_ret = play(num[2]);
-					if (play_ret == 'E'){
-						uart_printf(CONSOLE, "K2: ERROR: k2RPS not signed up, please sign up to join game\r\n");
-						return;
-					}
-					
-					uart_printf(CONSOLE, "You have: ");
-					uart_putc(CONSOLE, (char)play_ret);
-					uart_printf(CONSOLE, "\r\n");
-				} else if(strcmp_ret(num[1], "signup")){
-					signup();
-				} else if(strcmp_ret(num[1], "quit")){
-					quit();
-				}else {
-				uart_printf(CONSOLE, "K2: ERROR: k2RPS command is not valid\r\n");
-				}
+
+	if(strcmp_ret(num[0],"k2pm")){
+		Yield();
+		uart_printf(CONSOLE, "K2: STARTING SEND/RECIEVE/REPLY PERFORMANCE TESTS: %u\r\n");
+		turnaroundTests(); // should this be a process or just some tests?
+	} else if (strcmp_ret(num[0],"k2rps")){
+		Yield();
+		if (strcmp_ret(num[1], "start")){
+		int tid = Create(10, gameserver);
+			uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
+		// uart_printf(CONSOLE, "K2: STARTING Rock Paper Scissors TESTS: %u\r\n");
+		} else if (WhoIs("gameserver") == NUMPROCS){
+			uart_printf(CONSOLE, "K2: ERROR: gameserver is not running, run k2rps start to run the server\r\n");
+			return 0;
+		} else if (strcmp_ret(num[1], "shutdown")){
+		uart_printf(CONSOLE, "K2: SHUTTING DOWN Rock Paper Scissors TESTS: %u\r\n");
+		RPCShutdown();
+		} else if (strcmp_ret(num[1], "create")){
+		// this is the create command that creates the players
+		// create N 0 rock player
+		// create N 1 paper player
+		// create N 2 scissors player
+		// create N 3 random player
+		if (command_part_count != 4){
+			uart_printf(CONSOLE, "K2: ERROR: create command is not valid k2RPS start N <type>\r\n");
+			return 0;
+		}
+		uint64_t N = atoi(num[2]);
+		if (N > 10){
+			uart_printf(CONSOLE, "K2: ERROR: N is too large: %u\r\n", N);
+			return;
+		}
+		
+		uint64_t type;
+		if (strcmp_ret(num[3], "rock")){
+			type = 0;
+		} else if (strcmp_ret(num[3], "paper")){
+			type = 1;
+		} else if (strcmp_ret(num[3], "scissors")){
+			type = 2;
+		} else if (strcmp_ret(num[3], "random")){
+			type = 3;
+		} else {
+			uart_printf(CONSOLE, "K2: ERROR: type is not valid: %s\r\n", num[3]);
+			return 0;
+		}
+		initPlayer(N, type, Priority + 1);
+		
+		} else if(strcmp_ret(num[1], "play")) {
+			char play_ret = play(num[2]);
+			if (play_ret == 'E'){
+				uart_printf(CONSOLE, "K2: ERROR: k2RPS not signed up, please sign up to join game\r\n");
+				return 0;
+			}
 			
+			uart_printf(CONSOLE, "You have: ");
+			uart_putc(CONSOLE, (char)play_ret);
+			uart_printf(CONSOLE, "\r\n");
+		} else if(strcmp_ret(num[1], "signup")){
+			signup();
+		} else if(strcmp_ret(num[1], "quit")){
+			quit();
+		}else {
+		uart_printf(CONSOLE, "K2: ERROR: k2RPS command is not valid\r\n");
+		}
+	
 
 
-       
+	
       }
 	  // the command is not found
 	  else {
-		  uart_printf(CONSOLE, "ERROR: command is not valid\r\n");
+		  return -1;
 	  }
+	  return 1;
 }
-void k2preGuiTest() // First task as dictated in the reqs
+void k2FirstUserTask() // First task as dictated in the reqs
 {
-	// We are assuming that preGuiTest has a priority of 1
+	// We are assuming that FirstUserTask has a priority of 1
 	// start gameserver
-	RegisterAs("preGuiTest");
+	RegisterAs("FirstUserTask");
 	int gameserver_tid = Create(2, gameserver);
 	// int gameserver_tid2 = Create(1, rockPlayer);
 	// int gameserver_tid3 = Create(1, rockPlayer);
 	initPlayer(1, 0, 2);
 	initPlayer(1, 1, 2);
 	RPCShutdown();
-	Create(1, main);
+	Create(100, main);
 	Exit();
 }

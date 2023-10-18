@@ -12,4 +12,6 @@ uint64_t ASYNCSave(void*, void*, void (**)(), void**, uint32_t*);
 void push_trap_frame();
 void pop_trap_frame();
 void save_stack_pointer(void*);
+
+void wfi();
 #endif

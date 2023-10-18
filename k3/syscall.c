@@ -5,8 +5,11 @@
 #include "rpi.h"
 #include "util.h"
 #include "custstr.h"
-
+#include "gic.h"
 #define DEBUG 3
+
+# define READY 0
+# define BLOCKED 1
 
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
@@ -14,7 +17,7 @@
 uint8_t NO_PARAMS = 0;
 // scrSchedule(pid, priority, ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
-void scrSchedule(int pid, int priority, int ready)
+void scrSchedule(int pid, uint64_t priority, int ready)
 {
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
@@ -24,7 +27,7 @@ void scrSchedule(int pid, int priority, int ready)
 			READY_QUEUE[i] = currItem;
 			return 0;	
 		}
-		else if (READY_QUEUE[i].priority < priority) {
+		else if (READY_QUEUE[i].priority > priority) {
 			insert = 1;
 		}
 		if (insert) {
@@ -37,8 +40,9 @@ void scrSchedule(int pid, int priority, int ready)
 }
 // scrSchedule(pid, priority, ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
-void queue_unblock(int pid, int priority, int ready)
+void queue_unblock(int pid, uint64_t priority, int ready)
 {
+	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
 	int insert = 0;
@@ -79,12 +83,16 @@ void InitSys(void* reg)
 {	// For some reason, normal init to 0 just.. doesn't work?
 	STACKSTART = reg;
 	PID = 0;
+	for (int event = 0; event < MAXEVENT; event++){
+		AWAIT_INTERRUPT_LIST_LEN[event] = 0;
+	}
 	for (int idx = 0; idx < NUMPROCS; idx++) {
 		PROCS[idx].stackpointer = NULL;
 		PROCS[idx].pcpointer = NULL;
 		PROCS[idx].pstate = 0;
 		PROCS[idx].parentpid = 0;
 		PROCS[idx].priority = 0;
+		// PROCS[idx].queuesize = 0;
 		for (int jdx = 0; jdx < 31; jdx++) {
 			PROCS[idx].registervalues[jdx] = 10 + jdx;
 		
@@ -93,7 +101,7 @@ void InitSys(void* reg)
 		READY_QUEUE[idx].pid = 0;
 		READY_QUEUE[idx].ready = 0;
 		READY_QUEUE[idx].priority = 0;
-
+		
 		
 	}
 	return 0;
@@ -106,11 +114,22 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 	int p = PID - 1;
 	
 	#if DEBUG == 3 
-	uart_printf(CONSOLE, "HandleASYNC: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	// uart_printf(CONSOLE, "HandleASYNC: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	#endif
 	
 	uint64_t ASYNC = Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	ExceptionASYNC(ASYNC);
+	Schedule();
+
+    #if DEBUG >= 1
+		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
+		// print the queue of all tasks, print by PID: state
+		for (int i = 0; i < NUMPROCS; i++) {
+			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
+		}
+	uart_getc(1);
+	#endif
+	EXIT();
 }
 
 
@@ -129,25 +148,50 @@ void ExceptionASYNC(uint64_t esr_el1){
 	// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
     uint32_t interruptid = readInterruptId();
     #if DEBUG == 3
-    uart_printf(CONSOLE, "HandleASYNC: ESR is %x\n\r", esr_el1); // DEBUG PRINT
-    uart_printf(CONSOLE, "Asynchronouse SVC Call %x\n\r", interruptid); // DEBUG PRINT
-    uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
-    uart_printf(CONSOLE, "PID = %u\n\r", PID); // DEBUG PRINT
+    // uart_printf(CONSOLE, "HandleASYNC: ESR is %x\n\r", esr_el1); // DEBUG PRINT
+    // uart_printf(CONSOLE, "Asynchronouse SVC Call %x\n\r", interruptid); // DEBUG PRINT
+    // uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+    // uart_printf(CONSOLE, "PID = %u\n\r", PID); // DEBUG PRINT
     #endif
+	setActiveInterrupt(interruptid);
+	// make switch signal
+	for (int i = 0; i < AWAIT_INTERRUPT_LIST_LEN[interruptid]; i++) {
+		queue_unblock(AWAIT_INTERRUPT[interruptid][i].pid, AWAIT_INTERRUPT[interruptid][i].priority, READY);
+		PROCS[AWAIT_INTERRUPT[interruptid][i].pid - 1].registervalues[0] = 1;
+	}
+	AWAIT_INTERRUPT_LIST_LEN[interruptid] = 0;
+	switch (interruptid) {
+		case 99:
+			// uart_printf(CONSOLE, "Timer Interrupt\n\r");
+			// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+			// end the interrupt
+			
+			// set the next timer
+			// get the time
+			uint32_t time = get_timerLO();
+			set_timerC3(time + 10000);
+			// set_timerC3(time);
+			scrSchedule(PID, PROCS[p].priority, READY);
+			// uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
+			resetCS(3);
+			
+			// after this I want to see the time fire repeatitvely
+			break;
+		case 100:
+			// uart_printf(CONSOLE, "UART Interrupt\n\r");
+			// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
+			break;
+		default:
+			// uart_printf(CONSOLE, "Unknown Interrupt\n\r");
+			scrSchedule(PID, PROCS[p].priority, READY);
+			break;
+	}
+	endInterrupt(interruptid);
+	clearActiveInterrupt(interruptid);
+    
 
-    scrSchedule(PID, PROCS[p].priority, READY);
-    Schedule();
-
-    #if DEBUG >= 1
-		uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r"); // Nothing left // Upon maybe K2, the Kernel may be waiting at this point for user input, or other stuff for Processes to wake up. At this point, the Kernel should in theory spin
-		// print the queue of all tasks, print by PID: state
-		for (int i = 0; i < NUMPROCS; i++) {
-			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].ready, READY_QUEUE[i].priority);
-		}
-	uart_getc(1);
-	#endif
 	// uart_printf(CONSOLE, "Exiting...\r\n");
-    EXIT();
+    
 }
 
 
@@ -164,6 +208,9 @@ void Handle(void* sp) // A helper function to pull some c variables into assembl
 	#endif
 	
 	uint64_t esr_el1 = Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
+	// this is when the process is officially inturrupted.
+
+
 	handlerExceptionHelper(esr_el1);
 	Schedule();
 	/*
@@ -206,17 +253,17 @@ void send_helper(){
 	PROCS[p].message_sent.replylen = replylen;
 	PROCS[p].waiting_reply = 1;
 	// This is the target task, if it is waiting_send then we need ot remove the waiting send and unblock the task
-	p = tid - 1;
-	int tail = PROCS[p].waiting_recieve_tail;
-	PROCS[p].message_recieved[tail].tid = PID; // This is the tricky part for the recieved it should be the sender's pid
-	PROCS[p].message_recieved[tail].msg = msg;
-	PROCS[p].message_recieved[tail].msglen = msglen;
-	PROCS[p].message_recieved[tail].reply = reply;
-	PROCS[p].message_recieved[tail].replylen = replylen;
+	int p_to = tid - 1;
+	int tail = PROCS[p_to].waiting_recieve_tail;
+	PROCS[p_to].message_recieved[tail].tid = PID; // This is the tricky part for the recieved it should be the sender's pid
+	PROCS[p_to].message_recieved[tail].msg = msg;
+	PROCS[p_to].message_recieved[tail].msglen = msglen;
+	PROCS[p_to].message_recieved[tail].reply = reply;
+	PROCS[p_to].message_recieved[tail].replylen = replylen;
 	// // uart_printf(CONSOLE, "reply addr is %x\r\n", reply);
-	PROCS[p].waiting_recieve_tail++;
-	PROCS[p].waiting_recieve_tail %= QUEUESIZE;
-	PROCS[p].queuesize++;
+	PROCS[p_to].waiting_recieve_tail++;
+	PROCS[p_to].waiting_recieve_tail %= QUEUESIZE;
+	PROCS[p_to].queuesize++;
 	
 	# if DEBUG == 2
 	// print the function called
@@ -228,10 +275,9 @@ void send_helper(){
 	// uart_printf(CONSOLE, "REPLY is %s\r\n", reply);
 	// uart_printf(CONSOLE, "REPLYLEN is %u\r\n ============== \r\n", replylen);
 	# endif
-	if (PROCS[p].waiting_send == 1){
+	if (PROCS[p_to].waiting_send == 1){
 		// The task is waiting for a message
 		// unblock the task
-		p = tid - 1;
 		# if DEBUG == 2
 		// print therefore unblocked
 		// uart_printf(CONSOLE, "===============\r\n RECIEVE HELPER FOR %u by Send Helper Unblocked:\r\n", tid);
@@ -334,7 +380,9 @@ void recieve_helper(int PID){
 	# endif
 	// p is the current process, the process that is recieving
 	PROCS[p].waiting_recieve_head++;
-	PROCS[p].queuesize--;
+	if(PROCS[p].queuesize > 0){
+		PROCS[p].queuesize--;
+	}
 	PROCS[p].waiting_recieve_head %= QUEUESIZE;
 	PROCS[p].registervalues[0] = msglen;
 	queue_unblock(PID, PROCS[PID - 1].priority, READY);
@@ -426,8 +474,8 @@ void handlerExceptionHelper(uint64_t esr_el1)
 		case 5: // send blocks and unblocks other tasks
 			// This unblocks the recieving task
 			int tid_dest = PROCS[p].registervalues[0];
-			
-			if (dead(tid_dest - 1)){
+			int dest_p = tid_dest - 1;
+			if (dead(dest_p)){
 				# if DEBUG == 2
 				// print apparentlly tid_dest is dead
 				// uart_printf(CONSOLE, "%u is dead\r\n", tid_dest);
@@ -435,12 +483,15 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// The destination task does not exist
 				scrSchedule(PID, PROCS[p].priority, READY);
 				PROCS[p].registervalues[0] = -1;
-			} else if (PROCS[tid_dest].queuesize >= QUEUESIZE){
+			} else if (PROCS[dest_p].queuesize >= QUEUESIZE){
 				// the message failed to send due to the queue size being over QUEUESIZE
+				# if DEBUG == 3
+				uart_printf(CONSOLE, "Message failed to send due to the queue size being over QUEUESIZE, head = %u, tails = %u, PROCS[tid_dest].queuesize = %d\r\n", PROCS[tid_dest].waiting_recieve_head, PROCS[tid_dest].waiting_recieve_tail, PROCS[tid_dest].queuesize);
+				# endif
+	
 				scrSchedule(PID, PROCS[p].priority, READY);
 				PROCS[p].registervalues[0] = -2;
 			}
-			
 			else
 			{
 				// the destination does exist
@@ -527,6 +578,23 @@ void handlerExceptionHelper(uint64_t esr_el1)
 		
 			PROCS[p].registervalues[0] = ret;
 			break;
+		case 10:
+			uint64_t eventType = PROCS[p].registervalues[0];
+			if (checkActiveInterrupt(eventType)){
+
+				//uart_printf(CONSOLE, "Awaiting Interrupt %u\r\n", eventType);
+				scrSchedule(PID, PROCS[p].priority, BLOCKED);
+				struct state currItem = {PID, PROCS[p].priority, BLOCKED};
+				//uart_printf(CONSOLE, "AAWAIT_INTERRUPT_LIST_LEN[eventType] = %u\r\n", AWAIT_INTERRUPT_LIST_LEN[eventType]);
+				AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;
+				AWAIT_INTERRUPT_LIST_LEN[eventType]++;
+				
+			}else{
+				scrSchedule(PID, PROCS[p].priority, READY);
+				PROCS[p].registervalues[0] = -1;
+			}
+
+			break;
 		default:
 			scrSchedule(PID, PROCS[p].priority, READY);
 			# if DEBUG == 3
@@ -555,16 +623,18 @@ void Schedule()
 	
 	// uart_getc(1); /// Spins to stop it from keep on running // DEBUG
 	#endif
-	
+	// this begins the process, I would be keeping a timer here
+	// Kernel need to keep track of the total runtime of the process
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	return 0;
 }
 
-int KernelCreate(int priority, void (*function)(), int parent)
+int KernelCreate(uint64_t priority, void (*function)(), int parent)
 {	
 	// Error Check to see if the pid is correct or not?
 	// if (priority < 0) {return -1;} // All prios are valid now
 	for (int p = 0; p < NUMPROCS; p++) {
+		
 		// // uart_printf(CONSOLE, "%u %u\r\n", PRIORITY[p], p); // DEBUG code
 		if (PROCS[p].pcpointer == NULL) {
 			// This PID is currently not taken
@@ -581,8 +651,6 @@ int KernelCreate(int priority, void (*function)(), int parent)
 			PROCS[p].waiting_recieve_head = 0;
 			PROCS[p].waiting_recieve_tail = 0;
 			PROCS[p].queuesize = 0;
-			// void* memcpy(void* restrict dest, const void* restrict src, size_t n) 
-			// this could be used to start a task with certain parameters. 
 			scrSchedule(p + 1, PROCS[p].priority, READY);
 			
 			return p + 1;
@@ -633,16 +701,19 @@ int MyParentTid()
 	return;
 }
 
-int Create(int priority, void (*function)()) { // Returns to the Kernel, then calls KernelCreate
+int Create(uint64_t priority, void (*function)()) { // Returns to the Kernel, then calls KernelCreate
 	asm("svc 2"); // The Kernel needs to put the pid in x0
 	return;
 }
 
-int CreateArgs(int priority, void (*function)(), uint64_t argsno, uint64_t *args) { // Returns to the Kernel, then calls KernelCreate
+int CreateArgs(uint64_t priority, void (*function)(), uint64_t argsno, uint64_t *args) { // Returns to the Kernel, then calls KernelCreate
 	asm("svc 9"); // The Kernel needs to put the pid in x0
 	return;
 }
-
+int AwaitEvent(int eventType){ // Returns to the Kernel, then calls KernelCreate
+	asm("svc 10"); // The Kernel needs to put the pid in x0
+	return;
+}
 // Why is exit SCV 0 
 // The difference between an exit and a Yield is Exit do not return back to the priority READY_QUEUE where Yield returns the program back into the priority READY_QUEUE to be ran again. 
 void Exit()

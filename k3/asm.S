@@ -265,3 +265,6 @@ pop_trap_frame:
 
     ret               // Return from function
 
+.global wfi
+wfi:
+	WFI // puts the CPU into WFI mode

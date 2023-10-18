@@ -6,6 +6,9 @@
         "custstr.h": "c",
         "nameserver.h": "c",
         "systimer.h": "c",
-        "gic.h": "c"
+        "gic.h": "c",
+        "typeinfo": "c",
+        "clockserver.h": "c",
+        "asm.h": "c"
     }
 }

@@ -128,7 +128,7 @@ void player(){
 
 
 // init player takes in a void function
-void initPlayer(uint64_t N, uint64_t player_type, int priority){
+void initPlayer(uint64_t N, uint64_t player_type, uint64_t priority){
     // create player
     int tid = Create(priority, player);
     // register

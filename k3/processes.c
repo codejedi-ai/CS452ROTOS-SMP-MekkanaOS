@@ -8,6 +8,9 @@
 #include "k2TimeTests.h"
 #include "systimer.h"
 #include "k2rps.h"
+#include "clockserver.h"
+#include "k3tests.h"
+#include "asm.h"
 #define DISPLAY 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -41,7 +44,7 @@ void main(){
 	char command[50];
 	int command_length = 0;
 	command[0] = '\0';
-	uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
+	uart_printf(CONSOLE, "\r\nDARCY[%u]> ", counter++);
 	char c = ' ';
 	while (!(strcmp_ret(command, "quit"))) {
 		while (!uart_getc_queue(CONSOLE)) {
@@ -51,10 +54,23 @@ void main(){
 		if (c == '\r') {
 			uart_printf(CONSOLE, "\r\n");
 			// K2 commands
-      		k2ExecuteCommands(command);
+			// the parse char array changes the command 
+      		
+			char *num[100]; // array to store the numbers
+			// int parse_char_arr(char *arr, char **num, int num_size)
+			int command_part_count = parse_char_arr(command, num, 100);
+			if (k2ExecuteCommands(command, num, command_part_count) != -1);
+			if (k3ExecuteCommands(command, num, command_part_count) != -1);
+			else {
+				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
+				for (int i = 0; i < command_part_count; i++){
+					uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+				}
+
+			}
 			// K3 commands
 			// The operating system is doomed to go to sleep or die after running the command
-			
+
 			command_length = 0;
 			command[0] = '\0';
 			Yield();
@@ -79,12 +95,42 @@ void main(){
 	uart_printf(CONSOLE, "\033[37m");
 	Exit();
 }
-void preGuiTest() // First task as dictated in the reqs
-{
-	// We are assuming that preGuiTest has a priority of 1
-	// start gameserver
-	RegisterAs("preGuiTest");
 
-	Create(1, main);
+void clock_proc_test(){
+    RegisterAs("clock_proc_test");
+    Exit();
+}
+void FirstUserTask() // First task as dictated in the reqs
+{	// need to set the timer interrupt
+	uint32_t timer = get_timerLO();
+	set_timerC3(timer + 10000);
+	uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
+	
+	// We are assuming that FirstUserTask has a priority of 1
+	// start gameserver
+	RegisterAs("FirstUserTask"); 
+	int tid = MyTid();
+	uart_printf(CONSOLE, "FirstUserTask: tid = %d\r\n", tid);
+	char clockproc1[8] = "cl10";
+    // init_clock_proc(3, clockproc1, 10, 20);
+	    // uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
+	int priority = 3, numberOfDelays, delay = 100;
+	char clockname[8];
+	tid = Create(priority, clock_proc_test);
+	uart_printf(CONSOLE, "init_clock_proc: tid = %d\r\n", tid);
+	clockname[7] = '\0';
+	uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
+	Send(tid, clockname, 8, clockname, 8);
+	// char clockproc1[8] = "cl23";
+	//init_clock_proc(3, num[1], delay, delaycount);
+	// char clockproc2[8] = "cl23";
+    // init_clock_proc(4, clockproc2, 23, 9);
+	// char clockproc3[8] = "cl33";
+    // init_clock_proc(5, clockproc3, 33, 6);
+	// char clockproc4[8] = "cl71";
+    // init_clock_proc(6, clockproc4, 71, 3);
+
+	// Create(2000, main);
+	uart_printf(CONSOLE, "FirstUserTask: Started\r\n");
 	Exit();
 }

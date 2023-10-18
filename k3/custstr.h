@@ -7,8 +7,8 @@ int64_t atoi(char *str);
 int64_t hexatoi(char *str);
 
 void strcmp(int* ret, char* s1, char* s2);
+// return non-zero if s1 and s2 are equal
 int strcmp_ret(char* s1, char* s2);
-int strcat(char* dest, const char* src);
 // this fiunction would
 int parse_char_arr(char *arr, char **num, int num_size);
 // return strings in place

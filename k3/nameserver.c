@@ -5,7 +5,7 @@
 #include "util.h"
 #include "nameserver.h"
 #include "custstr.h"
-#define DEBUG 0
+#define DEBUG 2
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 

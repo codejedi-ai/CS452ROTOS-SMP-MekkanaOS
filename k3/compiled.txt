@@ -2346,7 +2346,7 @@ Disassembly of section .text:
    82a88:	a8c27bfd 	ldp	x29, x30, [sp], #32
    82a8c:	d65f03c0 	ret
 
-0000000000082a90 <preGuiTest>:
+0000000000082a90 <FirstUserTask>:
    82a90:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
    82a94:	910003fd 	mov	x29, sp
    82a98:	9400093d 	bl	84f8c <Exit>

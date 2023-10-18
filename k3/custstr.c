@@ -91,12 +91,16 @@ int parse_char_arr(char *arr, char **num, int num_size){
   while (*ptr != '\0') { // loop until the end of the array
     if (*ptr == ' ') { // check if the character is a space
       *ptr = 0;
-      num[i++] = ptr + 1; // store the value in the array
+      
+      num[i] = ptr + 1; // store the value in the array
+      uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+      i++;
       if (i >= num_size) {return i;}
       // increment the index
     }
     ptr++; // move to the next character
   }
+  uart_printf(CONSOLE, "i = %d\r\n", i);
   return i;
 }
 // this fiunction would
