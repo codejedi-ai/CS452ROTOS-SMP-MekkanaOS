@@ -1,5 +1,5 @@
-#XDIR:=/u/cs452/public/xdev
-XDIR:=/Users/darcyliu/bin/xdev
+XDIR:=/u/cs452/public/xdev
+# XDIR:=/Users/darcyliu/bin/xdev
 ARCH=cortex-a72
 TRIPLE=aarch64-none-elf
 XBINDIR:=$(XDIR)/bin

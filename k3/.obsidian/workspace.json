@@ -115,7 +115,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "f7e7b40ac4b1cd70",
@@ -194,6 +195,11 @@
   },
   "active": "7dbbe4e7c0bb1403",
   "lastOpenFiles": [
+    "Makefilelocal",
+    "Makefile copy",
+    "k3learn.pdf",
+    "k3-QUESTSUBMIT.pdf",
+    "QUESTSUBMIT.pdf",
     "K3Output.txt",
     "K2Output.txt",
     "Pasted image 20231019024343.png",
@@ -206,9 +212,7 @@
     "Hand in QuestPDF.md",
     "quest/PerfResults.csv",
     "quest",
-    "Hand in QuestPDF.pdf",
     "README Rock Paper Scissors.md",
-    "Untitled.canvas",
-    "handinCSV.numbers"
+    "Untitled.canvas"
   ]
 }

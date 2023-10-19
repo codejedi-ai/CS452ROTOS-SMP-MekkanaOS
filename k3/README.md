@@ -2,7 +2,7 @@
 
 # Repo name: cs452-trains
 
-# Commit Sha: 
+# Commit Sha: 3065ce77b44e50eb17e4b7752cf8bfd51745601c
 
 # K3 Description:
 Right now, the kernel consists of a name server that handles all the identity mapping, in addition to a clock server to keep track of the time. For the k3 assignment I have incorporated the structure as is:
@@ -98,8 +98,6 @@ Example:
 - Ensure that you follow the correct command syntax as per the examples provided to create players, play the game, or manage the game server.
 
 Please note that this is a basic guide to get you started with using the code for the Rock, Paper, Scissors game. The code appears to be part of a larger system, so make sure you understand how it integrates with your operating system or program. Detailed documentation and integration instructions may be required depending on your specific use case.
-
-Certainly, here's the documentation for the provided code:
 
 ### Clock Server and Related Functions
 
