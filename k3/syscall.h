@@ -63,6 +63,9 @@ struct process {
 	uint64_t waiting_recieve;
 	uint64_t waiting_reply;
 	uint64_t waiting_send;
+
+	uint32_t totaltime;
+	uint32_t waketime;
 };
 
 
@@ -80,4 +83,6 @@ int scrPick();
 void HandleASYNC(void* sp);
 void ExceptionASYNC(uint64_t esr_el1);
 int AwaitEvent(int eventType);
+int GetRuntime();
+int GetKernelRuntime();
 #endif

@@ -22,22 +22,28 @@ static const uint32_t SYSTIME_C3   = 0x18;   // System Timer Compare 3
 // read the mem location of timerbase plus the offset
 // This is the timer value []
 
-unsigned int get_timerLO() {
+uint32_t get_timerLO() {
     // Read the values from SYSTIME_CHI and SYSTIME_CLO
     const unsigned int ret = SYSTIMER_REG(SYSTIME_CLO);
     return ret;
 }
-unsigned int get_timerHI(){
+uint32_t get_timerHI(){
     // Read the values from SYSTIME_CHI and SYSTIME_CLO
     const unsigned int ret = SYSTIMER_REG(SYSTIME_CHI);
     return ret;
 }
-// set C3 to a value
+uint64_t get_timerFULL(){
+    uint64_t time = get_timerHI();
+	time = time << 32;
+	time += get_timerLO();
+    return time;
+}
+// set C3 to a value such that the timer interrupt would fire if the value is equal to the current timer value
 void set_timerC3(unsigned int value){
     SYSTIMER_REG(SYSTIME_C3) = value;
 }
 // get C3 value
-unsigned int get_timerC3(){
+uint32_t get_timerC3(){
     return SYSTIMER_REG(SYSTIME_C3);
 }
 void resetCS(uint32_t value){

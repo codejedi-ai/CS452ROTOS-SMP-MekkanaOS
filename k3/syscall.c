@@ -14,6 +14,7 @@
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
+uint32_t kernelStartTime = 0;
 uint8_t NO_PARAMS = 0;
 // scrSchedule(pid, priority, ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
@@ -42,7 +43,7 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 void queue_unblock(int pid, uint64_t priority, int ready)
 {
-	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
 	int insert = 0;
@@ -81,6 +82,7 @@ int scrPick()
 
 void InitSys(void* reg)
 {	// For some reason, normal init to 0 just.. doesn't work?
+	kernelStartTime = get_timerLO();
 	STACKSTART = reg;
 	PID = 0;
 	for (int event = 0; event < MAXEVENT; event++){
@@ -106,13 +108,19 @@ void InitSys(void* reg)
 	}
 	return 0;
 }
+
+void updateRunTimer(){
+	int p = PID - 1;
+	uint32_t curtime = get_timerLO();
+	PROCS[p].totaltime += curtime - PROCS[p].waketime;
+}
 // ============================ Handel Async
 
 void HandleASYNC(void* sp) // A helper function to pull some c variables into assembly
 {
 	// We just arrived here, there is stuff on the stack that I do not want to deal with
 	int p = PID - 1;
-	
+	updateRunTimer();
 	#if DEBUG == 3 
 	// uart_printf(CONSOLE, "HandleASYNC: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	#endif
@@ -202,7 +210,7 @@ void Handle(void* sp) // A helper function to pull some c variables into assembl
 {
 	// We just arrived here, there is stuff on the stack that I do not want to deal with
 	int p = PID - 1;
-	
+	updateRunTimer();
 	#if DEBUG == 3
 	// uart_printf(CONSOLE, "Handle: Handling %x %x %x %x %x\r\n", sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	#endif
@@ -595,6 +603,16 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			}
 
 			break;
+		case 11: // get total time
+			//uart_printf(CONSOLE, "Awaiting Interrupt %u\r\n", eventType);
+			scrSchedule(PID, PROCS[p].priority, READY);
+			PROCS[p].registervalues[0] = PROCS[p].totaltime;
+			break;
+		case 12: // get kernel runtime
+			scrSchedule(PID, PROCS[p].priority, READY);
+			PROCS[p].registervalues[0] = get_timerLO() - kernelStartTime;
+			break;
+
 		default:
 			scrSchedule(PID, PROCS[p].priority, READY);
 			# if DEBUG == 3
@@ -625,6 +643,9 @@ void Schedule()
 	#endif
 	// this begins the process, I would be keeping a timer here
 	// Kernel need to keep track of the total runtime of the process
+	// begibn 
+	// WAKE UP For real
+	PROCS[p].waketime = get_timerLO();
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	return 0;
 }
@@ -651,6 +672,7 @@ int KernelCreate(uint64_t priority, void (*function)(), int parent)
 			PROCS[p].waiting_recieve_head = 0;
 			PROCS[p].waiting_recieve_tail = 0;
 			PROCS[p].queuesize = 0;
+			PROCS[p].totaltime = 0;
 			scrSchedule(p + 1, PROCS[p].priority, READY);
 			
 			return p + 1;
@@ -712,6 +734,14 @@ int CreateArgs(uint64_t priority, void (*function)(), uint64_t argsno, uint64_t 
 }
 int AwaitEvent(int eventType){ // Returns to the Kernel, then calls KernelCreate
 	asm("svc 10"); // The Kernel needs to put the pid in x0
+	return;
+}
+int GetRuntime(){ // Returns to the Kernel, then calls KernelCreate
+	asm("svc 11"); // The Kernel needs to put the pid in x0
+	return;
+}
+int GetKernelRuntime(){ // Returns to the Kernel, then calls KernelCreate
+	asm("svc 12"); // The Kernel needs to put the pid in x0
 	return;
 }
 // Why is exit SCV 0 

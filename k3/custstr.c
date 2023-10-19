@@ -93,14 +93,14 @@ int parse_char_arr(char *arr, char **num, int num_size){
       *ptr = 0;
       
       num[i] = ptr + 1; // store the value in the array
-      uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+      // uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
       i++;
       if (i >= num_size) {return i;}
       // increment the index
     }
     ptr++; // move to the next character
   }
-  uart_printf(CONSOLE, "i = %d\r\n", i);
+  // uart_printf(CONSOLE, "i = %d\r\n", i);
   return i;
 }
 // this fiunction would

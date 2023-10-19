@@ -97,7 +97,15 @@ void main(){
 }
 
 void idle(){
-	while(1)uart_printf(CONSOLE, "idle: Started\r\n");
+	while(1){
+		asm("WFI");
+		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
+		// uart_printf(CONSOLE, "idle: time = %u\r\n", time);
+		uint32_t runtime = GetRuntime();
+		uint32_t kernelrt = GetKernelRuntime();
+		uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
+	}
+	Exit();
 }
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
@@ -110,16 +118,17 @@ void FirstUserTask() // First task as dictated in the reqs
 	RegisterAs("FirstUserTask");
   	int tid = KernelCreate(0, clockNotifier, 0);
 	tid = KernelCreate(0, clock_server, 0);
-
+	
 	char clockproc1[8] = "cl10";
-    init_clock_proc(3, clockproc1, 10, 20);
+    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
 	char clockproc2[8] = "cl23";
-    init_clock_proc(4, clockproc2, 23, 9);
+    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(4, clockproc2, 23, 9));
 	char clockproc3[8] = "cl33";
-    init_clock_proc(5, clockproc3, 33, 6);
+    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(5, clockproc3, 33, 6));
 	char clockproc4[8] = "cl71";
-    init_clock_proc(6, clockproc4, 71, 3);
-
+    uart_printf(CONSOLE, "%d \r\n", init_clock_proc(6, clockproc4, 71, 3));
+	tid = Create(7, idle);
+	uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
 	// Create(2000, main);
 	uart_printf(CONSOLE, "FirstUserTask: Started\r\n");
 	Exit();

@@ -37,7 +37,7 @@ void clock_server(){
         {
             if (waketicks[i] != -1 && waketicks[i] <= ticks){
                 // wake up the task
-                uart_printf(CONSOLE, "Waking up %d\r\n", i);
+                //uart_printf(CONSOLE, "Waking up %d\r\n", i);
                 waketicks[i] = -1;
                 Reply(i, &ticks, 4);
             }
@@ -48,7 +48,7 @@ void clock_server(){
             ticks++;
             continue;
         } 
-        uart_printf(CONSOLE, "%s called\r\n", command);
+        //uart_printf(CONSOLE, "%s called\r\n", command);
         command_part_count = parse_char_arr(command, num, 10);
         if (strcmp_ret(num[0], "Time")){
             uint64_t delay = command[0];
@@ -57,9 +57,9 @@ void clock_server(){
             // need to reply to the task that called delay after the delay count
             // print called delay from a certain PID
             int delay_ticks = atoi(num[1]);
-            uart_printf(CONSOLE, "Delay called from %d delay_ticks = %d\r\n", tid, delay_ticks);
+            //uart_printf(CONSOLE, "Delay called from %d delay_ticks = %d\r\n", tid, delay_ticks);
             waketicks[tid] = ticks + delay_ticks;
-            uart_printf(CONSOLE, "waketicks[%d] = %d\r\n", tid, waketicks[tid]);
+            //uart_printf(CONSOLE, "waketicks[%d] = %d\r\n", tid, waketicks[tid]);
         } else if (strcmp_ret(num[0], "DelayUntil")){
             waketicks[tid] = atoi(num[1]);
         }

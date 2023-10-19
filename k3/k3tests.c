@@ -45,20 +45,20 @@ void clock_proc(){
     RegisterAs(name);
 
     Receive(&tid, name, 8);
-    uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s\r\n", tid, name);
+    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s\r\n", tid, name);
     Reply(tid, name, 8);
     
 
     Receive(&tid, &delay, 4);
     Reply(tid, &delay, 4);
-    uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d\r\n", tid, name, delay);
+    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d\r\n", tid, name, delay);
 
     Receive(&tid, &numberOfDelays, 4);
     Reply(tid, &numberOfDelays, 4);
-    uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d, numberOfDelays = %d\r\n", tid, name, delay, numberOfDelays);
+    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d, numberOfDelays = %d\r\n", tid, name, delay, numberOfDelays);
     
     RegisterAs(name);
-    /*
+    
     for(int i = 0; i < numberOfDelays; i++){
         int clock_server = WhoIs("clock_server");
         if (clock_server == -1){
@@ -68,26 +68,26 @@ void clock_proc(){
         int delayret = Delay(clock_server, delay);
         uart_printf(CONSOLE, "i = %d, %s Reawakened after %d ticks\r\n",i, (char *)name, delay);
     }
-    */
+    
    uart_printf(CONSOLE, "Clock proc exit \r\n");
 
     Exit();
 }
 int32_t init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int numberOfDelays){
-    uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
+    // uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
     char clockname[8];
     for (int i = 0; i < 7; i++){
         clockname[i] = clockname_buf[i];
     }
     int tid = Create(priority, clock_proc);
-    uart_printf(CONSOLE, "init_clock_proc: tid = %d\r\n", tid);
+    // uart_printf(CONSOLE, "init_clock_proc: tid = %d\r\n", tid);
     clockname[7] = '\0';
-    uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
+    // uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
     if (Send(tid, clockname, 8, clockname, 8) < 0) return -1;
-    uart_printf(CONSOLE, "init_clock_proc: %s, %s\r\n", clockname, clockname);
+    // uart_printf(CONSOLE, "init_clock_proc: %s, %s\r\n", clockname, clockname);
     if (Send(tid, &delay, 4, &delay, 4) < 0) return -1;
-    uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
+    // uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, delay);
     if (Send(tid, &numberOfDelays, 4, &numberOfDelays, 4)  < 0) return -1;
-    uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, numberOfDelays);
+    // uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, numberOfDelays);
     return 0;
 }

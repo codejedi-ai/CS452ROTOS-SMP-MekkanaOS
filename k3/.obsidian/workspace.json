@@ -57,7 +57,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               }
@@ -93,7 +93,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#K3",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -110,7 +110,8 @@
               "state": {}
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -130,7 +131,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
+                "file": "README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -147,7 +148,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
+                "file": "README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -170,7 +171,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "quest/Hand in QuestPDF.md"
+                "file": "README.md"
               }
             }
           }
@@ -193,18 +194,21 @@
   },
   "active": "7dbbe4e7c0bb1403",
   "lastOpenFiles": [
+    "K3Output.txt",
+    "K2Output.txt",
+    "Pasted image 20231019024343.png",
+    "README Statistical Analysis.md",
+    "README Welecome to DarcyOS.md",
+    "quest/Hand in QuestPDF.md",
     "quest/Hand in QuestPDF.pdf",
     "README Name Server (nameserver.c).md",
     "PerfResults.csv",
     "Hand in QuestPDF.md",
-    "quest/Hand in QuestPDF.md",
     "quest/PerfResults.csv",
     "quest",
     "Hand in QuestPDF.pdf",
-    "README Welecome to DarcyOS.md",
     "README Rock Paper Scissors.md",
     "Untitled.canvas",
-    "README Statistical Analysis.md",
     "handinCSV.numbers"
   ]
 }

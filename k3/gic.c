@@ -26,6 +26,8 @@
 #define GICD_ISACTIVERn(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
 // clear active interrupt
 #define GICD_ICACTIVERn(n) (*(uint32_t*)(GICD_ISENABLERn + (4 * n)))
+
+# define DEBUG 1
 /*
 oute the interrupt to IRQ on CPU 0
 use GICD_ITARGETSRn
@@ -43,6 +45,7 @@ void route_interrupt(uint32_t interrupt_id, uint8_t cpu_target){
     uint32_t remainder = interrupt_id % 4;
     uint32_t target = ((0x01 << cpu_target) << (remainder << 3));
     // print target in binary
+    # if DEBUG == 3
     for (int i = 31; i >= 0; i--){
         if (target & (0x01 << i)){
              uart_printf(CONSOLE, "1");
@@ -53,6 +56,7 @@ void route_interrupt(uint32_t interrupt_id, uint8_t cpu_target){
     uart_printf(CONSOLE, "\r\n");
     uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", &GICD_ITARGETSR(offset));
     uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", GICD_ITARGETSRn + (4 * offset));
+    # endif
     GICD_ITARGETSR(offset) = target;
 }
 
