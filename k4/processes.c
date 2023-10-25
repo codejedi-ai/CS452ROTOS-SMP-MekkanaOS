@@ -158,11 +158,11 @@ void FirstUserTask() // First task as dictated in the reqs
 	int i = 0;
 	while (1)
 	{
-		uart_printf(CONSOLE, "FirstUserTask: %d\r\n", i++);
+		uart_printf(CONSOLE, "TID: %u, FirstUserTask: %d\r\n", MyTid(), i++);
 		uint64_t uinter = AwaitEvent(UARTINTER);
-		uart_printf(CONSOLE, "UARTINTER = 0b%b\r\n", uinter);
+		uart_printf(CONSOLE, "FirstUserTask: UARTINTER = 0b%b\r\n", uinter);
 		char* c = (char*)(&uinter);
-		uart_printf(CONSOLE, "UARTINTER = %u, %u, %u\r\n", *c, *(c + 1), *(c + 2));
+		uart_printf(CONSOLE, "FirstUserTask: UARTINTER = %u, %u, %u\r\n", *c, *(c + 1), *(c + 2));
 	}
 	Exit();
 }

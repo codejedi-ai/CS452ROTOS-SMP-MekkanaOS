@@ -46,8 +46,29 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 void queue_unblock(int pid, uint64_t priority, int ready)
 {
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
+	struct state nextItem;
+	int insert = 0;
+	for (int i = 0; i < NUMPROCS; i++) {
+		if (READY_QUEUE[i].pid == 0) {
+			// reached the end of the queue so ret
+			return 0;	
+		}
+		else if (READY_QUEUE[i].priority == priority && READY_QUEUE[i].pid == pid) {
+			READY_QUEUE[i].ready = ready;
+		}
+	}
+	return 0;
+}
+void queue_unblock_state(struct state currItem)
+{
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	uint32_t pid = currItem.pid;
+	uint32_t priority = currItem.priority;
+	uint32_t ready = currItem.ready;
+	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	
 	struct state nextItem;
 	int insert = 0;
 	for (int i = 0; i < NUMPROCS; i++) {
@@ -85,14 +106,19 @@ void debugPrint(char *str){
 	uart_printf(CONSOLE, str);
 	#endif
 }
-
+// init the initial variables the system goes by
 void InitSys(void* reg)
 {	// For some reason, normal init to 0 just.. doesn't work?
 	kernelStartTime = get_timerLO();
 	STACKSTART = reg;
 	PID = 0;
 	for (int event = 0; event < MAXEVENT; event++){
-		AWAIT_INTERRUPT_LIST_LEN[event] = 0;
+		AWAIT_INTERRUPT[event].len = 0;
+		for (int jdx = 0; jdx < NUMPROCS; jdx++) {
+			AWAIT_INTERRUPT[event].pid_ls[jdx].pid = 0;
+			AWAIT_INTERRUPT[event].pid_ls[jdx].priority = 0;
+			AWAIT_INTERRUPT[event].pid_ls[jdx].ready = 0;
+		}
 	}
 	for (int idx = 0; idx < NUMPROCS; idx++) {
 		PROCS[idx].stackpointer = NULL;
@@ -147,16 +173,21 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 }
 
 void unblock_return(uint32_t interruptid, uint64_t ret){
-	uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u\r\n", interruptid, ret);
+	uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
 	// AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;	
-	for (int i = 0; i < AWAIT_INTERRUPT_LIST_LEN[interruptid]; i++) {
+	for (int i = 0; i < AWAIT_INTERRUPT[interruptid].len; i++) {
+		struct state freed_state = AWAIT_INTERRUPT[interruptid].pid_ls[i];
+		freed_state.ready = READY;
 		# if DEBUG == 4
-		uart_printf(CONSOLE, "unblock_return: interruptid = %u, i = %u, pid = %u, priority = %u\r\n", interruptid, i, AWAIT_INTERRUPT[interruptid][i].pid, AWAIT_INTERRUPT[interruptid][i].priority);
+			uart_printf(CONSOLE, "unblock_return: interruptid = %u, i = %u, pid = %u, priority = %u\r\n", 
+						interruptid, i, 
+						freed_state.pid, 
+						freed_state.priority);
 		# endif
-		queue_unblock(AWAIT_INTERRUPT[interruptid][i].pid, AWAIT_INTERRUPT[interruptid][i].priority, READY);
-		PROCS[AWAIT_INTERRUPT[interruptid][i].pid - 1].registervalues[0] = ret; // the clock was interrupted
+		queue_unblock_state(freed_state);
+		PROCS[freed_state.pid - 1].registervalues[0] = ret; // the clock was interrupted
 	}
-	AWAIT_INTERRUPT_LIST_LEN[interruptid] = 0;
+	AWAIT_INTERRUPT[interruptid].len = 0;
 }
 
 void ExceptionASYNC(uint64_t esr_el1){
@@ -187,19 +218,20 @@ void ExceptionASYNC(uint64_t esr_el1){
 		case CLOCKINTID:
 			// uart_printf(CONSOLE, "Timer Interrupt\n\r");
 			// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
-			// end the interrupt
+			// end the interrupt d
 			
 			// set the next timer
 			// get the time
 			uint32_t time = get_timerLO();
 			set_timerC3(time + 10000);
 			set_timerC3(time);
-			scrSchedule(PID, PROCS[p].priority, READY);
+			// scrSchedule(PID, PROCS[p].priority, READY);
 			// uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
 			resetCS(3);
 			unblock_return(CLOCKINTID, 1);
 			// after this I want to see the time fire repeatitvely
-			// INTERRUPT_CLEAR_ACTIVE_REGS(CLOCKINTID);
+			
+			
 			break;
 		case UARTINTER:
 			char return_val[8];
@@ -247,20 +279,18 @@ void ExceptionASYNC(uint64_t esr_el1){
 				return_val[2] = get_CTS(MARKLIN);
 				*ICR_MARKLIN = (0x01 << CTSMIM);
 			}
-			// unblock_return(UARTINTER, -1);
+			
 			unblock_return(interruptid, *(uint64_t*)return_val);
 			
 			// INTERRUPT_CLEAR_ACTIVE_REGS(UARTINTER);
 			break;
 		default:
-			// uart_printf(CONSOLE, "Unknown Interrupt\n\r");
-			scrSchedule(PID, PROCS[p].priority, READY);
+			uart_printf(CONSOLE, "Unknown Interrupt\n\r");
+			//scrSchedule(PID, PROCS[p].priority, READY);
 			break;
 	}
+	INTERRUPT_CLEAR_ACTIVE_REGS(interruptid);
 	clear_GICC_EOIR(interruptid);
-	
-	// 
-    
 
 	// uart_printf(CONSOLE, "Exiting...\r\n");
     
@@ -618,9 +648,6 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 9: // Create args
 			scrSchedule(PID, PROCS[p].priority, READY);
-			for (int j = 0; j < 31; j++) {
-				// uart_printf(CONSOLE, "Reg %u: %x\n\r", j, PROCS[p].registervalues[j]);
-			}
 			ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
 			
 			if (PROCS[p].registervalues[2] > 0) {
@@ -629,7 +656,6 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// copy the first 8 registers from retptr to the registervalues
 				for (int j = 0; j < 8; j++) {
 					PROCS[ret - 1].registervalues[j] = ((int64_t *)PROCS[p].registervalues[3])[j];
-					// uart_printf(CONSOLE, "Reg %u: %x\n\r",j, PROCS[ret - 1].registervalues[j]);
 				}
 				// the rest of the parameters would be stored on the stack of the new process
 				// remember the stack is a uint64_t array
@@ -653,18 +679,15 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 10:
 			uint64_t eventType = PROCS[p].registervalues[0];
+			PROCS[p].registervalues[0] = -1;
 			if (checkActiveInterrupt(eventType)){
-
 				uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
 				scrSchedule(PID, PROCS[p].priority, BLOCKED);
 				struct state currItem = {PID, PROCS[p].priority, BLOCKED};
-				uart_printf(CONSOLE, "AWAIT_INTERRUPT_LIST_LEN[%u] = %u\r\n",eventType, AWAIT_INTERRUPT_LIST_LEN[eventType]);
-				AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;
-				AWAIT_INTERRUPT_LIST_LEN[eventType]++;
-				
+				AWAIT_INTERRUPT[eventType].pid_ls[AWAIT_INTERRUPT[eventType].len] = currItem;
+				AWAIT_INTERRUPT[eventType].len = AWAIT_INTERRUPT[eventType].len + 1;
 			}else{
 				scrSchedule(PID, PROCS[p].priority, READY);
-				PROCS[p].registervalues[0] = -1;
 			}
 
 			break;

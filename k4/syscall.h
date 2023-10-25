@@ -76,10 +76,13 @@ struct state {
 	uint64_t priority;
 	int ready;
 };
+struct interrupt {
+	struct state pid_ls[NUMPROCS]; // this is the list that is to be unblocked when interrupt happened
+	int len;
+};
 static struct process PROCS[NUMPROCS];
 static struct state READY_QUEUE[NUMPROCS];
-static struct state AWAIT_INTERRUPT[MAXEVENT][NUMPROCS];
-static uint32_t AWAIT_INTERRUPT_LIST_LEN[MAXEVENT];
+static struct interrupt AWAIT_INTERRUPT[MAXEVENT];
 void scrSchedule(int pid, uint64_t priority, int ready);
 int scrPick();
 void HandleASYNC(void* sp);
