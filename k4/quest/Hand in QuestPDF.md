@@ -201,7 +201,7 @@ uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
 
 RegisterAs("FirstUserTask");
 
-int tid = KernelCreate(0, clockNotifier, 0);
+int tid = KernelCreate(0, clock_notifier, 0);
 
 tid = KernelCreate(0, clock_server, 0);
 
@@ -335,9 +335,9 @@ Please note that this is a basic guide to get you started with using the code fo
 
 This code contains a clock server and related functions to manage time and delays in a real-time system.
 
-#### `clockNotifier()`
+#### `clock_notifier()`
 
-- **Description**: This function registers as "clockNotifier" and awaits events with an event type of CLOCKINTID. When such an event occurs, it sends a message to the clock server, requesting the current time.
+- **Description**: This function registers as "clock_notifier" and awaits events with an event type of CLOCKINTID. When such an event occurs, it sends a message to the clock server, requesting the current time.
 
 #### `clock_server()`
 
@@ -397,7 +397,7 @@ This code contains a clock server and related functions to manage time and delay
 
 ### Usage
 
-To use the clock server and related functions, you can register tasks as "clockNotifier" to request the current time and use `Time`, `Delay`, and `DelayUntil` functions to manage delays and time-based operations in your real-time system.
+To use the clock server and related functions, you can register tasks as "clock_notifier" to request the current time and use `Time`, `Delay`, and `DelayUntil` functions to manage delays and time-based operations in your real-time system.
 
 Make sure to include the necessary header files such as "clockserver.h," "syscall.h," "processes.h," and others to use these functions effectively.
 

@@ -162,7 +162,7 @@ void gameserver(){
 		else if (strcmp_ret(msg, "signup")){
 			// find a game that is not full
 			// print welcome message
-			uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player %u\r\n", tid);
+			uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player-%u\r\n", tid);
 
 			for (int i = 0; i < 10; i++)
 			{
@@ -277,10 +277,8 @@ void quit(){
 char play(char* move){
 	int pid = WhoIs("gameserver");
 	char msg[25];
-
 	Send(pid, move, 9, msg, 25);
 	char retchar = (char* )msg[0];
-
 	//strflush(msg, 25);
 	return retchar;
 }

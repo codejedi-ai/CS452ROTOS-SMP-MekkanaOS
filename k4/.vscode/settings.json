@@ -10,6 +10,22 @@
         "typeinfo": "c",
         "clockserver.h": "c",
         "asm.h": "c",
-        "locale": "c"
+        "locale": "c",
+        "__hash_table": "c",
+        "array": "c",
+        "charconv": "c",
+        "type_traits": "c",
+        "limits": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "variant": "c",
+        "rpi.h": "c",
+        "gameserver.h": "c",
+        "k2timetests.h": "c",
+        "k3tests.h": "c",
+        "k2rps.h": "c",
+        "ioserver.h": "c",
+        "sstream": "c",
+        "ios": "c"
     }
 }

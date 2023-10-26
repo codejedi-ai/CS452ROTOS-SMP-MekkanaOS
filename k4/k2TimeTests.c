@@ -547,7 +547,7 @@ int k2ExecuteCommands(char *command, char **num, int command_part_count){
 	} else if (strcmp_ret(num[0],"k2rps")){
 		Yield();
 		if (strcmp_ret(num[1], "start")){
-		int tid = Create(10, gameserver);
+		int tid = Create(Priority, gameserver);
 			uart_printf(CONSOLE,"gameserver Created: %u\r\n", tid);
 		// uart_printf(CONSOLE, "K2: STARTING Rock Paper Scissors TESTS: %u\r\n");
 		} else if (WhoIs("gameserver") == NUMPROCS){
@@ -585,7 +585,7 @@ int k2ExecuteCommands(char *command, char **num, int command_part_count){
 			uart_printf(CONSOLE, "K2: ERROR: type is not valid: %s\r\n", num[3]);
 			return 0;
 		}
-		initPlayer(N, type, Priority + 1);
+		initPlayer(N, type, Priority - 1);
 		
 		} else if(strcmp_ret(num[1], "play")) {
 			char play_ret = play(num[2]);

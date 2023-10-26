@@ -121,20 +121,20 @@ uint32_t* get_ICR(size_t line) {
 
 static const uint32_t UARTCLK = 48000000;
 void enable_RX_and_TX() {
-  // Enable things for the console
+  // enable things for the console
   
   uint32_t line = 1;
-  // Enable RTIM
+  // enable RTIM
   // UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 6);
 
   // enable TXIC
   // UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 5);
   
-  // Enable RXIM
+  // enable RXIM
   // UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 4);
 
   // enable CTSMIM
-  // UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 1);
+  UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 1);
 
   line = 2;
   // Enable RTIM
@@ -143,7 +143,7 @@ void enable_RX_and_TX() {
   // enable TXIC
   UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 5);
   
-  // Enable RXIM
+  // enable RXIM
   UART_REG(line, UART_IMSC) = UART_REG(line, UART_IMSC) | (1 << 4);
 
   // enable CTSMIM

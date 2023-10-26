@@ -325,6 +325,7 @@ int main(){
   // encode HELLO HI as a long, put each char as an ascii value in hexadeciman
   // 0x48454c4c4f204849
   // H 
+  /*
   uint64_t a = 0x48454c4c4f204849;
   
   char *str = (char *) &a;
@@ -332,5 +333,33 @@ int main(){
     printf("%c\n", str[i]);
   }
   printf("a = %llx\n", *((uint64_t*)str));
+  */
+  int channel = 0xffffffff;
+ 	char channel64[8] = "CTSM";
+  /*
+  channel64[0] = 0;
+  channel64[1] = 1;
+  channel64[2] = 2;
+  channel64[3] = 3;
+  channel64[4] = 4;
+  channel64[5] = 5;
+  channel64[6] = 6;
+  channel64[7] = 7;
+  
+	// *(uint64_t *)channel64 = 0;
+  // char channel64[8];
+  *((uint32_t *) channel64 + 1) = ((uint32_t) channel);
+  channel64[0] = 0;
+  channel64[1] = 0;
+  channel64[2] = 0;
+  channel64[3] = -1;
+	// channel64[2] = 0;
+  */  
+  uint64_t a = *((uint64_t *)channel64); 
+  printf("a = 0x%llx\n", a);
+  char *str = (char *)&a;
+  for (int i = 0; i < 8; i++){
+    printf("0x%x\n", (char)str[i]);
+  }
   return 0;
 }

@@ -11,6 +11,7 @@
 #include "clockserver.h"
 #include "k3tests.h"
 #include "asm.h"
+#include "ioserver.h"
 #define DISPLAY 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -59,13 +60,15 @@ void main(){
 			char *num[100]; // array to store the numbers
 			// int parse_char_arr(char *arr, char **num, int num_size)
 			int command_part_count = parse_char_arr(command, num, 100);
+			uart_printf(CONSOLE, "command = %s\r\n", command);
+			for (int i = 0; i < command_part_count; i++){
+				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+			}
 			if (k2ExecuteCommands(command, num, command_part_count) != -1);
-			if (k3ExecuteCommands(command, num, command_part_count) != -1);
+			// if (k3ExecuteCommands(command, num, command_part_count) != -1);
+			//if(k4ExecuteCommands(command, num, command_part_count) != 2);
 			else {
 				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
-				for (int i = 0; i < command_part_count; i++){
-					uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
-				}
 			}
 			// K3 commands
 			// The operating system is doomed to go to sleep or die after running the command
@@ -115,7 +118,7 @@ void FirstUserTaskk3() // First task as dictated in the reqs
 	// We are assuming that FirstUserTask has a priority of 1
 	// start gameserver
 	RegisterAs("FirstUserTask");
-  	int tid = KernelCreate(0, clockNotifier, 0);
+  	int tid = KernelCreate(0, clock_notifier, 0);
 	tid = KernelCreate(0, clock_server, 0);
 	
 	char clockproc1[8] = "cl10";
@@ -148,21 +151,15 @@ void FirstUserTask() // First task as dictated in the reqs
 	// start gameserver
 	// RegisterAs("FirstUserTask");
   	int tid = 0;
-	//tid = KernelCreate(0, clockNotifier, 0);
-	//tid = KernelCreate(0, clock_server, 0);
-	tid = Create(2000, main);
-	uart_printf(MARKLIN, "I am MARKLIN \r\n");
+	tid = KernelCreate(0, clock_notifier, 0);
+	tid = KernelCreate(0, clock_server, 0);
 	
-	uart_printf(CONSOLE, "TID: %u\r\n", tid);
-	uart_printf(CONSOLE, "UARTINTER = %u\r\n", UARTINTER);
-	int i = 0;
-	while (1)
-	{
-		uart_printf(CONSOLE, "TID: %u, FirstUserTask: %d\r\n", MyTid(), i++);
-		uint64_t uinter = AwaitEvent(UARTINTER);
-		uart_printf(CONSOLE, "FirstUserTask: UARTINTER = 0b%b\r\n", uinter);
-		char* c = (char*)(&uinter);
-		uart_printf(CONSOLE, "FirstUserTask: UARTINTER = %u, %u, %u\r\n", *c, *(c + 1), *(c + 2));
-	}
+	tid = Create(-1, idle);
+	
+	int io_server_PID;
+	io_server_PID = KernelCreate(0, io_notifier, 0);
+	io_server_PID = KernelCreate(0, io_server, 0);
+	uart_printf(CONSOLE, "io_server_PID = %d\r\n", io_server_PID);
+	tid = Create(2000, main);
 	Exit();
 }

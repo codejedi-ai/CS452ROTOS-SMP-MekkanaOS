@@ -11,7 +11,10 @@
 #include "custstr.h"
 #include "systimer.h"
 #include "clockserver.h"
-
+/*
+Print 0 if it is a complete command
+Print -1 if there is an error
+*/
 int k3ExecuteCommands(char *command, char **num, int command_part_count){
 	  // the command is not found
       if (strcmp_ret(num[0], "time")){

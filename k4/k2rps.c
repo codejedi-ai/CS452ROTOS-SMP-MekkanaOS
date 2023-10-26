@@ -8,7 +8,7 @@
 #include "systimer.h"
 #include "int64voodoo.h"
 #include "k2rps.h"
-#define DEBUG 0
+#define DEBUG 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -77,7 +77,7 @@ char random_play(int i, int tid){
         play_ret = play("scissors");
     }
     // play rock paper scissors
-    uart_printf(CONSOLE, "Play %u, player:%d have: ",i, tid);
+    uart_printf(CONSOLE, "Play: %u, player: %d have: ",i, tid);
     uart_putc(CONSOLE, (char)play_ret);
     uart_printf(CONSOLE, "\r\n");
     return play_ret;
@@ -105,14 +105,14 @@ void player(){
     strcat(name, num);
     uart_printf(CONSOLE, "Player: %s\r\n", name);
     RegisterAs(name);
-    
+    // get the values of N and player_type
     Receive(&tid, name, 2);
     uint64_t N =  name[0];
     uint64_t player_type = name[1];
     Reply(tid, name, 2);
-    uart_printf(CONSOLE, "player_type: %u, N: %u\r\n", player_type, N);
+    uart_printf(CONSOLE, "%s: player_type - %u, N: %u\r\n", player_type, N);
     signup();
-    
+    tid = MyTid();
     for (uint64_t i = 0; i < N; i++)
     {
         if (function_stack(i, tid, player_type) == 'K'){
@@ -136,5 +136,5 @@ void initPlayer(uint64_t N, uint64_t player_type, uint64_t priority){
     char name[50];
     name[0] = N;
     name[1] = player_type;
-    Send(tid, name, 2, name, 2);
+    uart_printf(CONSOLE, "initPlayer: %d\r\n", Send(tid, name, 2, name, 2));
 }

@@ -6,10 +6,14 @@
 #define NUMPROCS 20
 #define MAXINT 2147483647
 #define MININT -2147483648
-#define NULL 0
 #define MAXEVENT 1025
 #define CLOCKINTID 99
 #define UARTINTER 153
+
+# define RITC 6
+# define TXIC 5
+# define RXIC 4
+# define CTSMIM 1
 static void *STACKSTART;
 // This is the PID of the currentlly running process
 static uint32_t PID = 0;

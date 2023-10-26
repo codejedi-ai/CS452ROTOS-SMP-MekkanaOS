@@ -6,14 +6,11 @@
 #include "util.h"
 #include "custstr.h"
 #include "gic.h"
-#define DEBUG 4
+#define DEBUG 0
 #define DEBUG_EXIT 1
 # define READY 0
 # define BLOCKED 1
-# define RITC 6
-# define TXIC 5
-# define RXIC 4
-# define CTSMIM 1
+
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
@@ -46,7 +43,7 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 void queue_unblock(int pid, uint64_t priority, int ready)
 {
-	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
 	int insert = 0;
@@ -67,7 +64,7 @@ void queue_unblock_state(struct state currItem)
 	uint32_t pid = currItem.pid;
 	uint32_t priority = currItem.priority;
 	uint32_t ready = currItem.ready;
-	uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	
 	struct state nextItem;
 	int insert = 0;
@@ -173,7 +170,7 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 }
 
 void unblock_return(uint32_t interruptid, uint64_t ret){
-	uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
+	// uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
 	// AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;	
 	for (int i = 0; i < AWAIT_INTERRUPT[interruptid].len; i++) {
 		struct state freed_state = AWAIT_INTERRUPT[interruptid].pid_ls[i];
@@ -253,30 +250,41 @@ void ExceptionASYNC(uint64_t esr_el1){
 				*ICR_MARKLIN = (0x01 << RITC);
 			}
 			*/
-		
+			if((*RIS_CONSOLE) & (0x01 << CTSMIM)){
+				uart_printf(CONSOLE, "CTSMIM Interrupt ON CONSOLE get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
+				// RXIC on the marklin
+				return_val[0] = CTSMIM;
+				return_val[1] = MARKLIN;
+				return_val[2] = get_CTS(MARKLIN);
+				*ICR_CONSOLE = (0x01 << CTSMIM);
+			}
+
 			if((*RIS_MARKLIN) & (0x01 << TXIC)){
 				uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");
 				// TXIC on the marklin
 				return_val[0] = TXIC;
 				return_val[1] = MARKLIN;
+				return_val[2] = -1;
 				*ICR_MARKLIN = (0x01 << TXIC);
 			}
 
 			if((*RIS_MARKLIN) & (0x01 << RXIC)){
-				uart_printf(CONSOLE, "RXIC Interrupt ON MARKLIN\n\r");
 				// RXIC on the marklin
 				return_val[0] = RXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = uart_getc_modified(MARKLIN);
+				uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
 				*ICR_MARKLIN = (0x01 << RXIC);
 			}
 			
 			if((*RIS_MARKLIN) & (0x01 << CTSMIM)){
-				uart_printf(CONSOLE, "CTSMIM Interrupt ON MARKLIN\n\r");
+				uart_printf(CONSOLE, "CTSMIM Interrupt ON MARKLIN get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
+				
 				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
 				return_val[2] = get_CTS(MARKLIN);
+				
 				*ICR_MARKLIN = (0x01 << CTSMIM);
 			}
 			

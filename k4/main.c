@@ -35,7 +35,7 @@ int kmain(void *reg) {
   // uart_printf(CONSOLE, "%u\r\n", &STACK_EL0_START);
   // uart_printf(CONSOLE, "%u\r\n", STACK_EL0_START);
   int tid = KernelCreate(0, nameserver, 0);
-  // tid = KernelCreate(2000, clockNotifier, 0);
+  // tid = KernelCreate(2000, clock_notifier, 0);
 	// tid = KernelCreate(2000, clock_server, 0);
 
   KernelCreate(1, FirstUserTask, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent

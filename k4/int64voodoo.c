@@ -15,17 +15,10 @@ uint64_t byint_to_int64(int a, int b){
 }
 // an octochar is a char array of length 8 that is encoded as a int64
 uint64_t octochar_to_int64(char *str){
-  uint64_t ret = 0;
-  for (int i = 7; i >=0; i--){
-    ret = ret << 8;
-    ret = ret | str[i];
-  }
+  uint64_t ret = *(uint64_t*)str;
   return ret;
 }
 // return 8 characters in place from a int64
 void int64_to_octochar(uint64_t charint, char *str){
-  for (int i = 0; i < 8; i++){
-    str[i] = charint & 0xFF;
-    charint = charint >> 8;
-  }
+  *(uint64_t*)str = charint;
 }
