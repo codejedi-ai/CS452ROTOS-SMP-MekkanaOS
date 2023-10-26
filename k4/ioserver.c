@@ -100,12 +100,23 @@ void io_server()
 			Reply(tid, recieve, 8);
 		}
 		if (type == CTSMIM){
+			// CTS 0 means you cannot send
+			uart_printf(CONSOLE, "io_server: CTS = %d\r\n", STATE[channel]);
+			if(STATE[channel] == 1){
+				// Set it to two the marklin is busy
+				STATE[channel] = 2;
+				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
+			} else if(STATE[channel] == 2){
+				STATE[channel] = 0;
+				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
+				Reply(caller_TID, recieve, 8);
+			}
 			
 		}
 		if(type == TXIC){
 			// the transmit fires if the message finnished transmitting
 			uart_printf(CONSOLE, "io_server: TXIC INTURRUPT\r\n");
-			// if(STATE[channel] == 0){
+			if(STATE[channel] == 0){
 				// the char is sent
 				STATE[channel] = 1;
 				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
@@ -113,8 +124,7 @@ void io_server()
 				// print channel STATE[channel]
 				uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
 				// relpy to the caller
-				Reply(caller_TID, recieve, 8);
-			// }
+			}
 			// command send
 			
 		} else if(type == RXIC){
@@ -126,12 +136,12 @@ void io_server()
 			// the server
 		} else if(type == PUTC){
 			uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
-			// if(STATE[channel] == 0){
-			caller_TID = tid;
-			// the server
-			uart_putc(channel, char_ch);
-			uart_printf(CONSOLE, "io_server: PUT called, \'%c\' is to be printed.\r\n", char_ch);
-			//}
+			if(STATE[channel] == 0){
+				caller_TID = tid;
+				// the server
+				uart_putc(channel, char_ch);
+				uart_printf(CONSOLE, "io_server: PUT called, \'%c\' is to be printed.\r\n", char_ch);
+			}
 		}
 
 	}
