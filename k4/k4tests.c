@@ -17,7 +17,7 @@
 /*
 Return 0 upon successful execution
 Return 1 if the command is not valid
-Return 2 if the command is not found
+Return -1 if the command is not found
 
 */
 int k4ExecuteCommands(char *command, char **num, int command_part_count){
@@ -43,5 +43,5 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         Putc(ioserver_PID, MARKLIN, print_char2);
         return 0;
     }
-    return 2;
+    return -1;
 }

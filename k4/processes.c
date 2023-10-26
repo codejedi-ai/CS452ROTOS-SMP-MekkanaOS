@@ -65,8 +65,8 @@ void main(){
 				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
 			}
 			if (k2ExecuteCommands(command, num, command_part_count) != -1);
-			// if (k3ExecuteCommands(command, num, command_part_count) != -1);
-			//if(k4ExecuteCommands(command, num, command_part_count) != 2);
+			if (k3ExecuteCommands(command, num, command_part_count) != -1);
+			if(k4ExecuteCommands(command, num, command_part_count) != -1);
 			else {
 				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
 			}
