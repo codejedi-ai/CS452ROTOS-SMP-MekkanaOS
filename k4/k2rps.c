@@ -69,15 +69,19 @@ char random_play(int i, int tid){
     unsigned int time = get_timerLO();
     // if time is a multiple of 3
     char play_ret = ' ';
+    char *move = " ";
     if (time % 3 == 0){
         play_ret = play("rock");
+        move = "rock";
     } else if (time % 3 == 1){
         play_ret = play("paper");
+        move = "paper";
     } else if (time % 3 == 2){
         play_ret = play("scissors");
+        move = "scissors";
     }
     // play rock paper scissors
-    uart_printf(CONSOLE, "Play: %u, player: %d have: ",i, tid);
+    uart_printf(CONSOLE, "Play: %u, Played: %s player: %d have: ", i, move, tid);
     uart_putc(CONSOLE, (char)play_ret);
     uart_printf(CONSOLE, "\r\n");
     return play_ret;
