@@ -24,8 +24,8 @@ int k3ExecuteCommands(char *command, char **num, int command_part_count){
             uart_printf(CONSOLE, "Delay command: delay <name> <delaytime> <delaycount>, argcount = %d\r\n", command_part_count);
             return 0;
         }
-        int delay = atoi(num[2]);
-        int delaycount = atoi(num[3]);
+        int delay = atoi_64(num[2]);
+        int delaycount = atoi_64(num[3]);
         init_clock_proc(3, num[1], delay, delaycount);
       } else if (strcmp_ret(num[0], "delayuntil")) {
         if (command_part_count != 3){

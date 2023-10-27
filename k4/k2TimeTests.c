@@ -114,13 +114,13 @@ void k2Receiver(){
 	// READ THE N
 	int init_rec = Receive(&mytid, init_msg, 8);
 	// int parse_char_arr(char *arr, char **num, int num_size);
-	int64_t N = atoi(init_msg);
+	int64_t N = atoi_64(init_msg);
 	Reply(mytid, "INIT", 4);
 
 	// READ THE MSGLEN
 	init_rec = Receive(&mytid, init_msg, 8);
 	// int parse_char_arr(char *arr, char **num, int num_size);
-	int64_t msglen = atoi(init_msg);
+	int64_t msglen = atoi_64(init_msg);
 	Reply(mytid, "INIT", 4);
 
 
@@ -191,14 +191,14 @@ void turnaroundTestParseCommand(char *arr) {
   }
   */
   int cmp;
-  strcmp(&cmp, num[0], "yield");
+  strcmp_inpace(&cmp, num[0], "yield");
   if (cmp){
 	  Yield();
 	  return;
   }
   Yield();
   //string compair
-  strcmp(&cmp, num[0], "testsendRF");
+  strcmp_inpace(&cmp, num[0], "testsendRF");
   if (cmp){
 	// this is a send command
 	// the first argument is the tid
@@ -210,8 +210,8 @@ void turnaroundTestParseCommand(char *arr) {
 	}
 	char args[1];
 
-	int64_t N = atoi(num[1]);
-	int64_t str_length = atoi(num[2]);
+	int64_t N = atoi_64(num[1]);
+	int64_t str_length = atoi_64(num[2]);
 
 	// Init the reciever
 	int tid = Create(2, k2Receiver);
@@ -274,7 +274,7 @@ void turnaroundTestParseCommand(char *arr) {
 	return;
   }
   Yield();
-  strcmp(&cmp, num[0], "testsendSF");
+  strcmp_inpace(&cmp, num[0], "testsendSF");
   if (cmp){
 	// this is a send command
 	// the first argument is the tid
@@ -286,8 +286,8 @@ void turnaroundTestParseCommand(char *arr) {
 	}
 	char args[1];
 
-	int64_t N = atoi(num[1]);
-	int64_t str_length = atoi(num[2]);
+	int64_t N = atoi_64(num[1]);
+	int64_t str_length = atoi_64(num[2]);
 	Yield();
 	// Init the reciever
 	int tid = Create(1, k2Receiver);
@@ -354,7 +354,7 @@ void turnaroundTestParseCommand(char *arr) {
 	return;
   }
   Yield();
-  strcmp(&cmp, num[0], "CreateArgs");
+  strcmp_inpace(&cmp, num[0], "CreateArgs");
   if (cmp){
 	  // this is a create args command
 	  // the first argument is the priority
@@ -367,8 +367,8 @@ void turnaroundTestParseCommand(char *arr) {
 	  }
 	  int argsno = 2;
 	  int64_t args[argsno];
-	  args[0] = (int64_t)atoi(num[1]);
-	  args[1] = (int64_t)atoi(num[2]);
+	  args[0] = (int64_t)atoi_64(num[1]);
+	  args[1] = (int64_t)atoi_64(num[2]);
 	  uart_printf(CONSOLE, "argsno: %x\r\n", argsno);
 	  uart_printf(CONSOLE, "args: %x\r\n", args);
 	  int tid = CreateArgs(5, CreateArgsTest, argsno, args);
@@ -377,7 +377,7 @@ void turnaroundTestParseCommand(char *arr) {
   }
   Yield();
   // ad the adder test with predefined params of 1 - 10
-  strcmp(&cmp, num[0], "adder");
+  strcmp_inpace(&cmp, num[0], "adder");
   if (cmp){
 	  // this is a create args command
 	  // the first argument is the priority
@@ -387,16 +387,16 @@ void turnaroundTestParseCommand(char *arr) {
 	  int argsno = 10;
 	  int64_t args[10];
 	  /*
-	  args[0] = (int64_t)atoi(num[1]);
-	  args[1] = (int64_t)atoi(num[2]);
-	  args[2] = (int64_t)atoi(num[3]);
-	  args[3] = (int64_t)atoi(num[4]);
-	  args[4] = (int64_t)atoi(num[5]);
-	  args[5] = (int64_t)atoi(num[6]);
-	  args[6] = (int64_t)atoi(num[7]);
-	  args[7] = (int64_t)atoi(num[8]);
-	  args[8] = (int64_t)atoi(num[9]);
-	  args[9] = (int64_t)atoi(num[10]);
+	  args[0] = (int64_t)atoi_64(num[1]);
+	  args[1] = (int64_t)atoi_64(num[2]);
+	  args[2] = (int64_t)atoi_64(num[3]);
+	  args[3] = (int64_t)atoi_64(num[4]);
+	  args[4] = (int64_t)atoi_64(num[5]);
+	  args[5] = (int64_t)atoi_64(num[6]);
+	  args[6] = (int64_t)atoi_64(num[7]);
+	  args[7] = (int64_t)atoi_64(num[8]);
+	  args[8] = (int64_t)atoi_64(num[9]);
+	  args[9] = (int64_t)atoi_64(num[10]);
 	  */
 	 // the args are predetermined from 1 - 10
 	  args[0] = 1;
@@ -566,7 +566,7 @@ int k2ExecuteCommands(char *command, char **num, int command_part_count){
 			uart_printf(CONSOLE, "K2: ERROR: create command is not valid k2RPS start N <type>\r\n");
 			return 0;
 		}
-		uint64_t N = atoi(num[2]);
+		uint64_t N = atoi_64(num[2]);
 		if (N > 10){
 			uart_printf(CONSOLE, "K2: ERROR: N is too large: %u\r\n", N);
 			return;

@@ -13,6 +13,15 @@
 #include "k3tests.h"
 #include "asm.h"
 #include "ioserver.h"
+#include "tc1.h"
+
+void k4t1_init_test(){
+    // this would get a train to
+    RegisterAs("k4t1_init_test");
+    int ioserver_PID = WhoIs("io_server");
+    init_track();
+    Exit();
+}
 
 /*
 Return 0 upon successful execution
@@ -38,22 +47,11 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         int ioserver_PID = WhoIs("io_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
         return 0;
-    } else if (strcmp_ret(num[0], "getc")){
-        if (command_part_count != 1){
-            uart_printf(CONSOLE, "getc command requires no argument, argcount = %d\r\n", command_part_count);
-            return 1;
+    } else if (strcmp_ret(num[0], "k4t1")){
+        if(strcmp_ret(num[1], "init")){
+            k4t1_init_test();
+            return 0;
         }
-        /*
-        char *print_char = num[1];
-        while(*print_char != '\0'){
-            uart_putc(CONSOLE, *print_char);
-            print_char++;
-        }
-        */
-        char print_char2 = *num[1];
-        int ioserver_PID = WhoIs("io_server");
-        char ret_char = (char)Getc(ioserver_PID, MARKLIN);
-        uart_printf(CONSOLE, "ret_char = \"%c\" = \"%d\"\r\n", ret_char, ret_char);
         return 0;
     } 
     return -1;

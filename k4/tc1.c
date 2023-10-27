@@ -3,9 +3,7 @@
 #include "ioserver.h"
 #include "custstr.h"
 #include <stdio.h>
-#include <stdlib.h>
-
-// Serial line 1 on the RPi hat is used for the console
+#include "tc1.h"
 static const size_t COMMANDMAX_LEN = 64;
 #define UNINT_MAX 0xffffffff
 #define OVERFLOW_MINUTES = (UNINT_MAX / 1e6) / 60;
@@ -32,11 +30,11 @@ static const size_t COMMANDMAX_LEN = 64;
 #define SENSOR_QUERRY COMMAND_ROW + 3
 // 240 bytes per second
 #define S88_NOS 5
+// Serial line 1 on the RPi hat is used for the console
 
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
-
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     uint32_t io_server_pid = WhoIs("io_server");
     Putc(io_server_pid, MARKLIN, byte_1);
@@ -87,10 +85,10 @@ void tc1(char *command, char **num, int command_part_count){
     // set train speed
     // get train number
     char *train_id_ptr = num[1];
-    uint64_t train_id = atoi(train_id_ptr);
+    uint64_t train_id = atoi_64(train_id_ptr);
 
     char *train_command_ptr = num[2];
-    uint64_t train_speed = atoi(train_command_ptr);
+    uint64_t train_speed = atoi_64(train_command_ptr);
     // check is the train number valid
     if (train_id > 80 || train_id < 1){
       print_error("ERROR: INVALID TRAIN NUMBER");
@@ -102,7 +100,7 @@ void tc1(char *command, char **num, int command_part_count){
     // This command is just a prototype. It gives the user the function of reversing it at a different speed
     // get train number
     char *train_command_ptr = num[1];
-    uint64_t train_id = atoi(train_command_ptr);
+    uint64_t train_id = atoi_64(train_command_ptr);
     // check is the train number valid
     if (train_id > 80 || train_id < 1){
       print_error("ERROR: INVALID TRAIN NUMBER");
@@ -116,7 +114,7 @@ void tc1(char *command, char **num, int command_part_count){
       // check is it a valid solonoid id, the valid ones are only 0x99, 0x9a, 0x9b, 0x9c
 
       // this is a hex number
-      uint64_t sol_id = hexatoi(switch_number);
+      uint64_t sol_id = str_to_hex(switch_number);
 
       char switch_state = num[2][0];
       // 0x99 and 0x9a cannot be both curved at once
@@ -152,7 +150,7 @@ void tc1(char *command, char **num, int command_part_count){
       }
       solonoid_command(sol_id,  switch_state);
     } else {
-      uint64_t sol_id = atoi(switch_number);
+      uint64_t sol_id = atoi_64(switch_number);
       if (sol_id > SWITCH_COUNT || sol_id < 1){
         print_error("ERROR: INVALID SWITCH NUMBER");
         return;
@@ -160,9 +158,35 @@ void tc1(char *command, char **num, int command_part_count){
       char switch_state = num[2][0];
       solonoid_command(sol_id,  switch_state);
     }
-  } else if (strcmp_ret(num[0], "clear")){
-  } else if(strcmp_ret(num[0], "read")) {
   } else {
     print_error("ERROR: INVALID COMMAND");
   }
+}
+void init_track(){
+  char train_numbers[] = {1, 2, 24, 47, 54, 58};
+  int train_count = 6;
+    // set all train speed to 0
+  for (uint8_t i = 0; i < train_count; i ++){
+    execute_train_command(0, train_numbers[i]);
+    execute_train_command(64, train_numbers[i]);
+  }
+  // set all the turnabouts to straight
+  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
+    solonoid_command(i, 'S');
+    // this command only enqueues the switches
+  }
+  // uart_printf(CONSOLE,"\033[%u;%uHSWITCHES ALL STRAIGHT:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
+  // set all the turnabouts to curved
+  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
+    solonoid_command(i, 'C');
+  }
+  solonoid_command(0x99, 'S');
+  solonoid_command(0x9a, 'C');
+  solonoid_command(0x9b, 'S');
+  solonoid_command(0x9c, 'C');
+
+  solonoid_command(0x99, 'C');
+  solonoid_command(0x9a, 'S');
+  solonoid_command(0x9b, 'C');
+  solonoid_command(0x9c, 'S');
 }

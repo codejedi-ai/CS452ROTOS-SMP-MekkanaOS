@@ -57,12 +57,12 @@ void clock_server(){
         } else if (strcmp_ret(num[0], "Delay")){
             // need to reply to the task that called delay after the delay count
             // print called delay from a certain PID
-            int delay_ticks = atoi(num[1]);
+            int delay_ticks = atoi_64(num[1]);
             //uart_printf(CONSOLE, "Delay called from %d delay_ticks = %d\r\n", tid, delay_ticks);
             waketicks[tid] = ticks + delay_ticks;
             //uart_printf(CONSOLE, "waketicks[%d] = %d\r\n", tid, waketicks[tid]);
         } else if (strcmp_ret(num[0], "DelayUntil")){
-            waketicks[tid] = atoi(num[1]);
+            waketicks[tid] = atoi_64(num[1]);
         }
     }
     Exit();

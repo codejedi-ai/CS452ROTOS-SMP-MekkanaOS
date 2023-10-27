@@ -5,13 +5,13 @@
 int8_t is_empty(char *str){
   return (*str == '\0');
 }
-int8_t hex_atoi(char *switch_number){
+int8_t is_hex(char *switch_number){
 	if (switch_number[0] == '\0') return 0;
 	if (switch_number[1] == '\0') return 0;
 	return(switch_number[0] == '0' && switch_number[1] == 'x');
 }
 
-int64_t atoi(char *str){
+int64_t atoi_64(char *str){
     uint8_t is_neg = 0;
     if (str[0] == '-') {
       is_neg = 1;
@@ -26,7 +26,7 @@ int64_t atoi(char *str){
     return ret;
 }
 
-int64_t hexatoi(char *str){
+int64_t str_to_hex(char *str){
     uint64_t ret = 0; 
     str++;
     str++;
@@ -38,7 +38,7 @@ int64_t hexatoi(char *str){
     return ret;
 }
 // with inplace return again
-void strcmp(int* ret, char* s1, char* s2){
+void strcmp_inpace(int* ret, char* s1, char* s2){
 	while(*s1 && *s2){
 		if(*s1 != *s2){
 			*ret = 0;

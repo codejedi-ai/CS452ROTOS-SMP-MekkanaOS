@@ -58,7 +58,7 @@ void nameserver(){
 		// now print the compair
 		char *command_cand = "REGISTER";
 		int cmp;
-		// strcmp(&cmp, command, command_cand);
+		// strcmp_inpace(&cmp, command, command_cand);
 		cmp = strcmp_ret(command, command_cand);
 
 		if (cmp){
@@ -76,7 +76,7 @@ void nameserver(){
 			int repret = Reply(tid, "PID Registered", 25);
 		}
 		command_cand = "WHOIS";
-		strcmp(&cmp, command, command_cand);
+		strcmp_inpace(&cmp, command, command_cand);
 
 		if (cmp){
 
@@ -98,7 +98,7 @@ void nameserver(){
 			int repret = Reply(tid, bf, 25);
 		}
 		command_cand = "DEREGISTER";
-		strcmp(&cmp, command, command_cand);
+		strcmp_inpace(&cmp, command, command_cand);
 		if (cmp){
 			// this registers a PID with a name
 			// print the deregistered in red
@@ -161,5 +161,5 @@ int WhoIs(const char *name){
 	
 	//int ret_code = Send(tid, msg, msglen, msgreply, 25);
 	Send(1, sendmsg, 50, rep, 50);
-	return atoi(rep);
+	return atoi_64(rep);
 }
