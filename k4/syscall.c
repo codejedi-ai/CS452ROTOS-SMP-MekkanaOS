@@ -729,7 +729,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 
 				}
 				else{
-					uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
+					// uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
 					scrSchedule(PID, PROCS[p].priority, BLOCKED);
 					struct state currItem = {PID, PROCS[p].priority, BLOCKED};
 					AWAIT_INTERRUPT[eventType].pid_ls[AWAIT_INTERRUPT[eventType].len] = currItem;
@@ -741,7 +741,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 
 			break;
 		case 11: // get total time
-			//uart_printf(CONSOLE, "Awaiting Interrupt %u\r\n", eventType);
+			// uart_printf(CONSOLE, "Awaiting Interrupt %u\r\n", eventType);
 			scrSchedule(PID, PROCS[p].priority, READY);
 			PROCS[p].registervalues[0] = PROCS[p].totaltime;
 			break;

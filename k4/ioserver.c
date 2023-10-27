@@ -58,14 +58,14 @@ void io_notifier(){
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;
 		char char_ch = (event >> 16) & 0xFF;
-		uart_printf(CONSOLE, "io_notifier: type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+		// uart_printf(CONSOLE, "io_notifier: type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
 		Send(WhoIs("io_server"), &event, 8, &ret, 0);
 	}
 	Exit();
 }
 void io_server() 
 {
-	uart_printf(CONSOLE, "io_server: Registered at %u\n", MyTid());
+	// uart_printf(CONSOLE, "io_server: Registered at %u\n", MyTid());
 	RegisterAs("io_server");
 	// First task as dictated in the reqs
 	// need to set the timer interrupt
@@ -96,7 +96,7 @@ void io_server()
 		uart_putc(CONSOLE, char_ch);
 		uart_printf(CONSOLE, "\r\n");
 		if (type != GETC && type != PUTC){
-			// if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: io_notifier called me!! Gotta reply to it\r\n");
+			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: io_notifier called me!! Gotta reply to it\r\n");
 			Reply(tid, recieve, 8);
 		}
 		if (type == CTSMIM){
@@ -135,12 +135,21 @@ void io_server()
 		} else if(type == RXIC){
 			
 			// the recieve when the marklin have send a character
+			//. print in green
+			uart_printf(CONSOLE, "\033[32m");
 			uart_printf(CONSOLE, "io_server: RXIC INTURRUPT\r\n");
+			// print in white
+			uart_printf(CONSOLE, "\033[37m");
 			
 			Reply(caller_TID_GETC, recieve, 8);
 			//
 		} else if(type == GETC){
 			caller_TID_GETC = tid;
+			// print getC called in orange
+			uart_printf(CONSOLE, "\033[33m");
+			uart_printf(CONSOLE, "io_server: GETC called\r\n");
+			// print in white
+			uart_printf(CONSOLE, "\033[37m");
 			// the server
 		} else if(type == PUTC){
 			uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
@@ -185,7 +194,7 @@ int Getc(int tid, int channel){
 	channel64[2] = 0;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "Getc: sendret = %d\r\n", sendret);
+	uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 /*
