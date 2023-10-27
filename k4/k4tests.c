@@ -52,7 +52,7 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         */
         char print_char2 = *num[1];
         int ioserver_PID = WhoIs("io_server");
-        char ret_char = (char)Getc(ioserver_PID, MARKLIN, print_char2);
+        char ret_char = (char)Getc(ioserver_PID, MARKLIN);
         uart_printf(CONSOLE, "ret_char = \"%c\" = \"%d\"\r\n", ret_char, ret_char);
         return 0;
     } 
