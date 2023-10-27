@@ -42,8 +42,8 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // awaitCTS(int tid, int channel)
     // awaitCTS(io_server_pid, MARKLIN, 1);
     Putc(io_server_pid, MARKLIN, byte_2);
-    while (get_CTS(MARKLIN) == 0)
-      awaitCTS(io_server_pid, MARKLIN);
+    //awaitCTS(io_server_pid, MARKLIN);
+    //awaitCTS(io_server_pid, MARKLIN);
 }
 void print_error(char *error){
     // print in red
@@ -84,7 +84,7 @@ void sol_off(){  // Solonoid ID
 }
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
-void tc1(char *command, char **num, int command_part_count){
+void train_controller(char *command, char **num, int command_part_count){
   // execute here
   if (num[0][0] == 't' && num[0][1] == 'r'){
     // set train speed

@@ -79,13 +79,16 @@ void io_server()
 	// RegisterAs("FirstUserTask");
   	int tid = 0;
 
-	uint8_t tid_list[3][3];
+	uint8_t tid_list[3][3]; // Interrupt Type and Channel
 	uint8_t await_cts_val[3];
+	uint8_t STATE[3];
+
 	for (int i = 0; i < 3; i++)
 	{
 		tid_list[0][i] = 0;
 		tid_list[1][i] = 0;
 		tid_list[2][i] = 0;
+		STATE[i] = 0;
 	}
 	uint8_t send_queue_size = 0;
 	uint8_t send_queue_begin = 0;
@@ -100,46 +103,65 @@ void io_server()
 		
 		uint8_t type = recieve[0];
 		uint8_t channel = recieve[1];
+		
 		char char_ch = recieve[2];
 		// yellow character
 		uart_printf(CONSOLE, "\033[33m");
 		if (type != GETC && type != PUTC && type != CTS){
-			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
 			
 			Reply(tid, recieve, 8);
 		}
 
 		if (type == CTSMIM){
-			uart_printf(CONSOLE, "CTS channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
+			uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
 			if(tid_list[CTS - GETC][channel] != 0){
 				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 				recieve[2] = char_ch;
 				Reply(tid_list[CTS - GETC][channel], recieve, 8);
 				tid_list[CTS - GETC][channel] = 0;
 			} 
+			if(tid_list[PUTC - GETC][channel] != 0){
+				if(STATE[channel] == 2){
+					STATE[channel] = 3;
+				} else if(STATE[channel] = 3){
+					STATE[channel] = 0;
+					uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+					recieve[2] = char_ch;
+					Reply(tid_list[PUTC - GETC][channel], recieve, 8);
+					tid_list[PUTC - GETC][channel] = 0;
+				}
+			} 
 		} else if(type == TXIC){
-			uart_printf(CONSOLE, "PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
+			uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
 			if(tid_list[PUTC - GETC][channel] != 0) {
 				// print reply to channel and putc
 				uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
-				recieve[2] = char_ch;
-				Reply(tid_list[PUTC - GETC][channel], recieve, 8);
-				tid_list[PUTC - GETC][channel] = 0;
+				STATE[channel] = 2;
 			}
 		} else if(type == RXIC){			
 			// uart print replied to chanenl and geth
-			uart_printf(CONSOLE, "GETC channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
+			uart_printf(CONSOLE, "RXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
 			if(tid_list[GETC - GETC][channel] != 0) {
 				uart_printf(CONSOLE, "REPLIED: GETC channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
 				Reply(tid_list[GETC - GETC][channel], recieve, 8);
 				tid_list[GETC - GETC][channel] = 0;
 			}
 		} else if(type == GETC){
+			uart_printf(CONSOLE, "GETC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
 			tid_list[type - GETC][channel] = tid;
 		} else if(type == PUTC){
-			tid_list[type - GETC][channel] = tid;
-			uart_putc(channel, char_ch);
+			if(STATE[channel] == 0){
+				uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
+				tid_list[type - GETC][channel] = tid;
+				STATE[channel] = 1;
+				uart_putc(channel, char_ch);
+			} else {
+				recieve[2] = -1;
+				Reply(tid_list[type - GETC][channel], recieve, 8);
+			}
 		} else if(type == CTS){
+			uart_printf(CONSOLE, "CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
 			tid_list[type - GETC][channel] = tid;
 		}
 		// print in white
@@ -212,7 +234,7 @@ int Putc(int tid, int channel, unsigned char ch){
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
-	return sendret;
+	return channel64[2];
 }
 
 
