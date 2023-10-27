@@ -6,7 +6,7 @@
 #include "util.h"
 #include "custstr.h"
 #include "gic.h"
-#define DEBUG 0
+#define DEBUG 4
 #define DEBUG_EXIT 1
 # define READY 0
 # define BLOCKED 1
@@ -182,13 +182,15 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 }
 
 int unblock_return(uint32_t interruptid, uint64_t ret){
-	// uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
+	# if DEBUG == 4
+		uart_printf(CONSOLE, "KERNEL: unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
+	# endif
 	// AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;	
 	for (int i = 0; i < AWAIT_INTERRUPT[interruptid].len; i++) {
 		struct state freed_state = AWAIT_INTERRUPT[interruptid].pid_ls[i];
 		freed_state.ready = READY;
 		# if DEBUG == 4
-			uart_printf(CONSOLE, "unblock_return: interruptid = %u, i = %u, pid = %u, priority = %u\r\n", 
+			uart_printf(CONSOLE, "KERNEL: unblocked-process interruptid = %u, i = %u, pid = %u, priority = %u\r\n", 
 						interruptid, i, 
 						freed_state.pid, 
 						freed_state.priority);
@@ -271,27 +273,30 @@ void ExceptionASYNC(uint64_t esr_el1){
 				return_val[1] = MARKLIN;
 				return_val[2] = get_CTS(MARKLIN);
 				*ICR_CONSOLE = (0x01 << CTSMIM);
-			}
-
-			if((*RIS_MARKLIN) & (0x01 << TXIC)){
+			}else if((*RIS_MARKLIN) & (0x01 << TXIC)){
 				// uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");
 				// TXIC on the marklin
 				return_val[0] = TXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = -1;
+				// print in green
+				uart_printf(CONSOLE, "\033[32m");
+				uart_printf(CONSOLE, "KERNEL: TXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
 				*ICR_MARKLIN = (0x01 << TXIC);
-			}
-
-			if((*RIS_MARKLIN) & (0x01 << RXIC)){
+			} else if((*RIS_MARKLIN) & (0x01 << RXIC)){
 				// RXIC on the marklin
 				return_val[0] = RXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = uart_getc_modified(MARKLIN);
-				// uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
+				// print in green
+				uart_printf(CONSOLE, "\033[32m");
+				uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
 				*ICR_MARKLIN = (0x01 << RXIC);
-			}
-			
-			if((*RIS_MARKLIN) & (0x01 << CTSMIM)){
+			} else if((*RIS_MARKLIN) & (0x01 << CTSMIM)){
 				// print in green 
 				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "CTSMIM Interrupt ON MARKLIN get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));

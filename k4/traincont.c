@@ -3,7 +3,7 @@
 #include "ioserver.h"
 #include "custstr.h"
 #include <stdio.h>
-#include "tc1.h"
+#include "traincont.h"
 static const size_t COMMANDMAX_LEN = 64;
 #define UNINT_MAX 0xffffffff
 #define OVERFLOW_MINUTES = (UNINT_MAX / 1e6) / 60;
@@ -38,7 +38,10 @@ uint32_t sol_on_time= 0;
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     uint32_t io_server_pid = WhoIs("io_server");
     Putc(io_server_pid, MARKLIN, byte_1);
+    // awaitCTS(int tid, int channel)
     Putc(io_server_pid, MARKLIN, byte_2);
+    awaitCTS(io_server_pid, MARKLIN, 1);
+    awaitCTS(io_server_pid, MARKLIN, 0);
 }
 void print_error(char *error){
     // print in red

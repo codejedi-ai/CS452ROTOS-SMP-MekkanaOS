@@ -26,3 +26,4 @@ Return Value
 */
 // Either the queue is empty or the server needs to wait for the TXIC interrupt to be triggered
 int Putc(int tid, int channel, unsigned char ch);
+int awaitCTS(int tid, int channel, int cts);

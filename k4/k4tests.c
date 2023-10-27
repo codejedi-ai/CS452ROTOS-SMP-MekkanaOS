@@ -13,15 +13,19 @@
 #include "k3tests.h"
 #include "asm.h"
 #include "ioserver.h"
-#include "tc1.h"
+#include "traincont.h"
 
+/*
 void k4t1_init_test(){
     // this would get a train to
     RegisterAs("k4t1_init_test");
     int ioserver_PID = WhoIs("io_server");
-    init_track();
+    // init_track();
+    solonoid_command(0x99, 'S');
+    solonoid_command(0x99, 'C');
     Exit();
 }
+*/
 
 /*
 Return 0 upon successful execution
@@ -47,9 +51,24 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         int ioserver_PID = WhoIs("io_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
         return 0;
-    } else if (strcmp_ret(num[0], "k4t1")){
+    } else if (strcmp_ret(num[0], "k4tc")){
         if(strcmp_ret(num[1], "init")){
-            k4t1_init_test();
+            // create process 
+            // create a process that initializes the track
+            // Create(1, &k4t1_init_test);
+
+            return 0;
+        }
+        else if(strcmp_ret(num[1], "54") && strcmp_ret(num[2], "1")){
+            // create process 
+            // create a process that initializes the track
+            execute_train_command(10, 54);
+            return 0;
+        }
+        if(strcmp_ret(num[1], "54") && strcmp_ret(num[2], "2")){
+            // create process 
+            // create a process that initializes the track
+            execute_train_command(0, 54);
             return 0;
         }
         return 0;

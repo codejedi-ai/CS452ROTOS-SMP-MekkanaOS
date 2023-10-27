@@ -119,7 +119,9 @@ void FirstUserTaskk3() // First task as dictated in the reqs
 	// start gameserver
 	RegisterAs("FirstUserTask");
   	int tid = KernelCreate(0, clock_notifier, 0);
+	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
 	tid = KernelCreate(0, clock_server, 0);
+	uart_printf(CONSOLE, "clock_server: tid = %d\r\n", tid);
 	
 	char clockproc1[8] = "cl10";
     uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
@@ -151,14 +153,16 @@ void FirstUserTask() // First task as dictated in the reqs
 	// start gameserver
 	// RegisterAs("FirstUserTask");
   	int tid = 0;
-	tid = KernelCreate(0, clock_notifier, 0);
+  	tid = KernelCreate(0, clock_notifier, 0);
+	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
 	tid = KernelCreate(0, clock_server, 0);
+	uart_printf(CONSOLE, "clock_server: tid = %d\r\n", tid);
 	
 	tid = Create(-1, idle);
 	
 	int io_server_PID;
 	io_server_PID = KernelCreate(0, io_notifier, 0);
-	io_server_PID = KernelCreate(0, io_notifier, 0);
+	uart_printf(CONSOLE, "io_notifier_PID = %d\r\n", io_server_PID);
 	io_server_PID = KernelCreate(0, io_server, 0);
 	uart_printf(CONSOLE, "io_server_PID = %d\r\n", io_server_PID);
 	tid = Create(2000, main);

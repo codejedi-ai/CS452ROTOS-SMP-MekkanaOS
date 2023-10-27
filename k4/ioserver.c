@@ -16,6 +16,8 @@
 #define DISPLAY 1
 #define GETC 32
 #define PUTC 33
+#define CTS 34
+
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -76,12 +78,18 @@ void io_server()
 	// start gameserver
 	// RegisterAs("FirstUserTask");
   	int tid = 0;
-	uint8_t STATE[3]; // 0 is nothing, 1 is console, 2 is train (marklin)
-	uint8_t send_queue[255]; 
+
+	uint8_t tid_list[3][3];
+	uint8_t await_cts_val[3];
+	for (int i = 0; i < 3; i++)
+	{
+		tid_list[0][i] = 0;
+		tid_list[1][i] = 0;
+		tid_list[2][i] = 0;
+	}
 	uint8_t send_queue_size = 0;
 	uint8_t send_queue_begin = 0;
 	uint8_t send_queue_end = 0;
-	STATE[MARKLIN] = 0; // state 0 means READY, 1 means sent, 2 means marklin is busy
 	int i = 0;
 	uint8_t caller_TID_PUTC = 0, caller_TID_GETC = 0;
 	while (1)
@@ -93,72 +101,56 @@ void io_server()
 		uint8_t type = recieve[0];
 		uint8_t channel = recieve[1];
 		char char_ch = recieve[2];
-		uart_putc(CONSOLE, char_ch);
-		uart_printf(CONSOLE, "\r\n");
-		if (type != GETC && type != PUTC){
-			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: io_notifier called me!! Gotta reply to it\r\n");
+		// yellow character
+		uart_printf(CONSOLE, "\033[33m");
+		if (type != GETC && type != PUTC && type != CTS){
+			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+			
 			Reply(tid, recieve, 8);
 		}
+
 		if (type == CTSMIM){
-			// CTS 0 means you cannot send
-			// uart_printf(CONSOLE, "io_server: CTS = %d\r\n", STATE[channel]);
-			if(STATE[channel] == 1){
-				// Set it to two the marklin is busy
-				STATE[channel] = 2;
-				// uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
-			} else if(STATE[channel] == 2){
-				STATE[channel] = 0;
-				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
-				// print in green 
-				uart_printf(CONSOLE, "\033[32m");
-				uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
-				// print in white
-				uart_printf(CONSOLE, "\033[37m");
-				Reply(caller_TID_PUTC, recieve, 8);
+			uart_printf(CONSOLE, "CTS channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
+			await_cts_val[channel] = char_ch;
+			if(tid_list[CTS - GETC][channel] != 0 ){
+				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+				recieve[2] = char_ch;
+				Reply(tid_list[CTS - GETC][channel], recieve, 8);
+				tid_list[CTS - GETC][channel] = 0;
+			} 
+		} else if(type == TXIC){
+			uart_printf(CONSOLE, "PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
+			if(tid_list[PUTC - GETC][channel] != 0) {
+				// print reply to channel and putc
+				uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
+				recieve[2] = char_ch;
+				Reply(tid_list[PUTC - GETC][channel], recieve, 8);
+				tid_list[PUTC - GETC][channel] = 0;
 			}
-			
-		}
-		if(type == TXIC){
-			// the transmit fires if the message finnished transmitting
-			//uart_printf(CONSOLE, "io_server: TXIC INTURRUPT\r\n");
-			if(STATE[channel] == 0){
-				// the char is sent
-				STATE[channel] = 1;
-				//uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
-
-				// print channel STATE[channel]
-				//uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
-				// relpy to the caller
+		} else if(type == RXIC){			
+			// uart print replied to chanenl and geth
+			uart_printf(CONSOLE, "GETC channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
+			if(tid_list[GETC - GETC][channel] != 0) {
+				uart_printf(CONSOLE, "REPLIED: GETC channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
+				Reply(tid_list[GETC - GETC][channel], recieve, 8);
+				tid_list[GETC - GETC][channel] = 0;
 			}
-			// command send
-			
-		} else if(type == RXIC){
-			
-			// the recieve when the marklin have send a character
-			//. print in green
-			uart_printf(CONSOLE, "\033[32m");
-			uart_printf(CONSOLE, "io_server: RXIC INTURRUPT\r\n");
-			// print in white
-			uart_printf(CONSOLE, "\033[37m");
-			
-			Reply(caller_TID_GETC, recieve, 8);
-			//
 		} else if(type == GETC){
-			caller_TID_GETC = tid;
-			// print getC called in orange
-			uart_printf(CONSOLE, "\033[33m");
-			uart_printf(CONSOLE, "io_server: GETC called\r\n");
-			// print in white
-			uart_printf(CONSOLE, "\033[37m");
-			// the server
+			tid_list[type - GETC][channel] = tid;
 		} else if(type == PUTC){
-			uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
-			if(STATE[channel] == 0){
-				caller_TID_PUTC = tid;
-				uart_putc(channel, char_ch);
+			tid_list[type - GETC][channel] = tid;
+			uart_putc(channel, char_ch);
+		} else if(type == CTS){
+			tid_list[type - GETC][channel] = tid;
+			if(await_cts_val[channel] == char_ch){
+				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+				recieve[2] = char_ch;
+				Reply(tid_list[CTS - GETC][channel], recieve, 8);
+				tid_list[CTS - GETC][channel] = 0;
 			}
 		}
-
+		// print in white
+		uart_printf(CONSOLE, "\033[37m");
 	}
 	Exit();
 }
@@ -228,4 +220,17 @@ int Putc(int tid, int channel, unsigned char ch){
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
 	return sendret;
+}
+
+
+int awaitCTS(int tid, int channel, int cts){
+	char channel64[8];
+  	*((uint32_t *) channel64 + 1) = ((uint32_t) channel);
+	channel64[0] = CTS;
+	channel64[1] = (uint8_t) channel;
+	channel64[2] = cts;
+	channel64[3] = -1;
+	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
+	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	return channel64[2];
 }
