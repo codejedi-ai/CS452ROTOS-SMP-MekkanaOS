@@ -78,7 +78,7 @@ int Delay(int tid, int ticks){
     char sendmsg[50] = "Delay ";
     char str[5];
     i2a(ticks, str);
-    strcat(sendmsg, str);
+    strcat_cust(sendmsg, str);
     if (Send(tid, sendmsg, 50, &ticks, 4) == -1)return -1;
     return ticks;
 }
@@ -87,7 +87,7 @@ int DelayUntil(int tid, int ticks){
     char sendmsg[50] = "DelayUntil ";
     char str[5];
     i2a(ticks, str);
-    strcat(sendmsg, str);
+    strcat_cust(sendmsg, str);
     if (Send(tid, sendmsg, 50, &ticks, 4) == -1)return -1;
     return ticks;
 }

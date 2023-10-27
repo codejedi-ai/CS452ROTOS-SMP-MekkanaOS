@@ -64,7 +64,7 @@ int strcmp_ret(char* s1, char* s2){
 	}
 	return (*s1 == *s2);
 }
-int strcat(char* dest, const char* src) {
+int strcat_cust(char* dest, const char* src) {
 	int newsz = 0;
     while (*dest) {
 

@@ -130,9 +130,9 @@ int RegisterAs(const char *name){
 	char sendmsg[50] = "REGISTER ";
 	//// strflush(command_cand, 6);
 	int msgsz = 50;
-	//msgsz = strcat((char* )sendmsg, command_cand);
+	//msgsz = strcat_cust((char* )sendmsg, command_cand);
 	//// strflush(sendmsg, msgsz);
-	msgsz = strcat((char* )sendmsg, name);
+	msgsz = strcat_cust((char* )sendmsg, name);
 	//// strflush(sendmsg, msgsz);
 	Send(1, sendmsg, 50, rep, 50);
 	return 0;
@@ -144,7 +144,7 @@ int Deregister(){
 	char tid_str[10] = "";
 	i2a(tid, tid_str);
 	int msgsz = 50;
-	msgsz = strcat((char* )sendmsg, (char *)tid_str);
+	msgsz = strcat_cust((char* )sendmsg, (char *)tid_str);
 	// strflush(sendmsg, msgsz);
 	return Send(1, sendmsg, 50, rep, 50);
 }
@@ -154,9 +154,9 @@ int WhoIs(const char *name){
 
 	//// strflush(command_cand, 6);
 	int msgsz = 50;
-	// msgsz = strcat((char* )sendmsg, command_cand);
+	// msgsz = strcat_cust((char* )sendmsg, command_cand);
 	//// strflush(sendmsg, msgsz);
-	msgsz = strcat((char* )sendmsg, name);
+	msgsz = strcat_cust((char* )sendmsg, name);
 	// strflush(sendmsg, msgsz);
 	
 	//int ret_code = Send(tid, msg, msglen, msgreply, 25);

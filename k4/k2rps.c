@@ -106,7 +106,7 @@ void player(){
     char num[50];
     char name[50] = "player-";
     ui2a(tid, 10, num);
-    strcat(name, num);
+    strcat_cust(name, num);
     uart_printf(CONSOLE, "Player: %s\r\n", name);
     RegisterAs(name);
     // get the values of N and player_type

@@ -38,9 +38,9 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         int ioserver_PID = WhoIs("io_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
         return 0;
-    } else if (strcmp_ret(num[0], "get")){
+    } else if (strcmp_ret(num[0], "getc")){
         if (command_part_count != 1){
-            uart_printf(CONSOLE, "putc command requires no argument, argcount = %d\r\n", command_part_count);
+            uart_printf(CONSOLE, "getc command requires no argument, argcount = %d\r\n", command_part_count);
             return 1;
         }
         /*

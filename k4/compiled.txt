@@ -262,12 +262,12 @@ Disassembly of section .text:
    80b00:	910043ff 	add	sp, sp, #0x10
    80b04:	d65f03c0 	ret
 
-0000000000080b08 <strcat>:
+0000000000080b08 <strcat_cust>:
    80b08:	d10083ff 	sub	sp, sp, #0x20
    80b0c:	f90007e0 	str	x0, [sp, #8]
    80b10:	f90003e1 	str	x1, [sp]
    80b14:	b9001fff 	str	wzr, [sp, #28]
-   80b18:	14000007 	b	80b34 <strcat+0x2c>
+   80b18:	14000007 	b	80b34 <strcat_cust+0x2c>
    80b1c:	f94007e0 	ldr	x0, [sp, #8]
    80b20:	91000400 	add	x0, x0, #0x1
    80b24:	f90007e0 	str	x0, [sp, #8]
@@ -277,8 +277,8 @@ Disassembly of section .text:
    80b34:	f94007e0 	ldr	x0, [sp, #8]
    80b38:	39400000 	ldrb	w0, [x0]
    80b3c:	7100001f 	cmp	w0, #0x0
-   80b40:	54fffee1 	b.ne	80b1c <strcat+0x14>  // b.any
-   80b44:	1400000e 	b	80b7c <strcat+0x74>
+   80b40:	54fffee1 	b.ne	80b1c <strcat_cust+0x14>  // b.any
+   80b44:	1400000e 	b	80b7c <strcat_cust+0x74>
    80b48:	f94003e0 	ldr	x0, [sp]
    80b4c:	39400001 	ldrb	w1, [x0]
    80b50:	f94007e0 	ldr	x0, [sp, #8]
@@ -295,7 +295,7 @@ Disassembly of section .text:
    80b7c:	f94003e0 	ldr	x0, [sp]
    80b80:	39400000 	ldrb	w0, [x0]
    80b84:	7100001f 	cmp	w0, #0x0
-   80b88:	54fffe01 	b.ne	80b48 <strcat+0x40>  // b.any
+   80b88:	54fffe01 	b.ne	80b48 <strcat_cust+0x40>  // b.any
    80b8c:	f94007e0 	ldr	x0, [sp, #8]
    80b90:	3900001f 	strb	wzr, [x0]
    80b94:	b9401fe0 	ldr	w0, [sp, #28]
@@ -2051,7 +2051,7 @@ Disassembly of section .text:
    82624:	b9008fe0 	str	w0, [sp, #140]
    82628:	910083e0 	add	x0, sp, #0x20
    8262c:	f9400fe1 	ldr	x1, [sp, #24]
-   82630:	97fff936 	bl	80b08 <strcat>
+   82630:	97fff936 	bl	80b08 <strcat_cust>
    82634:	b9008fe0 	str	w0, [sp, #140]
    82638:	910163e1 	add	x1, sp, #0x58
    8263c:	910083e0 	add	x0, sp, #0x20
@@ -2093,7 +2093,7 @@ Disassembly of section .text:
    826c4:	b9009be0 	str	w0, [sp, #152]
    826c8:	910063e1 	add	x1, sp, #0x18
    826cc:	9100a3e0 	add	x0, sp, #0x28
-   826d0:	97fff90e 	bl	80b08 <strcat>
+   826d0:	97fff90e 	bl	80b08 <strcat_cust>
    826d4:	b9009be0 	str	w0, [sp, #152]
    826d8:	910183e1 	add	x1, sp, #0x60
    826dc:	9100a3e0 	add	x0, sp, #0x28
@@ -2122,7 +2122,7 @@ Disassembly of section .text:
    82730:	b9008fe0 	str	w0, [sp, #140]
    82734:	910083e0 	add	x0, sp, #0x20
    82738:	f9400fe1 	ldr	x1, [sp, #24]
-   8273c:	97fff8f3 	bl	80b08 <strcat>
+   8273c:	97fff8f3 	bl	80b08 <strcat_cust>
    82740:	b9008fe0 	str	w0, [sp, #140]
    82744:	910163e1 	add	x1, sp, #0x58
    82748:	910083e0 	add	x0, sp, #0x20
@@ -11463,7 +11463,7 @@ Disassembly of section .debug_abbrev:
      a48:	3b01213a 	.inst	0x3b01213a ; undefined
      a4c:	0621390b 	.inst	0x0621390b ; undefined
      a50:	01111927 	.inst	0x01111927 ; undefined
-     a54:	18400712 	ldr	w18, 80b34 <strcat+0x2c>
+     a54:	18400712 	ldr	w18, 80b34 <strcat_cust+0x2c>
      a58:	1301197c 	sbfx	w28, w11, #1, #6
      a5c:	2e0d0000 	ext	v0.8b, v0.8b, v13.8b, #0
      a60:	03193f01 	.inst	0x03193f01 ; undefined
