@@ -122,9 +122,9 @@ void io_server()
 				tid_list[CTS - GETC][channel] = 0;
 			} 
 			if(tid_list[PUTC - GETC][channel] != 0){
-				if(STATE[channel] == 2){
+				if(STATE[channel] == 2 && get_CTS(channel) == 0){
 					STATE[channel] = 3;
-				} else if(STATE[channel] = 3){
+				} else if(STATE[channel] = 3 && get_CTS(channel) == 1){
 					STATE[channel] = 0;
 					uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 					recieve[2] = char_ch;
