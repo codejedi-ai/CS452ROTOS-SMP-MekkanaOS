@@ -4,6 +4,7 @@
 #include "custstr.h"
 #include <stdio.h>
 #include "traincont.h"
+
 static const size_t COMMANDMAX_LEN = 64;
 #define UNINT_MAX 0xffffffff
 #define OVERFLOW_MINUTES = (UNINT_MAX / 1e6) / 60;
@@ -39,9 +40,10 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     uint32_t io_server_pid = WhoIs("io_server");
     Putc(io_server_pid, MARKLIN, byte_1);
     // awaitCTS(int tid, int channel)
+    // awaitCTS(io_server_pid, MARKLIN, 1);
     Putc(io_server_pid, MARKLIN, byte_2);
-    awaitCTS(io_server_pid, MARKLIN, 1);
-    awaitCTS(io_server_pid, MARKLIN, 0);
+    while (get_CTS(MARKLIN) == 0)
+      awaitCTS(io_server_pid, MARKLIN);
 }
 void print_error(char *error){
     // print in red

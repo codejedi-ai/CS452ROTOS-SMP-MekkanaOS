@@ -111,8 +111,7 @@ void io_server()
 
 		if (type == CTSMIM){
 			uart_printf(CONSOLE, "CTS channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
-			await_cts_val[channel] = char_ch;
-			if(tid_list[CTS - GETC][channel] != 0 ){
+			if(tid_list[CTS - GETC][channel] != 0){
 				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 				recieve[2] = char_ch;
 				Reply(tid_list[CTS - GETC][channel], recieve, 8);
@@ -142,12 +141,6 @@ void io_server()
 			uart_putc(channel, char_ch);
 		} else if(type == CTS){
 			tid_list[type - GETC][channel] = tid;
-			if(await_cts_val[channel] == char_ch){
-				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
-				recieve[2] = char_ch;
-				Reply(tid_list[CTS - GETC][channel], recieve, 8);
-				tid_list[CTS - GETC][channel] = 0;
-			}
 		}
 		// print in white
 		uart_printf(CONSOLE, "\033[37m");
@@ -223,12 +216,12 @@ int Putc(int tid, int channel, unsigned char ch){
 }
 
 
-int awaitCTS(int tid, int channel, int cts){
+int awaitCTS(int tid, int channel){
 	char channel64[8];
   	*((uint32_t *) channel64 + 1) = ((uint32_t) channel);
 	channel64[0] = CTS;
 	channel64[1] = (uint8_t) channel;
-	channel64[2] = cts;
+	channel64[2] = -1;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);

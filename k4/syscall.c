@@ -6,7 +6,7 @@
 #include "util.h"
 #include "custstr.h"
 #include "gic.h"
-#define DEBUG 4
+#define DEBUG 0
 #define DEBUG_EXIT 1
 # define READY 0
 # define BLOCKED 1
@@ -279,29 +279,35 @@ void ExceptionASYNC(uint64_t esr_el1){
 				return_val[0] = TXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = -1;
-				// print in green
+				# if DEBUG == 4
+					// print in green
 				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "KERNEL: TXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
 				// print in white
 				uart_printf(CONSOLE, "\033[37m");
+				# endif
 				*ICR_MARKLIN = (0x01 << TXIC);
 			} else if((*RIS_MARKLIN) & (0x01 << RXIC)){
 				// RXIC on the marklin
 				return_val[0] = RXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = uart_getc_modified(MARKLIN);
+				# if DEBUG == 4 
 				// print in green
 				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
 				// print in white
 				uart_printf(CONSOLE, "\033[37m");
+				# endif
 				*ICR_MARKLIN = (0x01 << RXIC);
 			} else if((*RIS_MARKLIN) & (0x01 << CTSMIM)){
+				# if DEBUG == 4 
 				// print in green 
 				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "CTSMIM Interrupt ON MARKLIN get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
 				// print in white
 				uart_printf(CONSOLE, "\033[37m");
+				# endif
 				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
@@ -312,11 +318,13 @@ void ExceptionASYNC(uint64_t esr_el1){
 			
 			if (!unblock_return(interruptid, *(uint64_t*)return_val)){
 				// enqueue the interrupt
-				//print in red
-				uart_printf(CONSOLE, "\033[31m");
-				uart_printf(CONSOLE, "UART Interrupt: No one is waiting for this interrupt\n\r");
-				// print in white
-				uart_printf(CONSOLE, "\033[37m");
+				# if DEBUG == 4
+					// print in red
+					uart_printf(CONSOLE, "\033[31m");
+					uart_printf(CONSOLE, "UART Interrupt: No one is waiting for this interrupt\n\r");
+					// print in white
+					uart_printf(CONSOLE, "\033[37m");
+				# endif
 				// enqueue the interrupt
 				AWAIT_INTERRUPT[interruptid].event_q[AWAIT_INTERRUPT[interruptid].eventq_tail] = *(uint64_t*)return_val;
 				AWAIT_INTERRUPT[interruptid].eventq_tail++;
@@ -327,7 +335,9 @@ void ExceptionASYNC(uint64_t esr_el1){
 			// INTERRUPT_CLEAR_ACTIVE_REGS(UARTINTER);
 			break;
 		default:
-			uart_printf(CONSOLE, "Unknown Interrupt\n\r");
+			# if DEBUG == 4
+				uart_printf(CONSOLE, "Unknown Interrupt\n\r");
+			# endif
 			//scrSchedule(PID, PROCS[p].priority, READY);
 			break;
 	}

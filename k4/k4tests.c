@@ -50,6 +50,8 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         uart_printf(CONSOLE, "print_char[0] = \"%c\" = \"%d\"\r\n", print_char2, print_char2);
         int ioserver_PID = WhoIs("io_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
+        while (get_CTS(MARKLIN) == 0)
+            awaitCTS(ioserver_PID, MARKLIN);
         return 0;
     } else if (strcmp_ret(num[0], "k4tc")){
         if(strcmp_ret(num[1], "init")){
