@@ -21,10 +21,6 @@ Return -1 if the command is not found
 
 */
 int k4ExecuteCommands(char *command, char **num, int command_part_count){
-    uart_printf(CONSOLE, "command = %s\r\n", command);
-    for (int i = 0; i < command_part_count; i++){
-        uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
-    }
     if (strcmp_ret(num[0], "putc")){
         if (command_part_count != 2){
             uart_printf(CONSOLE, "putc command requires 1 argument, argcount = %d\r\n", command_part_count);

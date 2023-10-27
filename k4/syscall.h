@@ -82,7 +82,9 @@ struct state {
 };
 struct interrupt {
 	struct state pid_ls[NUMPROCS]; // this is the list that is to be unblocked when interrupt happened
+	uint64_t event_q[NUMPROCS];
 	int len;
+	int eventq_len, eventq_head, eventq_tail;
 };
 static struct process PROCS[NUMPROCS];
 static struct state READY_QUEUE[NUMPROCS];

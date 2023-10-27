@@ -11,6 +11,14 @@
 # define READY 0
 # define BLOCKED 1
 
+
+
+
+
+
+
+
+
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
@@ -41,8 +49,9 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 }
 // scrSchedule(pid, priority, ready)
 // This is an enqueue funciton in which it adds a process to the READY_QUEUE 
-void queue_unblock(int pid, uint64_t priority, int ready)
+int queue_unblock(int pid, uint64_t priority, int ready)
 {
+	
 	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
@@ -111,6 +120,9 @@ void InitSys(void* reg)
 	PID = 0;
 	for (int event = 0; event < MAXEVENT; event++){
 		AWAIT_INTERRUPT[event].len = 0;
+		AWAIT_INTERRUPT[event].eventq_len = 0;
+		AWAIT_INTERRUPT[event].eventq_head = 0;
+		AWAIT_INTERRUPT[event].eventq_tail = 0;
 		for (int jdx = 0; jdx < NUMPROCS; jdx++) {
 			AWAIT_INTERRUPT[event].pid_ls[jdx].pid = 0;
 			AWAIT_INTERRUPT[event].pid_ls[jdx].priority = 0;
@@ -169,7 +181,7 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 	EXIT();
 }
 
-void unblock_return(uint32_t interruptid, uint64_t ret){
+int unblock_return(uint32_t interruptid, uint64_t ret){
 	// uart_printf(CONSOLE, "unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
 	// AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;	
 	for (int i = 0; i < AWAIT_INTERRUPT[interruptid].len; i++) {
@@ -184,7 +196,9 @@ void unblock_return(uint32_t interruptid, uint64_t ret){
 		queue_unblock_state(freed_state);
 		PROCS[freed_state.pid - 1].registervalues[0] = ret; // the clock was interrupted
 	}
+	ret = AWAIT_INTERRUPT[interruptid].len;
 	AWAIT_INTERRUPT[interruptid].len = 0;
+	return ret;
 }
 
 void ExceptionASYNC(uint64_t esr_el1){
@@ -251,7 +265,7 @@ void ExceptionASYNC(uint64_t esr_el1){
 			}
 			*/
 			if((*RIS_CONSOLE) & (0x01 << CTSMIM)){
-				uart_printf(CONSOLE, "CTSMIM Interrupt ON CONSOLE get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
+				// uart_printf(CONSOLE, "CTSMIM Interrupt ON CONSOLE get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
 				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
@@ -260,7 +274,7 @@ void ExceptionASYNC(uint64_t esr_el1){
 			}
 
 			if((*RIS_MARKLIN) & (0x01 << TXIC)){
-				uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");
+				// uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");
 				// TXIC on the marklin
 				return_val[0] = TXIC;
 				return_val[1] = MARKLIN;
@@ -273,13 +287,16 @@ void ExceptionASYNC(uint64_t esr_el1){
 				return_val[0] = RXIC;
 				return_val[1] = MARKLIN;
 				return_val[2] = uart_getc_modified(MARKLIN);
-				uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
+				// uart_printf(CONSOLE, "KERNEL: RXIC Interrupt ON MARKLIN  0x%x\r\n", *(uint64_t*)return_val);
 				*ICR_MARKLIN = (0x01 << RXIC);
 			}
 			
 			if((*RIS_MARKLIN) & (0x01 << CTSMIM)){
+				// print in green 
+				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "CTSMIM Interrupt ON MARKLIN get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
-				
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
 				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
@@ -288,7 +305,19 @@ void ExceptionASYNC(uint64_t esr_el1){
 				*ICR_MARKLIN = (0x01 << CTSMIM);
 			}
 			
-			unblock_return(interruptid, *(uint64_t*)return_val);
+			if (!unblock_return(interruptid, *(uint64_t*)return_val)){
+				// enqueue the interrupt
+				//print in red
+				uart_printf(CONSOLE, "\033[31m");
+				uart_printf(CONSOLE, "UART Interrupt: No one is waiting for this interrupt\n\r");
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
+				// enqueue the interrupt
+				AWAIT_INTERRUPT[interruptid].event_q[AWAIT_INTERRUPT[interruptid].eventq_tail] = *(uint64_t*)return_val;
+				AWAIT_INTERRUPT[interruptid].eventq_tail++;
+				AWAIT_INTERRUPT[interruptid].eventq_tail %= NUMPROCS;
+				AWAIT_INTERRUPT[interruptid].eventq_len++;
+			}
 			
 			// INTERRUPT_CLEAR_ACTIVE_REGS(UARTINTER);
 			break;
@@ -685,15 +714,27 @@ void handlerExceptionHelper(uint64_t esr_el1)
 		
 			PROCS[p].registervalues[0] = ret;
 			break;
-		case 10:
+		case 10: // get the interrupt
 			uint64_t eventType = PROCS[p].registervalues[0];
 			PROCS[p].registervalues[0] = -1;
 			if (checkActiveInterrupt(eventType)){
-				uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
-				scrSchedule(PID, PROCS[p].priority, BLOCKED);
-				struct state currItem = {PID, PROCS[p].priority, BLOCKED};
-				AWAIT_INTERRUPT[eventType].pid_ls[AWAIT_INTERRUPT[eventType].len] = currItem;
-				AWAIT_INTERRUPT[eventType].len = AWAIT_INTERRUPT[eventType].len + 1;
+				// check the interrupt queue, if the queue is empty then block the task
+				if (AWAIT_INTERRUPT[eventType].eventq_len){
+					// pop the queue
+					scrSchedule(PID, PROCS[p].priority, READY);
+					PROCS[p].registervalues[0] = AWAIT_INTERRUPT[eventType].event_q[AWAIT_INTERRUPT[eventType].eventq_head];
+					AWAIT_INTERRUPT[eventType].eventq_head++;
+					AWAIT_INTERRUPT[eventType].eventq_head %= NUMPROCS;
+					AWAIT_INTERRUPT[eventType].eventq_len--;
+
+				}
+				else{
+					uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
+					scrSchedule(PID, PROCS[p].priority, BLOCKED);
+					struct state currItem = {PID, PROCS[p].priority, BLOCKED};
+					AWAIT_INTERRUPT[eventType].pid_ls[AWAIT_INTERRUPT[eventType].len] = currItem;
+					AWAIT_INTERRUPT[eventType].len = AWAIT_INTERRUPT[eventType].len + 1;
+				}
 			}else{
 				scrSchedule(PID, PROCS[p].priority, READY);
 			}

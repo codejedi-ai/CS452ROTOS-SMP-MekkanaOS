@@ -321,7 +321,7 @@ int logo(){
     printf("%s", logo);
   return 0;
 }
-int main(){
+int main6(){
   // encode HELLO HI as a long, put each char as an ascii value in hexadeciman
   // 0x48454c4c4f204849
   // H 
@@ -362,4 +362,87 @@ int main(){
     printf("0x%x\n", (char)str[i]);
   }
   return 0;
+}
+
+struct state {
+	int pid;
+	uint64_t priority;
+	int ready;
+};
+#define NUMPROCS 20
+static struct state READY_QUEUE[NUMPROCS];
+
+uint32_t queue_size = 0;
+// the last element of the queue would be swapped with the first element and that element need to go back to its correct position
+
+void bubble_up(int index){
+  while (index > 0)
+  {
+    int parent = index / 2;
+    if(READY_QUEUE[parent].priority > READY_QUEUE[index].priority){
+      // swap
+      struct state temp = READY_QUEUE[parent];
+      READY_QUEUE[parent] = READY_QUEUE[index];
+      READY_QUEUE[index] = temp;
+      index = parent;
+    } else {
+      return;
+    }
+  }
+}
+
+void enqueue(int pid, uint64_t priority){
+  if(queue_size >= NUMPROCS){
+    // queue is full
+    return;
+  }
+  READY_QUEUE[queue_size].pid = pid;
+  READY_QUEUE[queue_size].priority = priority;
+  READY_QUEUE[queue_size].ready = 1;
+  bubble_up(queue_size);
+  queue_size++;
+}
+int dequeue(){
+  if(queue_size == 0){
+    // queue is empty
+    return -1;
+  }
+  int ret = READY_QUEUE[0].pid;
+  READY_QUEUE[0] = READY_QUEUE[queue_size - 1];
+  READY_QUEUE[queue_size - 1].pid = 0;
+  READY_QUEUE[queue_size - 1].priority = 0;
+  READY_QUEUE[queue_size - 1].ready = 0;
+  queue_size--;
+  bubble_up(0);
+  return ret;
+}
+
+int main(){
+  for(int i = 0; i < NUMPROCS; i++){
+    READY_QUEUE[i].pid = 0;
+    READY_QUEUE[i].priority = 0;
+    READY_QUEUE[i].ready = 0;
+  }
+  // test the queue
+  enqueue(1, 8);
+  /*
+  enqueue(2, 3);
+  enqueue(3, 2);
+  enqueue(4, 4);
+  enqueue(5, 5);
+  enqueue(6, 0);
+  enqueue(7, 7);
+  enqueue(8, 18);
+  */
+  // now test dequeue
+  while (1)
+  {
+    int ret = dequeue();
+    if (ret == -1){
+      break;
+    }
+    printf("ret = %d\n", ret);
+    /* code */
+  }
+  
 }

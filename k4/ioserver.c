@@ -42,6 +42,10 @@ Code	Effect
 
 
 #define UARTINTER 153
+
+
+
+
 void io_notifier(){
 	RegisterAs("io_notifier");
 	// uart_printf(CONSOLE, "io_notifier:Registered\n");
@@ -54,11 +58,7 @@ void io_notifier(){
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;
 		char char_ch = (event >> 16) & 0xFF;
-		uart_printf(CONSOLE, "io_notifier: 0x%x ", event);
-		uart_printf(CONSOLE, "recieved message type = %d, channel = %d, char_ch = ", type, channel);
-		uart_putc(CONSOLE, char_ch);
-		uart_printf(CONSOLE, "\r\n");
-		
+		uart_printf(CONSOLE, "io_notifier: type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
 		Send(WhoIs("io_server"), &event, 8, &ret, 0);
 	}
 	Exit();
@@ -101,28 +101,33 @@ void io_server()
 		}
 		if (type == CTSMIM){
 			// CTS 0 means you cannot send
-			uart_printf(CONSOLE, "io_server: CTS = %d\r\n", STATE[channel]);
+			// uart_printf(CONSOLE, "io_server: CTS = %d\r\n", STATE[channel]);
 			if(STATE[channel] == 1){
 				// Set it to two the marklin is busy
 				STATE[channel] = 2;
-				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
+				// uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
 			} else if(STATE[channel] == 2){
 				STATE[channel] = 0;
 				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
+				// print in green 
+				uart_printf(CONSOLE, "\033[32m");
+				uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
 				Reply(caller_TID, recieve, 8);
 			}
 			
 		}
 		if(type == TXIC){
 			// the transmit fires if the message finnished transmitting
-			uart_printf(CONSOLE, "io_server: TXIC INTURRUPT\r\n");
+			//uart_printf(CONSOLE, "io_server: TXIC INTURRUPT\r\n");
 			if(STATE[channel] == 0){
 				// the char is sent
 				STATE[channel] = 1;
-				uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
+				//uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
 
 				// print channel STATE[channel]
-				uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
+				//uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
 				// relpy to the caller
 			}
 			// command send
@@ -138,9 +143,7 @@ void io_server()
 			uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
 			if(STATE[channel] == 0){
 				caller_TID = tid;
-				// the server
 				uart_putc(channel, char_ch);
-				uart_printf(CONSOLE, "io_server: PUT called, \'%c\' is to be printed.\r\n", char_ch);
 			}
 		}
 

@@ -158,6 +158,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	
 	int io_server_PID;
 	io_server_PID = KernelCreate(0, io_notifier, 0);
+	io_server_PID = KernelCreate(0, io_notifier, 0);
 	io_server_PID = KernelCreate(0, io_server, 0);
 	uart_printf(CONSOLE, "io_server_PID = %d\r\n", io_server_PID);
 	tid = Create(2000, main);
