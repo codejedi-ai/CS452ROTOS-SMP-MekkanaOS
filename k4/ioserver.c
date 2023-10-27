@@ -83,7 +83,7 @@ void io_server()
 	uint8_t send_queue_end = 0;
 	STATE[MARKLIN] = 0; // state 0 means READY, 1 means sent, 2 means marklin is busy
 	int i = 0;
-	uint8_t caller_TID = 0;
+	uint8_t caller_TID_PUTC = 0, caller_TID_GETC = 0;
 	while (1)
 	{
 		// recieve the message
@@ -114,7 +114,7 @@ void io_server()
 				uart_printf(CONSOLE, "io_server: The message is sent and Marklin is ready to recieve\r\n");
 				// print in white
 				uart_printf(CONSOLE, "\033[37m");
-				Reply(caller_TID, recieve, 8);
+				Reply(caller_TID_PUTC, recieve, 8);
 			}
 			
 		}
@@ -133,16 +133,19 @@ void io_server()
 			// command send
 			
 		} else if(type == RXIC){
+			
 			// the recieve when the marklin have send a character
 			uart_printf(CONSOLE, "io_server: RXIC INTURRUPT\r\n");
+			
+			Reply(caller_TID_GETC, recieve, 8);
 			//
 		} else if(type == GETC){
-			caller_TID = tid;
+			caller_TID_GETC = tid;
 			// the server
 		} else if(type == PUTC){
 			uart_printf(CONSOLE, "STATE[%d] = %u\r\n",channel,  STATE[channel]);
 			if(STATE[channel] == 0){
-				caller_TID = tid;
+				caller_TID_PUTC = tid;
 				uart_putc(channel, char_ch);
 			}
 		}
@@ -182,8 +185,8 @@ int Getc(int tid, int channel){
 	channel64[2] = 0;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
-	return sendret;
+	uart_printf(CONSOLE, "Getc: sendret = %d\r\n", sendret);
+	return channel64[2];
 }
 /*
 int Putc(int tid, int channel, unsigned char ch)

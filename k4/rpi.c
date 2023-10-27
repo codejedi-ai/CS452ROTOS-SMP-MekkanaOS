@@ -290,6 +290,9 @@ static void uart_format_print (size_t line, char *fmt, va_list va ) {
         ui2a( va_arg( va, unsigned int ), 2, bf );
         uart_puts( line, bf );
         break;
+      case 'c':
+				uart_putc( line, ch );
+				break;
 			case '%':
 				uart_putc( line, ch );
 				break;
