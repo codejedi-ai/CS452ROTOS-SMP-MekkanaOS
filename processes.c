@@ -161,7 +161,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	int tid;
-	int tid = Create(1, read_s88_test_sensor_A);
+	tid = Create(1, read_s88_test_sensor_A);
 	uart_printf(CONSOLE, "read_s88_test_sensor_A: tid = %d\r\n", tid);
 	tid = Create(2, init_track_test);
 	uart_printf(CONSOLE, "init_track_test: tid = %d\r\n", tid);
