@@ -242,6 +242,7 @@ void io_server_MARKLIN()
 					STATE[channel] = 3;
 				} else if(STATE[channel] = 3 && char_ch == 1){
 					STATE[channel] = 0;
+					// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 					recieve[2] = char_ch;
 					Reply(tid_list[PUTC - GETC][channel], recieve, 8);
 					tid_list[PUTC - GETC][channel] = 0;
@@ -253,6 +254,7 @@ void io_server_MARKLIN()
 			}
 		} else if(type == PUTC){
 			if(STATE[channel] == 0){
+				// uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
 				tid_list[type - GETC][channel] = tid;
 				STATE[channel] = 1;
 				uart_putc(channel, char_ch);
