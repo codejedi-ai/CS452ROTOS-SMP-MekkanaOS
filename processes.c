@@ -166,7 +166,14 @@ void FirstUserTask() // First task as dictated in the reqs
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
 	//tid = Create(-2, main);
 	execute_train_command(0, 54);
+	Delay(100);
 	execute_train_command(10, 54);
+	Delay(100);
+	execute_train_command(0, 54);
+	execute_reverse_command(54);
+	execute_train_command(10, 54);
+	Delay(100);
+	execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	// print in green process finnished
 	uart_printf(CONSOLE, "\033[32m");

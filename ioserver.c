@@ -13,7 +13,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 3
+#define DISPLAY 4
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -342,66 +342,6 @@ void io_notifier()
 	Exit();
 }
 
-// was thinking about doing a three server layout. It is possible that two tasks are waiting for the same interrupt
-void io_TXIC_MARKLIN_server_old()
-{
-/*
-	if (io_logging)
-		// # if DISPLAY == 4 uart_printf(CONSOLE, "io_TXIC_MARKLIN_server: Registered at %u\n", MyTid());
-	RegisterAs("io_TXIC_MARKLIN_server");
-	int io_notifier_tid = WhoIs("io_notifier");
-  	int tid = 0;
-
-	uint8_t await_cts_val[3];
-	uint8_t STATE = 0;
-
-
-	uint8_t tid_ret = 0;
-
-	while (1)
-	{
-		// recieve the message
-		char recieve[8];
-		Receive(&tid, recieve, 8);
-		
-		uint8_t type = recieve[0];
-		uint8_t channel = recieve[1];
-		
-		char char_ch = recieve[2];
-		// yellow character
-		// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[33m");
-		if (type != GETC && type != PUTC && type != CTS){
-			if (WhoIs("io_notifier") == tid) // # if DISPLAY == 4 uart_printf(CONSOLE, "io_server: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
-			
-			Reply(tid, recieve, 8);
-		}
-
-		if (type == CTSMIM){
-
-		} else if(type == TXIC){
-			if(STATE == 1) {
-				STATE = 0;
-				recieve[2] = 1;
-				Reply(tid_ret, recieve, 8);
-			}
-		} else if(type == PUTC){
-			if(STATE == 0){
-				# if DISPLAY == 4 uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_ret);
-				tid_ret = tid;
-				STATE = 1;
-				uart_putc(channel, char_ch);
-				if (recieve[3] != -1){
-					uart_putc(channel, recieve[3]);
-				}
-			} else {
-				recieve[2] = -1;
-				Reply(tid, recieve, 8);
-			}
-		}
-	}
-*/
-	Exit();
-}
 
 /*
 int Getc(int tid, int channel)
