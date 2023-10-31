@@ -17,6 +17,7 @@ void clock_notifier(){
     {
         uint64_t event = AwaitEvent(CLOCKINTID);
         int ret;
+        uart_printf(CONSOLE, "clock_notifier: event = %d\r\n", event);
         Send(clock_server_tid, "Time", 4, &ret, 0);
     }
     Exit();

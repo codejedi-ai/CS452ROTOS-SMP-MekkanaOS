@@ -159,7 +159,7 @@ void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	int tid;
 	uint32_t timer = get_timerLO(), clock_server_tid = WhoIs("clock_server");
-	set_timerC3(timer + 10000);
+	
 	init_ioserver();
 	set_io_logging(1);
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");

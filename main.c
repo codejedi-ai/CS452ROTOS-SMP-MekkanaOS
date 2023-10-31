@@ -23,7 +23,7 @@ int kmain(void *reg) {
   
   
   
-
+  set_timerC3(timer + 10000);
   route_interrupt(CLOCKINTID, 0);
   enable_interrupt(CLOCKINTID);
 
