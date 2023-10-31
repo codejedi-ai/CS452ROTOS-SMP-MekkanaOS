@@ -99,7 +99,8 @@ void io_TXIC_server()
 				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
 				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
-				Reply(tid_ret, recieve, 8);
+				
+				uart_printf(CONSOLE, "soldier returned home: %u\r\n", Reply(tid_ret, recieve, 8););
 				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 				call_list[channel].size--;
 				clear = 1;
