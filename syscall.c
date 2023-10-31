@@ -5,6 +5,7 @@
 #include "rpi.h"
 #include "util.h"
 #include "custstr.h"
+# include "systimer.h"
 #include "gic.h"
 #define DEBUG 0
 #define DEBUG_EXIT 1
@@ -234,8 +235,8 @@ void ExceptionASYNC(uint64_t esr_el1){
 			// print in white
 			uart_printf(CONSOLE, "\033[37m");
 			uint32_t time = get_timerLO();
-			set_timerC3(time + 10000);
-			set_timerC3(time);
+			//set_timerC3(time + 10000);
+			//set_timerC3(time);
 			// scrSchedule(PID, PROCS[p].priority, READY);
 
 			resetCS(3);
