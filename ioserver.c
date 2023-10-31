@@ -145,6 +145,7 @@ void io_TXIC_MARKLIN_server()
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
 			// uart_printf(CONSOLE, "\033[37m");
+			uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
 			Reply(ret_pid, recieve, 8);
 			call_list.call[call_list.begin].tid = 0;
 			call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
