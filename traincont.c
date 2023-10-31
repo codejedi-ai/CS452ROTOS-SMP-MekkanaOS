@@ -68,13 +68,13 @@ void command_wrapper(unsigned char byte_1, unsigned char byte_2 ){
     uart_printf(CONSOLE, "command_wrapper: byte_1 = %d, byte_2 = %d\r\n", byte_1, byte_2);
     int clock_server_tid = WhoIs("clock_server");
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
-    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
-    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
+    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
+    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
     
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_2);
     // await CTS 
-    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
-    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
+    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
+    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
