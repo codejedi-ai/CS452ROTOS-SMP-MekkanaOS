@@ -58,8 +58,12 @@ void idle(){
 	Exit();
 }
 void main(){
+	
 	// register the k2
 	RegisterAs("main");
+	  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
+  	uart_printf(CONSOLE, "%s\r\n", logo);
+  	uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
 	unsigned int counter=1;
 	char command[50];
 	int command_length = 0;
