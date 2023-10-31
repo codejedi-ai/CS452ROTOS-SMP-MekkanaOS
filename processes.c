@@ -158,7 +158,7 @@ void busyloop(){
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	int tid;
-	uint32_t timer = get_timerLO(), clock_server_tid = WhoIs("clock_server");
+	uint32_t clock_server_tid = WhoIs("clock_server");
 	
 	init_ioserver();
 	set_io_logging(1);
