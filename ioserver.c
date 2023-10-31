@@ -500,6 +500,7 @@ int awaitCTS(int tid, int channel, uint8_t val)
 	// print the params
 	# if DISPLAY == 3
 	 uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
+	#endif
 	char channel64[8];
 	*((uint32_t *)channel64 + 1) = ((uint32_t)channel);
 	channel64[0] = CTS;
