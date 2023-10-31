@@ -168,9 +168,8 @@ void FirstUserTask() // First task as dictated in the reqs
 	//tid = Create(7, FirstUserTaskk3);
 	//uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
 	execute_train_command(0, 54);
-	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
+	execute_train_command(0, 54);
 	execute_reverse_command(10, 54);
-	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000)); // this is the value I am curiose of
 	//execute_train_command(15, 54);

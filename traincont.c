@@ -74,6 +74,7 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // await CTS 
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
+    Delay(clock_server_tid, 20)
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
