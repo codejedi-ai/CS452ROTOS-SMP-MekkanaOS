@@ -129,8 +129,6 @@ void FirstUserTaskk3() // First task as dictated in the reqs
 	RegisterAs("FirstUserTask");
   	int tid = KernelCreate(0, clock_notifier, 0);
 	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
-	tid = KernelCreate(0, clock_server, 0);
-	uart_printf(CONSOLE, "clock_server: tid = %d\r\n", tid);
 	
 	char clockproc1[8] = "cl10";
     uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
