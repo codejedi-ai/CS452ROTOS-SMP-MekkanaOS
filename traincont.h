@@ -19,7 +19,7 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 );
 void print_error(char *error);
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id);  // Binary: 00000001)
-void execute_reverse_command(unsigned char id);  // Binary: 00000001)
+void execute_reverse_command(unsigned char speed, unsigned char id );  // Binary: 00000001)
 void solonoid_command(unsigned char solonoid_id, // Solonoid ID. . 
                       unsigned char direction);  // S 33 go straight, C 34 go bent
 void sol_off(); // Solonoid ID

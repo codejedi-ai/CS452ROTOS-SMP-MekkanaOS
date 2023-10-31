@@ -113,10 +113,10 @@ void execute_train_command(unsigned char speed, // Binary: 00001010
       enqueue(speed, id);
       trains_speed[id] = speed;
 }
-void execute_reverse_command(unsigned char id){  // Binary: 00000001)
+void execute_reverse_command(unsigned char speed, unsigned char id){  // Binary: 00000001)
       enqueue(0, id);
       enqueue(15, id);
-      enqueue(trains_speed[id], id);
+      enqueue(speed, id);
 }
 void solonoid_command(unsigned char solonoid_id, // Solonoid ID. . 
                       unsigned char direction){  // S 33 go straight, C 34 go bent
