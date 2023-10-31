@@ -100,7 +100,7 @@ void io_TXIC_server()
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
 				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
 				
-				uart_printf(CONSOLE, "soldier returned home: %u\r\n", Reply(tid_ret, recieve, 8));
+				uart_printf(CONSOLE, "soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
 				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 				call_list[channel].size--;
 				clear = 1;
@@ -396,9 +396,9 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 	channel64[1] = (uint8_t)channel;
 	channel64[2] = ch;
 	channel64[3] = ch2;
-	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	if (io_logging)
-		// uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
+	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 1);
+	//if (io_logging)
+	uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 
