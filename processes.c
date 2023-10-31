@@ -172,12 +172,12 @@ void FirstUserTask() // First task as dictated in the reqs
 	execute_train_command(10, 54);
 	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
-	// uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000)); // this is the value I am curiose of
-	execute_train_command(15, 54);
-	// uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
-	execute_train_command(10, 54);
-	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
-	execute_train_command(0, 54);
+	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000)); // this is the value I am curiose of
+	//execute_train_command(15, 54);
+	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
+	//execute_train_command(10, 54);
+	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
+	//execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	// print in green process finnished
 	uart_printf(CONSOLE, "\033[32m");
