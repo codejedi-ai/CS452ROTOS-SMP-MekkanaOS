@@ -87,29 +87,33 @@ void io_TXIC_server()
 		uint8_t channel = recieve[1];
 		uint8_t char_ch = recieve[2];
 		uint8_t char_ch2 = recieve[3];
+		if(type ==CTSMIM){
+			uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
+		}
 		if(type == TXIC){
-			
+			uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 			// enqueue the interrupt
 			// pop the call list queue and reply to the task
 			if (call_list[channel].size && !clear){
 				// soldier <tid>'s bullet has landed
 				int tid_ret = call_list[channel].call[call_list[channel].begin].tid;
-				uart_printf(CONSOLE, "soldier %u's bullet has landed\r\n", tid_ret);
+				uart_printf(CONSOLE, "	soldier %u's bullet has landed\r\n", tid_ret);
 				recieve[0] = call_list[channel].call[call_list[channel].begin].type;
 				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
 				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
 				
-				uart_printf(CONSOLE, "soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
+				uart_printf(CONSOLE, "	soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
 				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 				call_list[channel].size--;
 				clear = 1;
 			}
 
 		} else if(type == PUTC){
+			uart_printf(CONSOLE, "PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
 			// enqueue the function call
 			// print soldier <tid> entered firing queue print it a Kernel is like a military
-			uart_printf(CONSOLE, "soldier %u entered firing queue\r\n", tid);
+			uart_printf(CONSOLE, "	soldier %u entered firing queue\r\n", tid);
 			call_list[channel].call[call_list[channel].end].tid = tid;
 			call_list[channel].call[call_list[channel].end].type = type;
 			call_list[channel].call[call_list[channel].end].channel = channel;
@@ -382,8 +386,8 @@ int Putc(int tid, int channel, unsigned char ch)
 	channel64[2] = ch;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	if (io_logging)
-		// uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	//if (io_logging)
+	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 // cannot get over the waitCTS thing. I want the my code to unblock when the CTS is high
