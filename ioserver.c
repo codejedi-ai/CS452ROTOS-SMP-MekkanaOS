@@ -473,7 +473,9 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 }
 
 int awaitCTS(int tid, int channel, uint8_t val)
-{
+{	
+	// print the params
+	uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
 	char channel64[8];
 	*((uint32_t *)channel64 + 1) = ((uint32_t)channel);
 	channel64[0] = CTS;
