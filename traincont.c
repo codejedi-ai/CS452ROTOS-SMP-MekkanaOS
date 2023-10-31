@@ -73,8 +73,8 @@ void command_wrapper(unsigned char byte_1, unsigned char byte_2 ){
     
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_2);
     // await CTS 
-    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
-    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
+    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
+    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
