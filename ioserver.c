@@ -333,8 +333,8 @@ void io_notifier()
 			else if(type == CTSMIM)
 			{
 				# if DISPLAY == 3 
-					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");#
-				endif
+					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
+				#endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 		}
