@@ -17,7 +17,8 @@
 #define GETC 32
 #define PUTC 33
 #define CTS 34
-
+# if DISPLAY
+#elif
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -114,10 +115,10 @@ void io_TXIC_MARKLIN_server()
 		} 
 		
 		if(type == PUTC){
-			uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);#endif
 			// enqueue the function call
 			// print soldier <tid> entered firing queue print it a Kernel is like a military
-			uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); #endif
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;
@@ -132,10 +133,10 @@ void io_TXIC_MARKLIN_server()
 			STATE = 0;
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
 			// print in green
-			uart_printf(CONSOLE, "\033[32m");
-			uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[32m");#endif
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);#endif
 			// print in white
-			uart_printf(CONSOLE, "\033[37m");
+			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");#endif
 		}
 		
 		if(call_list.size > 0 && interrupt_list.size > 0){
@@ -144,8 +145,8 @@ void io_TXIC_MARKLIN_server()
 			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
-			uart_printf(CONSOLE, "\033[37m");
-			uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");#endif
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);#endif
 			// print in green
 			Reply(ret_pid, recieve, 8);
 			call_list.call[call_list.begin].tid = 0;
@@ -180,7 +181,7 @@ void io_RXIC_MARKLIN_server()
 	while (1)
 	{
 		// change font to orange
-		// uart_printf(CONSOLE, "\033[33m");
+		// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[33m");
 		char recieve[8];
 		Receive(&tid, recieve, 8);
 		uint8_t type = recieve[0];
@@ -204,7 +205,7 @@ void io_RXIC_MARKLIN_server()
 		{
 			// check is the channel is empty
 			// enqueue the interrupt
-			// uart_printf(CONSOLE, "GETC FUNCTION char_ch = 0x%x, tid = %u\r\n", char_ch, tid);
+			// # if DISPLAY == 4 uart_printf(CONSOLE, "GETC FUNCTION char_ch = 0x%x, tid = %u\r\n", char_ch, tid);
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;
@@ -220,7 +221,7 @@ void io_RXIC_MARKLIN_server()
 			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
-			// uart_printf(CONSOLE, "\033[37m");
+			// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");
 			Reply(ret_pid, recieve, 8);
 			call_list.call[call_list.begin].tid = 0;
 			call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
@@ -229,7 +230,7 @@ void io_RXIC_MARKLIN_server()
 			interrupt_list.size--;
 		}
 		// print in white
-		// uart_printf(CONSOLE, "\033[37m");
+		// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");
 	}
 	Exit();
 }
@@ -259,7 +260,7 @@ void io_CTS_MARKLIN_server()
 			Reply(tid, recieve, 0);
 		}
 		if(type ==CTSMIM){
-			uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);#endif
 			int cur_cts = get_CTS(MARKLIN);
 			for (int i = 0; i < NUMPROCS; i++){
 				int tid_free = awaitcts[cur_cts][i];
@@ -268,7 +269,7 @@ void io_CTS_MARKLIN_server()
 			}
 			awaitcts_size[cur_cts] = 0;
 		} else if(type == CTS){
-			uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);
+			# if DISPLAY == 4 uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);#endif
 			if (char_ch == get_CTS(MARKLIN)){
 				Reply(tid, recieve, 8);
 			} else {
@@ -308,17 +309,17 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
-				uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
+				# if DISPLAY == 4 uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");#endif
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
-				uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
+				# if DISPLAY == 4 uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");#endif
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
-				uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
+				# if DISPLAY == 4 uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");#endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 		}
@@ -331,7 +332,7 @@ void io_TXIC_MARKLIN_server_old()
 {
 /*
 	if (io_logging)
-		// uart_printf(CONSOLE, "io_TXIC_MARKLIN_server: Registered at %u\n", MyTid());
+		// # if DISPLAY == 4 uart_printf(CONSOLE, "io_TXIC_MARKLIN_server: Registered at %u\n", MyTid());
 	RegisterAs("io_TXIC_MARKLIN_server");
 	int io_notifier_tid = WhoIs("io_notifier");
   	int tid = 0;
@@ -353,9 +354,9 @@ void io_TXIC_MARKLIN_server_old()
 		
 		char char_ch = recieve[2];
 		// yellow character
-		// uart_printf(CONSOLE, "\033[33m");
+		// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[33m");
 		if (type != GETC && type != PUTC && type != CTS){
-			if (WhoIs("io_notifier") == tid) // uart_printf(CONSOLE, "io_server: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+			if (WhoIs("io_notifier") == tid) // # if DISPLAY == 4 uart_printf(CONSOLE, "io_server: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
 			
 			Reply(tid, recieve, 8);
 		}
@@ -370,7 +371,7 @@ void io_TXIC_MARKLIN_server_old()
 			}
 		} else if(type == PUTC){
 			if(STATE == 0){
-				uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_ret);
+				# if DISPLAY == 4 uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_ret);
 				tid_ret = tid;
 				STATE = 1;
 				uart_putc(channel, char_ch);
@@ -421,7 +422,7 @@ int Getc(int tid, int channel)
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	if (io_logging)
-		// uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
+		// # if DISPLAY == 4 uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 /*
@@ -455,7 +456,7 @@ int Putc(int tid, int channel, unsigned char ch)
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	//if (io_logging)
-	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	# if DISPLAY == 4 uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 // cannot get over the waitCTS thing. I want the my code to unblock when the CTS is high
@@ -470,14 +471,14 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 	channel64[3] = ch2;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 1);
 	//if (io_logging)
-	uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
+	# if DISPLAY == 4 uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 
 int awaitCTS(int tid, int channel, uint8_t val)
 {	
 	// print the params
-	uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
+	# if DISPLAY == 4 uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
 	char channel64[8];
 	*((uint32_t *)channel64 + 1) = ((uint32_t)channel);
 	channel64[0] = CTS;
@@ -485,6 +486,6 @@ int awaitCTS(int tid, int channel, uint8_t val)
 	channel64[2] = val;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	# if DISPLAY == 4 uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
