@@ -24,7 +24,7 @@ void clock_notifier(){
 }
 void clock_server(){
     RegisterAs("clock_server");
-    // uart_printf(CONSOLE, "clock_notifier:Registered\n");
+    uart_printf(CONSOLE, "clock_server: Registered\n");
     int waketicks[NUMPROCS];
     memset(waketicks, -1, NUMPROCS * sizeof(int));
     int ticks = 0;

@@ -17,6 +17,7 @@ Print -1 if there is an error
 */
 int k3ExecuteCommands(char *command, char **num, int command_part_count){
 	  // the command is not found
+      int mypriority = MyPriority();
       int clock_server_pid = WhoIs("clock_server");
       if (strcmp_ret(num[0], "time")){
          uart_printf(CONSOLE, "Ticks passed: %d\r\n", Time(clock_server_pid));
@@ -27,7 +28,7 @@ int k3ExecuteCommands(char *command, char **num, int command_part_count){
         }
         int delay = atoi_64(num[2]);
         int delaycount = atoi_64(num[3]);
-        init_clock_proc(3, num[1], delay, delaycount);
+        init_clock_proc(mypriority - 1, num[1], delay, delaycount);
       } else if (strcmp_ret(num[0], "delayuntil")) {
         if (command_part_count != 3){
             uart_printf(CONSOLE, "delayuntil command requires 1 argument, argcount = %d\r\n", command_part_count);

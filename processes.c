@@ -61,7 +61,7 @@ void main(){
 	
 	// register the k2
 	RegisterAs("main");
-	  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
+	char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   	uart_printf(CONSOLE, "%s\r\n", logo);
   	uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
 	unsigned int counter=1;
@@ -131,8 +131,6 @@ void FirstUserTaskk3() // First task as dictated in the reqs
 	// We are assuming that FirstUserTask has a priority of 1
 	// start gameserver
 	RegisterAs("FirstUserTask");
-  	int tid = KernelCreate(0, clock_notifier, 0);
-	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
 	
 	char clockproc1[8] = "cl10";
     uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
@@ -145,7 +143,7 @@ void FirstUserTaskk3() // First task as dictated in the reqs
 	// tid = Create(7, idle);
 	// uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
 	// Create(2000, main);
-	uart_printf(CONSOLE, "FirstUserTask: Started\r\n");
+	uart_printf(CONSOLE, "FirstUserTaskk3: Started\r\n");
 	Exit();
 }
 void busyloop(){
@@ -158,24 +156,27 @@ void busyloop(){
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	int tid;
+	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
 	uint32_t clock_server_tid = WhoIs("clock_server");
-	
+	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
 	init_ioserver();
 	set_io_logging(1);
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	tid = Create(1, FirstUserTaskk3);
-	uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
+	//tid = Create(7, FirstUserTaskk3);
+	//uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
 	execute_train_command(0, 54);
-	Delay(clock_server_tid, 100);
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(10, 54);
-	Delay(clock_server_tid, 100);
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 20));
 	execute_reverse_command(54);
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 20));
 	execute_train_command(10, 54);
-	Delay(clock_server_tid, 100);
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	// print in green process finnished
@@ -184,7 +185,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	// print in white
 	uart_printf(CONSOLE, "\033[37m");
 
-	tid = Create(-2, main);
-	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
+	//tid = Create(-2, main);
+	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();
 }

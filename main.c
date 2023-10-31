@@ -35,6 +35,7 @@ int kmain(void *reg) {
   // INIT THE SERVERS AND NOTIFIERS
   int tid = KernelCreate(0, nameserver, 0);
   tid = KernelCreate(0, io_notifier, 0);
+  tid = KernelCreate(0, clock_notifier, 0);
   uart_printf(CONSOLE, "io_notifier: tid = %d\r\n", tid);
 
 	tid = KernelCreate(-1, idle, 0);
