@@ -140,8 +140,8 @@ void FirstUserTaskk3() // First task as dictated in the reqs
     uart_printf(CONSOLE, "%d\r\n", init_clock_proc(5, clockproc3, 33, 6));
 	char clockproc4[8] = "cl71";
     uart_printf(CONSOLE, "%d \r\n", init_clock_proc(6, clockproc4, 71, 3));
-	tid = Create(7, idle);
-	uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
+	// tid = Create(7, idle);
+	// uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
 	// Create(2000, main);
 	uart_printf(CONSOLE, "FirstUserTask: Started\r\n");
 	Exit();
@@ -152,43 +152,6 @@ void busyloop(){
 	Exit();
 }
 #define UARTINTER 153
-void clock_proc(){
-    uart_printf(CONSOLE, "clock_proc: Started\r\n");
-    uint64_t tid = MyTid();
-    char name[8] = "clock_proc";
-    int delay = 10;
-    int numberOfDelays = 20;
-    RegisterAs(name);
-
-    Receive(&tid, name, 8);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s\r\n", tid, name);
-    Reply(tid, name, 8);
-    
-
-    Receive(&tid, &delay, 4);
-    Reply(tid, &delay, 4);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d\r\n", tid, name, delay);
-
-    Receive(&tid, &numberOfDelays, 4);
-    Reply(tid, &numberOfDelays, 4);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d, numberOfDelays = %d\r\n", tid, name, delay, numberOfDelays);
-    
-    RegisterAs(name);
-    int clock_server = WhoIs("clock_server");
-    for(int i = 0; i < numberOfDelays; i++){
-        int clock_server = WhoIs("clock_server");
-        if (clock_server == -1){
-            uart_printf(CONSOLE, "clock_proc: clock_server not found\r\n");
-            Exit();
-        }
-        int delayret = Delay(clock_server, delay);
-        uart_printf(CONSOLE, "i = %d, %s Reawakened after %d ticks\r\n",i, (char *)name, delay);
-    }
-    
-   uart_printf(CONSOLE, "Clock proc exit \r\n");
-
-    Exit();
-}
 // new paradymn, run tests for each k# assignment (other than 3) before running the shell
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
@@ -201,8 +164,8 @@ void FirstUserTask() // First task as dictated in the reqs
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	tid = Create(1, clock_proc);
-	uart_printf(CONSOLE, "clock_proc: tid = %d\r\n", tid);
+	tid = Create(1, FirstUserTaskk3);
+	uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
 	execute_train_command(0, 54);
 	Delay(clock_server_tid, 100);
 	execute_train_command(10, 54);
