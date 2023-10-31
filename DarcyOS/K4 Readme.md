@@ -16,3 +16,9 @@ this server imitates the FIFO queue that I do not have the luxury to enjoy.
 I have simulated the UART queue. I made two data structures that are meant to push and pull. 
 
 Instead of having one IO server, I have an I server and an O server. the I server is responsible for the input
+
+
+I made an input queue for the marklin, in which all put C commands would be enqueued. I used my favourite circular queue methodology to keep track of the command. THis way we can ensure that all putc commands are executed properlly. 
+
+
+

@@ -158,19 +158,19 @@ void FirstUserTask() // First task as dictated in the reqs
 	uint32_t timer = get_timerLO();
 	set_timerC3(timer + 10000);
 	init_ioserver();
-	uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
+	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	int tid;
 	//int tid = Create(1, read_s88_test_sensor_A);
 	// uart_printf(CONSOLE, "read_s88_test_sensor_A: tid = %d\r\n", tid);
-	tid = Create(2, init_track_test);
-
+	// tid = Create(2, init_track_test);
+	// uart_printf(CONSOLE, "init_track_test: tid = %d\r\n", tid);
 	// tid = Create(20, read_s88_test_many);
-	tid = Create(20, init_trains);
-	uart_printf(CONSOLE, "init_trains: tid = %d\r\n", tid);
-	tid = Create(20, test_trains);
-	uart_printf(CONSOLE, "test_trains: tid = %d\r\n", tid);
-	uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	// Create(-2, main);
+	//tid = Create(20, init_trains);
+	//uart_printf(CONSOLE, "init_trains: tid = %d\r\n", tid);
+	// tid = Create(20, test_trains);
+	// uart_printf(CONSOLE, "test_trains: tid = %d\r\n", tid);
+	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
+	Create(-2, main);
 	Exit();
 }
