@@ -136,7 +136,7 @@ void io_TXIC_server()
 			char char_ch = recieve[2];
 			char char_ch2 = recieve[3];
 			// soldier <tid> is firing his gun
-			uart_printf(CONSOLE, "soldier %u is firing his gun\r\n", ret_pid);
+			uart_printf(CONSOLE, "soldier %u is firing his gun, char_ch = %d, char_ch = %d\r\n", ret_pid, char_ch, char_ch);
 			uart_printf(MARKLIN, char_ch);
 			if (recieve[3] != -1){
 				uart_printf(MARKLIN, char_ch2);
