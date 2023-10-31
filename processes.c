@@ -161,16 +161,17 @@ void FirstUserTask() // First task as dictated in the reqs
 	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
 	init_ioserver();
 	set_io_logging(1);
+	// Commented out the old code
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
 	//tid = Create(7, FirstUserTaskk3);
 	//uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
-	execute_train_command(0, 54);
-	execute_train_command(0, 54);
-	execute_reverse_command(10, 54);
-	execute_train_command(0, 54);
+	//execute_train_command(0, 54);
+	//execute_train_command(0, 54);
+	//execute_reverse_command(10, 54);
+	//execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000)); // this is the value I am curiose of
 	//execute_train_command(15, 54);
 	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
@@ -179,12 +180,12 @@ void FirstUserTask() // First task as dictated in the reqs
 	//execute_train_command(0, 54);
 	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	// print in green process finnished
-	uart_printf(CONSOLE, "\033[32m");
-	uart_printf(CONSOLE, "FirstUserTask: FIRST TASK FINISHED\r\n");
+	// uart_printf(CONSOLE, "\033[32m");
+	// uart_printf(CONSOLE, "FirstUserTask: FIRST TASK FINISHED\r\n");
 	// print in white
-	uart_printf(CONSOLE, "\033[37m");
+	// uart_printf(CONSOLE, "\033[37m");
 
-	//tid = Create(-2, main);
-	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
+	tid = Create(-2, main);
+	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();
 }

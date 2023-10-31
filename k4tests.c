@@ -61,7 +61,6 @@ void init_track_test(){
     // set all the turnabouts to straight
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
     solonoid_command(i, 'S');
-    // this command only enqueues the switches
   }
   // set all the turnabouts to curved
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){

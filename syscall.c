@@ -17,7 +17,6 @@
 uint32_t kernelStartTime = 0;
 uint8_t NO_PARAMS = 0;
 // scrSchedule(pid, priority, ready)
-// This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 void scrSchedule(int pid, uint64_t priority, int ready)
 {
 	struct state currItem = {pid, priority, ready};
@@ -40,7 +39,6 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 	return 0;
 }
 // scrSchedule(pid, priority, ready)
-// This is an enqueue funciton in which it adds a process to the READY_QUEUE 
 int queue_unblock(int pid, uint64_t priority, int ready)
 {
 	
@@ -288,7 +286,6 @@ void ExceptionASYNC(uint64_t esr_el1){
 			}
 			
 			if (!unblock_return(interruptid, *(uint64_t*)return_val)){
-				// enqueue the interrupt
 				# if DEBUG == 4
 					// print in red
 					uart_printf(CONSOLE, "\033[31m");
@@ -296,7 +293,6 @@ void ExceptionASYNC(uint64_t esr_el1){
 					// print in white
 					uart_printf(CONSOLE, "\033[37m");
 				# endif
-				// enqueue the interrupt
 				AWAIT_INTERRUPT[interruptid].event_q[AWAIT_INTERRUPT[interruptid].eventq_tail] = *(uint64_t*)return_val;
 				AWAIT_INTERRUPT[interruptid].eventq_tail++;
 				AWAIT_INTERRUPT[interruptid].eventq_tail %= NUMPROCS;

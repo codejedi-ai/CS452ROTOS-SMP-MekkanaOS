@@ -13,7 +13,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 4
+#define DISPLAY 15
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -98,11 +98,14 @@ void io_TXIC_MARKLIN_server()
 		}
 
 		if(type == TXIC){
-			// enqueue the interrupt
 			// pop the call list queue and reply to the task
 			// is there another bullet the soldier can fire
 			// soldier <tid>'s bullet has landed
-			
+			# if DISPLAY % 2== 0 
+				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
+				// print soldier <tid> entered firing queue print it a Kernel is like a military
+				uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); 
+			#endif
 			// add interrupt to the interrupt list
 			interrupt_list.call[interrupt_list.end].tid = tid;
 			interrupt_list.call[interrupt_list.end].type = type;
@@ -114,9 +117,8 @@ void io_TXIC_MARKLIN_server()
 		} 
 		
 		if(type == PUTC){
-			# if DISPLAY == 1 
+			# if DISPLAY % 2== 0 
 				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
-				// enqueue the function call
 				// print soldier <tid> entered firing queue print it a Kernel is like a military
 				uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); 
 			#endif
@@ -134,7 +136,7 @@ void io_TXIC_MARKLIN_server()
 			STATE = 0;
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
 			// print in green
-			# if DISPLAY == 1 
+			# if DISPLAY % 2== 0 
 				uart_printf(CONSOLE, "\033[32m");
 				uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);
 				// print in white
@@ -148,7 +150,7 @@ void io_TXIC_MARKLIN_server()
 			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
-			# if DISPLAY == 1 
+			# if DISPLAY % 2== 0 
 				uart_printf(CONSOLE, "\033[37m");
 				uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
 			#endif
@@ -209,7 +211,6 @@ void io_RXIC_MARKLIN_server()
 		else if (type == GETC)
 		{
 			// check is the channel is empty
-			// enqueue the interrupt
 			// # if DISPLAY == 4 uart_printf(CONSOLE, "GETC FUNCTION char_ch = 0x%x, tid = %u\r\n", char_ch, tid);
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
@@ -265,7 +266,7 @@ void io_CTS_MARKLIN_server()
 			Reply(tid, recieve, 0);
 		}
 		if(type ==CTSMIM){
-			# if DISPLAY == 3
+			# if DISPLAY % 3== 0
 				uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
 			#endif
 			int cur_cts = get_CTS(MARKLIN);
@@ -276,7 +277,7 @@ void io_CTS_MARKLIN_server()
 			}
 			awaitcts_size[cur_cts] = 0;
 		} else if(type == CTS){
-			# if DISPLAY == 3 
+			# if DISPLAY % 3== 0 
 				uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);
 			#endif
 			if (char_ch == get_CTS(MARKLIN)){
@@ -285,9 +286,6 @@ void io_CTS_MARKLIN_server()
 				awaitcts[char_ch][awaitcts_size[char_ch]] = tid;
 				awaitcts_size[char_ch]++;
 			}
-			// enqueue the function call
-			// print soldier <tid> entered firing queue print it a Kernel is like a military
-			// this is different in essence that it would 
 		}
 	}
 	
@@ -318,21 +316,21 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
-				# if DISPLAY == 1
+				# if DISPLAY % 2 == 0
 					uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
 				#endif
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
-				# if DISPLAY == 2
+				# if DISPLAY % 5 == 0
 					uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 				#endif
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
-				# if DISPLAY == 3 
+				# if DISPLAY % 3 == 0 
 					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
 				#endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
@@ -437,7 +435,7 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 int awaitCTS(int tid, int channel, uint8_t val)
 {	
 	// print the params
-	# if DISPLAY == 3
+	# if DISPLAY % 3== 0
 	 uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
 	#endif
 	char channel64[8];
@@ -447,7 +445,7 @@ int awaitCTS(int tid, int channel, uint8_t val)
 	channel64[2] = val;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	# if DISPLAY == 3 
+	# if DISPLAY % 3== 0 
 	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
 	#endif
 	return channel64[2];

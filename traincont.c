@@ -63,9 +63,9 @@ uint32_t MARKLIN_GET_SERVER(){
 uint32_t get_Marklin_CTS_pid(){
     return io_CTS_MARKLIN_server_pid;
 }
-void enqueue(unsigned char byte_1, unsigned char byte_2 ){
+void command_wrapper(unsigned char byte_1, unsigned char byte_2 ){
     // Put2c(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1, byte_2);
-    uart_printf(CONSOLE, "enqueue: byte_1 = %d, byte_2 = %d\r\n", byte_1, byte_2);
+    uart_printf(CONSOLE, "command_wrapper: byte_1 = %d, byte_2 = %d\r\n", byte_1, byte_2);
     int clock_server_tid = WhoIs("clock_server");
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
@@ -75,7 +75,6 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // await CTS 
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
-    Delay(clock_server_tid, 20);
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
@@ -112,13 +111,13 @@ uint16_t read_many_s88(char s88_no, uint16_t* ret){
 
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
-      enqueue(speed, id);
+      command_wrapper(speed, id);
       trains_speed[id] = speed;
 }
 void execute_reverse_command(unsigned char speed, unsigned char id){  // Binary: 00000001)
-      enqueue(0, id);
-      enqueue(15, id);
-      enqueue(speed, id);
+      command_wrapper(0, id);
+      command_wrapper(15, id);
+      command_wrapper(speed, id);
 }
 void solonoid_command(unsigned char solonoid_id, // Solonoid ID. . 
                       unsigned char direction){  // S 33 go straight, C 34 go bent
@@ -131,7 +130,7 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
       return;
     }
     byte_2 = solonoid_id;
-    enqueue(byte_1, byte_2);
+    command_wrapper(byte_1, byte_2);
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, 32);
 }
 // define a function that takes a char array as a parameter
