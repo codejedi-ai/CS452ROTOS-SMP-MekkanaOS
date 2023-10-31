@@ -10,8 +10,10 @@
 #include "k2rps.h"
 #include "clockserver.h"
 #include "k3tests.h"
+#include "k4tests.h"
 #include "asm.h"
 #include "ioserver.h"
+
 #define DISPLAY 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -36,8 +38,24 @@ Code	Effect
 "\033[37m"	White text.
 
 */
-
-
+void print_error(char *error){
+    // print in red
+    uart_printf(CONSOLE, "\033[31m");
+    uart_printf(CONSOLE, "%s\r\n", error);
+    // print in white
+    uart_printf(CONSOLE, "\033[37m");
+}
+void idle(){
+	while(1){
+		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
+		//uart_printf(CONSOLE, "idle: time = %u\r\n", get_timerLO());
+		asm("WFI");
+		uint32_t runtime = GetRuntime();
+		uint32_t kernelrt = GetKernelRuntime();
+		//uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
+	}
+	Exit();
+}
 void main(){
 	// register the k2
 	RegisterAs("main");
@@ -98,17 +116,7 @@ void main(){
 	Exit();
 }
 
-void idle(){
-	while(1){
-		asm("WFI");
-		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
-		// uart_printf(CONSOLE, "idle: time = %u\r\n", time);
-		uint32_t runtime = GetRuntime();
-		uint32_t kernelrt = GetKernelRuntime();
-		uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
-	}
-	Exit();
-}
+
 void FirstUserTaskk3() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	uint32_t timer = get_timerLO();
@@ -143,28 +151,26 @@ void busyloop(){
 	Exit();
 }
 #define UARTINTER 153
+// new paradymn, run tests for each k# assignment (other than 3) before running the shell
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
+
 	uint32_t timer = get_timerLO();
 	set_timerC3(timer + 10000);
-	// uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
-	
-	// We are assuming that FirstUserTask has a priority of 1
-	// start gameserver
-	// RegisterAs("FirstUserTask");
-  	int tid = 0;
-  	tid = KernelCreate(0, clock_notifier, 0);
-	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
-	tid = KernelCreate(0, clock_server, 0);
-	uart_printf(CONSOLE, "clock_server: tid = %d\r\n", tid);
-	
-	tid = Create(-1, idle);
-	
-	int io_server_PID;
-	io_server_PID = KernelCreate(0, io_notifier, 0);
-	uart_printf(CONSOLE, "io_notifier_PID = %d\r\n", io_server_PID);
-	io_server_PID = KernelCreate(0, io_server, 0);
-	uart_printf(CONSOLE, "io_server_PID = %d\r\n", io_server_PID);
-	tid = Create(2000, main);
+	init_ioserver();
+	uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
+	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
+	int tid;
+	//int tid = Create(1, read_s88_test_sensor_A);
+	// uart_printf(CONSOLE, "read_s88_test_sensor_A: tid = %d\r\n", tid);
+	tid = Create(2, init_track_test);
+
+	// tid = Create(20, read_s88_test_many);
+	tid = Create(20, init_trains);
+	uart_printf(CONSOLE, "init_trains: tid = %d\r\n", tid);
+	tid = Create(20, test_trains);
+	uart_printf(CONSOLE, "test_trains: tid = %d\r\n", tid);
+	uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
+	// Create(-2, main);
 	Exit();
 }

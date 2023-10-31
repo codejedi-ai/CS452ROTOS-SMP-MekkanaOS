@@ -44,13 +44,90 @@ Code	Effect
 
 
 #define UARTINTER 153
+#define QUEUELENGTH 100
+// this struct can be used to store the function call and interrupts
+struct intFun{
+	uint8_t tid; // the PID of the send, put or CTS
+	uint8_t type; // the type of the interrupt it is waiting for
+	uint8_t channel; // the channel of the interrupt it is waiting for
+	uint8_t char_ch; // the character that is being sent or recieved or the state of the CTS it is waiting for
+};
+// this list contains all the functions that are waiting for a certain interrupt, if that interrupt fires then the function is unblocked
+// all functions that are blocked by the same interrupt are stored in a list
+struct fi_list{
+	struct intFun call[QUEUELENGTH];
+	uint8_t size;
+	uint8_t begin;
+	uint8_t end;
+};
+void io_TXIC_server(){
+	Exit();
+}
+void io_RXIC_server(){
+	int tid;
+	RegisterAs("io_RXIC_server");
+	int io_notifier_tid = WhoIs("io_notifier");
+	// for the recieve interrupts I need to handle cases in which the interrupt happened before a task picked it up
+	// this doubles of as a queue for the interrupts
+	struct fi_list interrupts_list[3];
+	struct fi_list call_list[3];
+	// 0 is nothing
+	// 1 is CONSOLE
+	// 2 is MARKLIN
 
-
-
+	// need to consider cases in which the interrupt arrived before the task picked it up
+	// in other words the task is still blocked on the AwaitEvent or a PutC
+	while(1){
+		char recieve[8];
+		Receive(&tid, recieve, 8);
+		uint8_t type = recieve[0];
+		uint8_t channel = recieve[1];
+		uint8_t char_ch = recieve[2];
+		// get arrives after interrupt
+		// interrupt arrives after get
+		if(type == RXIC){			
+			Reply(tid, recieve, 0);
+			interrupts_list[channel].call[interrupts_list[channel].end].tid = tid;
+			interrupts_list[channel].call[interrupts_list[channel].end].type = type;
+			interrupts_list[channel].call[interrupts_list[channel].end].channel = channel;
+			interrupts_list[channel].call[interrupts_list[channel].end].char_ch = char_ch;
+			interrupts_list[channel].end = (interrupts_list[channel].end + 1) % QUEUELENGTH;
+			interrupts_list[channel].size++;
+		} else if(type == GETC){
+			// check is the channel is empty
+			// enqueue the interrupt
+			call_list[channel].call[call_list[channel].end].tid = tid;
+			call_list[channel].call[call_list[channel].end].type = type;
+			call_list[channel].call[call_list[channel].end].channel = channel;
+			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
+			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
+			call_list[channel].size++;
+		}
+		// if there exist an interrupt to match up with a request
+		if(call_list[channel].size&& interrupts_list[channel].size){
+			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
+			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
+			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
+			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
+			Reply(ret_pid, recieve, 8);
+			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
+			call_list[channel].size--;
+			interrupts_list[channel].begin = (interrupts_list[channel].begin + 1) % QUEUELENGTH;
+			interrupts_list[channel].size--;
+		} 
+	}
+	Exit();
+}
+void io_CTS_server(){
+	Exit();
+}
 
 void io_notifier(){
 	RegisterAs("io_notifier");
-	// uart_printf(CONSOLE, "io_notifier:Registered\n");
+	int io_server_MARKLIN_tid = Create(0, io_server_MARKLIN);
+	int io_TXIC_tid = Create(0, io_TXIC_server);
+	int io_RXIC_tid = Create(0, io_RXIC_server);
+	int io_CTS_tid = Create(0, io_CTS_server);
 	while (1)
 	{
 		uint64_t event = AwaitEvent(UARTINTER);
@@ -59,36 +136,42 @@ void io_notifier(){
 
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;
-		char char_ch = (event >> 16) & 0xFF;
-		// uart_printf(CONSOLE, "io_notifier: type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
-		Send(WhoIs("io_server"), &event, 8, &ret, 0);
+		uint8_t char_ch = (event >> 16) & 0xFF;
+		// // uart_printf(CONSOLE, "io_notifier: type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+		if(type == RXIC){
+			Send(io_RXIC_tid, &event, 8, &ret, 0);
+		}else if (channel == MARKLIN){
+			Send(io_server_MARKLIN_tid, &event, 8, &ret, 0);
+		}
 	}
 	Exit();
 }
-void io_server() 
+
+// was thinking about doing a three server layout. It is possible that two tasks are waiting for the same interrupt
+void io_server_MARKLIN() 
 {
-	// uart_printf(CONSOLE, "io_server: Registered at %u\n", MyTid());
-	RegisterAs("io_server");
+	
+	// // uart_printf(CONSOLE, "io_server_MARKLIN: Registered at %u\n", MyTid());
+	RegisterAs("io_server_MARKLIN");
+	int io_notifier_tid = WhoIs("io_notifier");
 	// First task as dictated in the reqs
 	// need to set the timer interrupt
-	// uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
+	// // uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
 	// the IO server listens to the UART interrupt and the user commands
 	// it's instruction queue would be it's message queue
 	// We are assuming that FirstUserTask has a priority of 1
 	// start gameserver
 	// RegisterAs("FirstUserTask");
+	// make a put queue
+	struct fi_list put_wait_queue;
   	int tid = 0;
 
-	uint8_t tid_list[3][3]; // Interrupt Type and Channel
-	uint8_t await_cts_val[3];
-	uint8_t STATE[3];
+	uint8_t tid_list[3]; // Interrupt Type and Channel
+	uint8_t STATE;
 
 	for (int i = 0; i < 3; i++)
 	{
-		tid_list[0][i] = 0;
-		tid_list[1][i] = 0;
-		tid_list[2][i] = 0;
-		STATE[i] = 0;
+		tid_list[i] = 0;
 	}
 	uint8_t send_queue_size = 0;
 	uint8_t send_queue_begin = 0;
@@ -106,69 +189,58 @@ void io_server()
 		
 		char char_ch = recieve[2];
 		// yellow character
-		uart_printf(CONSOLE, "\033[33m");
+		// uart_printf(CONSOLE, "\033[33m");
 		if (type != GETC && type != PUTC && type != CTS){
-			if (WhoIs("io_notifier") == tid) uart_printf(CONSOLE, "io_server: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
-			
-			Reply(tid, recieve, 8);
+			// if (WhoIs("io_notifier") == tid)  uart_printf(CONSOLE, "io_server_MARKLIN: UART INTERRUPT io_notifier called me!! type = %u, channel = %u, char_ch = %u\r\n", type, channel, char_ch);
+			Reply(tid, recieve, 0);
 		}
-
+		
 		if (type == CTSMIM){
-			uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
-			if(tid_list[CTS - GETC][channel] != 0){
-				uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+			/*
+			// uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC], char_ch);
+			if(tid_list[CTS - GETC] != 0){
+				// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC]);
 				recieve[2] = char_ch;
-				Reply(tid_list[CTS - GETC][channel], recieve, 8);
-				tid_list[CTS - GETC][channel] = 0;
+				Reply(tid_list[CTS - GETC], recieve, 8);
+				tid_list[CTS - GETC] = 0;
 			} 
-			if(tid_list[PUTC - GETC][channel] != 0){
-				if(STATE[channel] == 2 && get_CTS(channel) == 0){
-					STATE[channel] = 3;
-				} else if(STATE[channel] = 3 && get_CTS(channel) == 1){
-					STATE[channel] = 0;
-					uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+			*/
+			if(tid_list[PUTC - GETC] != 0){
+				if(STATE == 2 && char_ch == 0){
+					STATE = 3;
+				} else if(STATE = 3 && char_ch == 1){
+					STATE = 0;
+					// uart_printf(CONSOLE, "	REPLIED PUTC: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC]);
 					recieve[2] = char_ch;
-					Reply(tid_list[PUTC - GETC][channel], recieve, 8);
-					tid_list[PUTC - GETC][channel] = 0;
+					Reply(tid_list[PUTC - GETC], recieve, 8);
+					tid_list[PUTC - GETC] = 0;
 				}
 			} 
-		} else if(type == TXIC){
-			uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
-			if(tid_list[PUTC - GETC][channel] != 0) {
+		} else 
+		
+		if(type == TXIC){
+			// uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC]);
+			if(tid_list[PUTC - GETC] != 0) {
 				// print reply to channel and putc
-				uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
-				STATE[channel] = 2;
+				// // uart_printf(CONSOLE, "	REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC]);
+				STATE = 2;
 			}
-		} else if(type == RXIC){			
-			// uart print replied to chanenl and geth
-			uart_printf(CONSOLE, "RXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
-			if(tid_list[GETC - GETC][channel] != 0) {
-				uart_printf(CONSOLE, "REPLIED: GETC channel = %u, tid = %u\r\n", channel, tid_list[GETC - GETC]);
-				Reply(tid_list[GETC - GETC][channel], recieve, 8);
-				tid_list[GETC - GETC][channel] = 0;
-			}
-		} else if(type == GETC){
-			uart_printf(CONSOLE, "GETC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
-			tid_list[type - GETC][channel] = tid;
 		} else if(type == PUTC){
-			if(STATE[channel] == 0){
-				uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
-				tid_list[type - GETC][channel] = tid;
-				STATE[channel] = 1;
-				uart_putc(channel, char_ch);
-			} else {
-				recieve[2] = -1;
-				Reply(tid_list[type - GETC][channel], recieve, 8);
-			}
-		} else if(type == CTS){
-			uart_printf(CONSOLE, "CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
-			tid_list[type - GETC][channel] = tid;
+			// enqueue the putc
+
+		} 
+		/*
+		else if(type == CTS){
+			// uart_printf(CONSOLE, "	CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC]);
+			tid_list[type - GETC] = tid;
 		}
+		*/
 		// print in white
-		uart_printf(CONSOLE, "\033[37m");
+		// uart_printf(CONSOLE, "\033[37m");
 	}
 	Exit();
 }
+
 /*
 int Getc(int tid, int channel)
 returns the next un-returned character from the given channel. 
@@ -201,7 +273,7 @@ int Getc(int tid, int channel){
 	channel64[2] = 0;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
+	// uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 /*
@@ -233,19 +305,31 @@ int Putc(int tid, int channel, unsigned char ch){
 	channel64[2] = ch;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	// uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	return channel64[2];
+}
+// cannot get over the waitCTS thing. I want the my code to unblock when the CTS is high
+// this way the marklin would not swallow commands too fast
+int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2){
+	char channel64[8];
+  	*((uint32_t *) channel64 + 1) = ((uint32_t) channel);
+	channel64[0] = PUTC;
+	channel64[1] = (uint8_t) channel;
+	channel64[2] = ch;
+	channel64[3] = ch2;
+	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
+	// uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
 
-
-int awaitCTS(int tid, int channel){
+int awaitCTS(int tid, int channel, uint8_t val){
 	char channel64[8];
   	*((uint32_t *) channel64 + 1) = ((uint32_t) channel);
 	channel64[0] = CTS;
 	channel64[1] = (uint8_t) channel;
-	channel64[2] = -1;
+	channel64[2] = val;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	// uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
 	return channel64[2];
 }

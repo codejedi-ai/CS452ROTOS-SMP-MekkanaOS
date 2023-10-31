@@ -10,15 +10,6 @@
 #define DEBUG_EXIT 1
 # define READY 0
 # define BLOCKED 1
-
-
-
-
-
-
-
-
-
 // it is time to turn READY_QUEUE into a heap
 // enqueing on a heap is O(log(n))
 // first you 
@@ -258,20 +249,11 @@ void ExceptionASYNC(uint64_t esr_el1){
 
 			uint32_t* RIS_MARKLIN = get_RIS(MARKLIN);
 			uint32_t* ICR_MARKLIN = get_ICR(MARKLIN);
-			/*
-			if((*RIS_MARKLIN) & (0x01 << RITC)){
-				// RITC on the marklin
-				uart_printf(CONSOLE, "RITC Interrupt ON MARKLIN\n\r");
-				uart_printf(CONSOLE, "Marklin char = %d\n\r", uart_getc_modified(MARKLIN));
-				*ICR_MARKLIN = (0x01 << RITC);
-			}
-			*/
 			if((*RIS_CONSOLE) & (0x01 << CTSMIM)){
-				// uart_printf(CONSOLE, "CTSMIM Interrupt ON CONSOLE get_CTS(%u) = %u\n\r", MARKLIN, get_CTS(MARKLIN));
 				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
-				return_val[2] = get_CTS(MARKLIN);
+				if (get_CTS(MARKLIN) == 1) return_val[2] = 1; else return_val[2] = 0;
 				*ICR_CONSOLE = (0x01 << CTSMIM);
 			}else if((*RIS_MARKLIN) & (0x01 << TXIC)){
 				// uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");

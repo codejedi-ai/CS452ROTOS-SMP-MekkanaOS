@@ -1,6 +1,6 @@
 #include "rpi.h"
+void io_server_MARKLIN();
 void io_notifier();
-void io_server();
 /*
 int Getc(int tid, int channel)
 returns the next un-returned character from the given channel. 
@@ -26,4 +26,6 @@ Return Value
 */
 // Either the queue is empty or the server needs to wait for the TXIC interrupt to be triggered
 int Putc(int tid, int channel, unsigned char ch);
-int awaitCTS(int tid, int channel);
+int Put2c (int tid, int channel, unsigned char ch1, unsigned char ch2);
+// DO NOT USE await CTS
+int awaitCTS(int tid, int channel, uint8_t val);

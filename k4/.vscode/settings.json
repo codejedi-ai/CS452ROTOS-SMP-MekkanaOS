@@ -26,6 +26,9 @@
         "k2rps.h": "c",
         "ioserver.h": "c",
         "sstream": "c",
-        "ios": "c"
+        "ios": "c",
+        "track_data.h": "c",
+        "stdio.h": "c",
+        "traincont.h": "c"
     }
 }

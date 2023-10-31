@@ -6,10 +6,15 @@
 #include "custstr.h"
 
 // Serial line 1 on the RPi hat is used for the console
+#define SWITCH_COUNT 18
 
+/*
+read_one_s88(char s88_id) would return one byte of data from the s88
+each bit in the byte would reflect the state of the sensor
 
-
-
+*/
+uint16_t read_one_s88(char s88_id);
+uint16_t read_many_s88(char s88_no, uint16_t* ret);
 void enqueue(unsigned char byte_1, unsigned char byte_2 );
 void print_error(char *error);
 void execute_train_command(unsigned char speed, // Binary: 00001010 
@@ -20,5 +25,5 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
 void sol_off(); // Solonoid ID
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
-void train_controller(char *command, char **num, int command_part_count);
+int train_controller(char *command, char **num, int command_part_count);
 void init_track();

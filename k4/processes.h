@@ -3,4 +3,5 @@
 
 void main();
 void FirstUserTask();
+void idle();
 #endif

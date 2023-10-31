@@ -1,6 +1,7 @@
 #include "rpi.h"
 #include "util.h"
 #include "ioserver.h"
+#include "clockserver.h"
 #include "custstr.h"
 #include <stdio.h>
 #include "traincont.h"
@@ -36,22 +37,53 @@ static const size_t COMMANDMAX_LEN = 64;
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
-void enqueue(unsigned char byte_1, unsigned char byte_2 ){
-    uint32_t io_server_pid = WhoIs("io_server");
-    Putc(io_server_pid, MARKLIN, byte_1);
-    // awaitCTS(int tid, int channel)
-    // awaitCTS(io_server_pid, MARKLIN, 1);
-    Putc(io_server_pid, MARKLIN, byte_2);
-    //awaitCTS(io_server_pid, MARKLIN);
-    //awaitCTS(io_server_pid, MARKLIN);
+uint32_t io_server_MARKLIN_pid, io_RXIC_server_pid;
+uint64_t l2(uint64_t x){
+    if (x == 1) return 0;
+    return l2(x / 2) + 1;
 }
-void print_error(char *error){
-    // print in red
-    uart_printf(CONSOLE, "\033[31m");
-    uart_printf(CONSOLE, "%s\r\n", error);
+uint64_t get_i(uint64_t x){
+    return 8 - l2(x);
+}
+void init_ioserver(){
+    io_server_MARKLIN_pid = WhoIs("io_server_MARKLIN");
+    io_RXIC_server_pid = WhoIs("io_RXIC_server");
+}
+void enqueue(unsigned char byte_1, unsigned char byte_2 ){
+    Put2c(io_server_MARKLIN_pid, MARKLIN, byte_1, byte_2);
+}
+uint16_t read_one_s88(char s88_id){  
+    char byte_1 = (192 + s88_id);
+    Putc(io_server_MARKLIN_pid, MARKLIN, byte_1);
+    uint16_t a = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
+    uint16_t b = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
+    a = (b << 8) | a;
+    // print in green
+    uart_printf(CONSOLE, "\033[32m");
+    uart_printf(CONSOLE, "a = 0x%x\r\n", a);
     // print in white
     uart_printf(CONSOLE, "\033[37m");
+    return a;
 }
+// the size of the ret is s88_on
+uint16_t read_many_s88(char s88_no, uint16_t* ret){ 
+    char byte_1 = ( 128 + s88_no);
+    Putc(io_server_MARKLIN_pid, MARKLIN, byte_1);
+    for (uint32_t i = 0; i < s88_no; i ++){
+      uint16_t a = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
+      uint16_t b = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
+      int display = 0;
+
+      if (a != 0){
+        display = get_i(a);
+      }else if(b != 0){
+        display = get_i(b) + 8;
+      }
+      uart_printf(CONSOLE, "display = 0x%x\r\n", display);
+    }
+    return 0; // Dummy return
+}
+
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
       enqueue(speed, id);
@@ -80,11 +112,11 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
     sol_off();
 }
 void sol_off(){  // Solonoid ID
-    enqueue(32, '\r');
+    Putc(io_server_MARKLIN_pid, MARKLIN, 32);
 }
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
-void train_controller(char *command, char **num, int command_part_count){
+int train_controller(char *command, char **num, int command_part_count){
   // execute here
   if (num[0][0] == 't' && num[0][1] == 'r'){
     // set train speed
@@ -97,7 +129,7 @@ void train_controller(char *command, char **num, int command_part_count){
     // check is the train number valid
     if (train_id > 80 || train_id < 1){
       print_error("ERROR: INVALID TRAIN NUMBER");
-      return;
+      return 1;
     }
     execute_train_command(train_speed, train_id);
   }else if (num[0][0] == 'r' && num[0][1] == 'v'){
@@ -109,7 +141,7 @@ void train_controller(char *command, char **num, int command_part_count){
     // check is the train number valid
     if (train_id > 80 || train_id < 1){
       print_error("ERROR: INVALID TRAIN NUMBER");
-      return;
+      return 1;
     }
     execute_reverse_command(train_id);
   }else if (num[0][0] == 's' && num[0][1] == 'w'){
@@ -151,7 +183,7 @@ void train_controller(char *command, char **num, int command_part_count){
       } else {
         // throw an error
         print_error("ERROR: INVALID SWITCH NUMBER");
-        return;
+        return 1;
       }
       solonoid_command(sol_id,  switch_state);
     } else {
@@ -165,33 +197,7 @@ void train_controller(char *command, char **num, int command_part_count){
     }
   } else {
     print_error("ERROR: INVALID COMMAND");
+    return -1;
   }
-}
-void init_track(){
-  char train_numbers[] = {1, 2, 24, 47, 54, 58};
-  int train_count = 6;
-    // set all train speed to 0
-  for (uint8_t i = 0; i < train_count; i ++){
-    execute_train_command(0, train_numbers[i]);
-    execute_train_command(64, train_numbers[i]);
-  }
-  // set all the turnabouts to straight
-  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
-    solonoid_command(i, 'S');
-    // this command only enqueues the switches
-  }
-  // uart_printf(CONSOLE,"\033[%u;%uHSWITCHES ALL STRAIGHT:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
-  // set all the turnabouts to curved
-  for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
-    solonoid_command(i, 'C');
-  }
-  solonoid_command(0x99, 'S');
-  solonoid_command(0x9a, 'C');
-  solonoid_command(0x9b, 'S');
-  solonoid_command(0x9c, 'C');
-
-  solonoid_command(0x99, 'C');
-  solonoid_command(0x9a, 'S');
-  solonoid_command(0x9b, 'C');
-  solonoid_command(0x9c, 'S');
+  return 0;
 }

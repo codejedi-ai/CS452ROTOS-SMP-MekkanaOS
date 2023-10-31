@@ -55,16 +55,56 @@
             "id": "7dbbe4e7c0bb1403",
             "type": "leaf",
             "state": {
+              "type": "empty",
+              "state": {}
+            }
+          },
+          {
+            "id": "b159540f18e62ea4",
+            "type": "leaf",
+            "state": {
               "type": "markdown",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
+                "file": "DarcyOS/Clock Notifier.md",
                 "mode": "source",
                 "source": false
               }
             }
+          },
+          {
+            "id": "e6e61d474c36128a",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          },
+          {
+            "id": "90fb1e4a194df905",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          },
+          {
+            "id": "67513ed72d78c9f3",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          },
+          {
+            "id": "98657d9a77ef709f",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
           }
         ],
-        "currentTab": 4
+        "currentTab": 9
       }
     ],
     "direction": "vertical"
@@ -130,7 +170,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -147,7 +186,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "quest/Hand in QuestPDF.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -169,9 +207,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "quest/Hand in QuestPDF.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -191,26 +227,41 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "7dbbe4e7c0bb1403",
+  "active": "98657d9a77ef709f",
   "lastOpenFiles": [
+    "0-kernel.elf",
+    "traincont.o",
+    "tc1.c",
+    "debugprint.o",
+    "DarcyOS/Track Datasheet.md",
+    "util.c",
+    "DarcyOS/Darcy OS Organization Structure.canvas",
+    "DarcyOS/UART Server.md",
+    "README Welecome to DarcyOS.md",
+    "README Statistical Analysis.md",
+    "There are three types of tasks.md",
+    "DarcyOS/Kernel.canvas",
+    "DarcyOS/Train Tracks.md",
+    "DarcyOS/Train Worker.md",
+    "DarcyOS/Se.md",
+    "DarcyOS/Kernel.md",
+    "DarcyOS/Clock Notifier.md",
+    "DarcyOS/Types of tasks.md",
+    "DarcyOS/Namespace Server.md",
+    "DarcyOS/RPS Server.md",
+    "DarcyOS/Clock Server.md",
+    "DarcyOS/UART Interrupt Notifier.md",
+    "DarcyOS/Shell.md",
+    "DarcyOS",
+    "quest/Hand in QuestPDF.md",
     "quest/Hand in QuestPDF.pdf",
-    "quest/Hand in QuestPDF.md",
-    "quest/Hand in QuestPDF.md",
     "Makefilelocal",
     "Makefile copy",
     "k3learn.pdf",
     "k3-QUESTSUBMIT.pdf",
-    "QUESTSUBMIT.pdf",
-    "K3Output.txt",
-    "K2Output.txt",
     "Pasted image 20231019024343.png",
-    "README Statistical Analysis.md",
-    "README Welecome to DarcyOS.md",
     "README Name Server (nameserver.c).md",
-    "PerfResults.csv",
     "Hand in QuestPDF.md",
-    "quest/PerfResults.csv",
-    "README Rock Paper Scissors.md",
-    "Untitled.canvas"
+    "README Rock Paper Scissors.md"
   ]
 }

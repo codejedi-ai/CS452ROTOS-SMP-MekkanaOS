@@ -24,18 +24,18 @@ SOURCES := $(wildcard *.c) $(wildcard *.S)
 OBJECTS := $(patsubst %.c, %.o, $(patsubst %.S, %.o, $(SOURCES)))
 DEPENDS := $(patsubst %.c, %.d, $(patsubst %.S, %.d, $(SOURCES)))
 
-# The first rule is the default, ie. "make", "make all" and "make 0-kernel8.img" mean the same
-all: 0-kernel.img
+# The first rule is the default, ie. "make", "make all" and "make d273liu8.img" mean the same
+all: d273liu.img
 
 clean:
-	rm -f $(OBJECTS) $(DEPENDS) 0-kernel.elf 0-kernel.img
+	rm -f $(OBJECTS) $(DEPENDS) d273liu.elf d273liu.img
 
-0-kernel.img: 0-kernel.elf
+d273liu.img: d273liu.elf
 	$(OBJCOPY) $< -O binary $@
 
-0-kernel.elf: $(OBJECTS) linker.ld
+d273liu.elf: $(OBJECTS) linker.ld
 	$(CC) $(CFLAGS) $(filter-out %.ld, $^) -o $@ $(LDFLAGS)
-	@$(OBJDUMP) -d 0-kernel.elf | fgrep -q q0 && printf "\n***** WARNING: SIMD INSTRUCTIONS DETECTED! *****\n\n" || true
+	@$(OBJDUMP) -d d273liu.elf | fgrep -q q0 && printf "\n***** WARNING: SIMD INSTRUCTIONS DETECTED! *****\n\n" || true
 
 %.o: %.c Makefile
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
