@@ -1,5 +1,5 @@
 #include "rpi.h"
-void io_TXIC_server();
+void io_TXIC_MARKLIN_server();
 void io_notifier();
 void set_io_logging(int val);
 /*
@@ -27,6 +27,6 @@ Return Value
 */
 // Either the queue is empty or the server needs to wait for the TXIC interrupt to be triggered
 int Putc(int tid, int channel, unsigned char ch);
-int Put2c (int tid, int channel, unsigned char ch1, unsigned char ch2);
+// int Put2c (int tid, int channel, unsigned char ch1, unsigned char ch2);
 // DO NOT USE await CTS
 int awaitCTS(int tid, int channel, uint8_t val);

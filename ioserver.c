@@ -68,11 +68,12 @@ void set_io_logging(int val)
 	io_logging = val;
 }
 // one queue to wait to be fired, another queue to await for the send to be returned
-void io_TXIC_server()
+void io_TXIC_MARKLIN_server()
 {
-	struct fi_list interrupts_list[3];
-	struct fi_list call_list[3];
-	RegisterAs("io_TXIC_server");
+	// It is automatically assumed the channel is 2
+	struct fi_list interrupts_list;
+	struct fi_list call_list;
+	RegisterAs("io_TXIC_MARKLIN_server");
 	int8_t io_notifier_tid = WhoIs("io_notifier");
 	// set the size of the lists to 0
 	// define STATE car
@@ -94,21 +95,27 @@ void io_TXIC_server()
 			uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 			// enqueue the interrupt
 			// pop the call list queue and reply to the task
-			if (call_list[channel].size && STATE == 1){
+			if (call_list.size && STATE == 1){
 				// is there another bullet the soldier can fire
 				// soldier <tid>'s bullet has landed
-				int tid_ret = call_list[channel].call[call_list[channel].begin].tid;
+				int tid_ret = call_list.call[call_list.begin].tid;
 				uart_printf(CONSOLE, "	soldier %u's bullet has landed\r\n", tid_ret);
-				recieve[0] = call_list[channel].call[call_list[channel].begin].type;
-				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
-				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
-				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
+				recieve[0] = call_list.call[call_list.begin].type;
+				recieve[1] = call_list.call[call_list.begin].channel;
+				recieve[2] = call_list.call[call_list.begin].char_ch;
+				recieve[3] = call_list.call[call_list.begin].char_ch2;
+				char char_ch = recieve[2];
+				char char_ch2 = recieve[3];
 				if (recieve[3] != -1){
+					// sends another command need to wait for the CTS 
+					uart_printf(CONSOLE, "	soldier %u is firing his second gun, char_ch2 = %d\r\n", ret_pid, char_ch2);
 					uart_printf(MARKLIN, char_ch2);
+					call_list.call[call_list.begin].char_ch2 = -1;
+					
 				}else{
 					uart_printf(CONSOLE, "	soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
-					call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
-					call_list[channel].size--;
+					call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
+					call_list.size--;
 					STATE = 0;
 				}
 			}
@@ -117,54 +124,46 @@ void io_TXIC_server()
 			// enqueue the function call
 			// print soldier <tid> entered firing queue print it a Kernel is like a military
 			uart_printf(CONSOLE, "	soldier %u entered firing queue\r\n", tid);
-			call_list[channel].call[call_list[channel].end].tid = tid;
-			call_list[channel].call[call_list[channel].end].type = type;
-			call_list[channel].call[call_list[channel].end].channel = channel;
-			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
-			call_list[channel].call[call_list[channel].end].char_ch2 = char_ch2;
-			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
-			call_list[channel].size++;
+			call_list.call[call_list.end].tid = tid;
+			call_list.call[call_list.end].type = type;
+			call_list.call[call_list.end].channel = channel;
+			call_list.call[call_list.end].char_ch = char_ch;
+			call_list.call[call_list.end].char_ch2 = char_ch2;
+			call_list.end = (call_list.end + 1) % QUEUELENGTH;
+			call_list.size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list[channel].size && STATE == 0)
+		if (call_list.size && STATE == 0)
 		{
 			
 			
 			STATE = 1;
-			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
-			recieve[0] = call_list[channel].call[call_list[channel].begin].type;
-			recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
-			recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
-			recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
+			int ret_pid = call_list.call[call_list.begin].tid;
+			recieve[0] = call_list.call[call_list.begin].type;
+			recieve[1] = call_list.call[call_list.begin].channel;
+			recieve[2] = call_list.call[call_list.begin].char_ch;
+			recieve[3] = call_list.call[call_list.begin].char_ch2;
 			char char_ch = recieve[2];
 			char char_ch2 = recieve[3];
 			// soldier <tid> is firing his gun
-			uart_printf(CONSOLE, "soldier %u is firing his gun, char_ch = %d, char_ch2 = %d\r\n", ret_pid, char_ch, char_ch2);
+			uart_printf(CONSOLE, "soldier %u is firing his gun, char_ch = %d\r\n", ret_pid, char_ch);
 			uart_printf(MARKLIN, char_ch);
 		}
 	}
 	
 	Exit();
 }
-void io_RXIC_server()
+void io_RXIC_MARKLIN_server()
 {
+	// It is automatically assumed the channel is 2
 	int tid;
-	RegisterAs("io_RXIC_server");
+	RegisterAs("io_RXIC_MARKLIN_server");
 	int io_notifier_tid = WhoIs("io_notifier");
 	// for the recieve interrupts I need to handle cases in which the interrupt happened before a task picked it up
 	// this doubles of as a queue for the interrupts
-	struct fi_list interrupts_list[3];
-	struct fi_list call_list[3];
+	struct fi_list interrupts_list;
+	struct fi_list call_list;
 	// set the size of the lists to 0
-	for (int i = 0; i < 3; i++)
-	{
-		interrupts_list[i].size = 0;
-		interrupts_list[i].begin = 0;
-		interrupts_list[i].end = 0;
-		call_list[i].size = 0;
-		call_list[i].begin = 0;
-		call_list[i].end = 0;
-	}
 	// 0 is nothing
 	// 1 is CONSOLE
 	// 2 is MARKLIN
@@ -186,57 +185,68 @@ void io_RXIC_server()
 		{
 			// uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
 			Reply(tid, recieve, 0);
-			interrupts_list[channel].call[interrupts_list[channel].end].tid = tid;
-			interrupts_list[channel].call[interrupts_list[channel].end].type = type;
-			interrupts_list[channel].call[interrupts_list[channel].end].channel = channel;
-			interrupts_list[channel].call[interrupts_list[channel].end].char_ch = char_ch;
-			interrupts_list[channel].end = (interrupts_list[channel].end + 1) % QUEUELENGTH;
-			interrupts_list[channel].size++;
+			interrupts_list.call[interrupts_list.end].tid = tid;
+			interrupts_list.call[interrupts_list.end].type = type;
+			interrupts_list.call[interrupts_list.end].channel = channel;
+			interrupts_list.call[interrupts_list.end].char_ch = char_ch;
+			interrupts_list.end = (interrupts_list.end + 1) % QUEUELENGTH;
+			interrupts_list.size++;
 		}
 		else if (type == GETC)
 		{
 			// check is the channel is empty
 			// enqueue the interrupt
 			// uart_printf(CONSOLE, "GETC FUNCTION char_ch = 0x%x, tid = %u\r\n", char_ch, tid);
-			call_list[channel].call[call_list[channel].end].tid = tid;
-			call_list[channel].call[call_list[channel].end].type = type;
-			call_list[channel].call[call_list[channel].end].channel = channel;
-			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
-			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
-			call_list[channel].size++;
+			call_list.call[call_list.end].tid = tid;
+			call_list.call[call_list.end].type = type;
+			call_list.call[call_list.end].channel = channel;
+			call_list.call[call_list.end].char_ch = char_ch;
+			call_list.end = (call_list.end + 1) % QUEUELENGTH;
+			call_list.size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list[channel].size && interrupts_list[channel].size)
+		if (call_list.size && interrupts_list.size)
 		{
-			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
-			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
-			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
-			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
-			recieve[3] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch2;
+			int ret_pid = call_list.call[call_list.begin].tid;
+			recieve[0] = interrupts_list.call[interrupts_list.begin].type;
+			recieve[1] = interrupts_list.call[interrupts_list.begin].channel;
+			recieve[2] = interrupts_list.call[interrupts_list.begin].char_ch;
+			recieve[3] = interrupts_list.call[interrupts_list.begin].char_ch2;
 			// uart_printf(CONSOLE, "\033[37m");
 			Reply(ret_pid, recieve, 8);
-			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
-			call_list[channel].size--;
-			interrupts_list[channel].begin = (interrupts_list[channel].begin + 1) % QUEUELENGTH;
-			interrupts_list[channel].size--;
+			call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
+			call_list.size--;
+			interrupts_list.begin = (interrupts_list.begin + 1) % QUEUELENGTH;
+			interrupts_list.size--;
 		}
 		// print in white
 		// uart_printf(CONSOLE, "\033[37m");
 	}
 	Exit();
 }
-void io_CTS_server()
+void io_CTS_MARKLIN_server()
 {
+	// It is automatically assumed the channel is 2
+	struct fi_list interrupts_list;
+	while (1)
+	{
+		char recieve[8];
+		Receive(&tid, recieve, 8);
+		uint8_t type = recieve[0];
+		uint8_t channel = recieve[1];
+		uint8_t char_ch = recieve[2];
+		/* code */
+	}
+	
 	Exit();
 }
 
 void io_notifier()
 {
 	RegisterAs("io_notifier");
-	int io_TXIC_server_tid = Create(0, io_TXIC_server);
-	int io_TXIC_tid = Create(0, io_TXIC_server);
-	int io_RXIC_tid = Create(0, io_RXIC_server);
-	int io_CTS_tid = Create(0, io_CTS_server);
+	int io_TXIC_MARKLIN_server_tid = Create(0, io_TXIC_MARKLIN_server);
+	int io_RXIC_MARKLIN_server_tid = Create(0, io_RXIC_MARKLIN_server);
+	int io_CTS_MARKLIN_server_tid = Create(0, io_CTS_MARKLIN_server);
 	while (1)
 	{
 		uint64_t event = AwaitEvent(uartINTER);
@@ -246,25 +256,33 @@ void io_notifier()
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;
 		uint8_t char_ch = (event >> 16) & 0xFF;
-		if (type == RXIC)
+		if (cha)
+		if (channel == MARKLIN)
 		{
-			Send(io_RXIC_tid, &event, 8, &ret, 0);
-		}
-		else if (channel == MARKLIN)
-		{
-			Send(io_TXIC_server_tid, &event, 8, &ret, 0);
+			if (type == RXIC)
+			{
+				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
+			}
+			else if(type == TXIC)
+			{
+				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
+			}
+			else if(type == CTSMIM)
+			{
+				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
+			}
 		}
 	}
 	Exit();
 }
 
 // was thinking about doing a three server layout. It is possible that two tasks are waiting for the same interrupt
-void io_TXIC_server_old()
+void io_TXIC_MARKLIN_server_old()
 {
 /*
 	if (io_logging)
-		// uart_printf(CONSOLE, "io_TXIC_server: Registered at %u\n", MyTid());
-	RegisterAs("io_TXIC_server");
+		// uart_printf(CONSOLE, "io_TXIC_MARKLIN_server: Registered at %u\n", MyTid());
+	RegisterAs("io_TXIC_MARKLIN_server");
 	int io_notifier_tid = WhoIs("io_notifier");
   	int tid = 0;
 
