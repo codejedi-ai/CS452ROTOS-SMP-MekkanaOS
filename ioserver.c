@@ -250,7 +250,8 @@ void io_server_MARKLIN()
 			put_wait_queue.call[put_wait_queue.end].char_ch2 = recieve[3];
 			put_wait_queue.end = (put_wait_queue.end + 1) % QUEUELENGTH;
 			put_wait_queue.size++;
-	
+		}
+		if(STATE == 0 && put_wait_queue.size){
 			// pop the queue and send the character
 			char char1 = put_wait_queue.call[put_wait_queue.begin].char_ch;
 			char char2 = put_wait_queue.call[put_wait_queue.begin].char_ch2;
