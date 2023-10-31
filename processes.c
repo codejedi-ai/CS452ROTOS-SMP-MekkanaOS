@@ -159,7 +159,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	uint32_t timer = get_timerLO();
 	set_timerC3(timer + 10000);
 	init_ioserver();
-	set_io_logging(0);
+	set_io_logging(1);
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
