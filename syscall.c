@@ -235,14 +235,15 @@ void ExceptionASYNC(uint64_t esr_el1){
 			uart_printf(CONSOLE, "\033[37m");
 			
 			
-			
+
 			uint32_t time = get_timerLO();
 			set_timerC3(time + 10000);
+			resetCS(3);
 			/*
 			//set_timerC3(time);
 			// scrSchedule(PID, PROCS[p].priority, READY);
 
-			resetCS(3);
+			
 			// after this I want to see the time fire repeatitvely
 			
 			*/
