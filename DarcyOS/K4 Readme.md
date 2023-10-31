@@ -22,3 +22,6 @@ I made an input queue for the marklin, in which all put C commands would be enqu
 
 
 
+The yellow text printed are debug logs that details on the variouse interrupts that were issued to the system. s
+
+For testing, I recommend 

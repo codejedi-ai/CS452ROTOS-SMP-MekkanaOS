@@ -24,6 +24,4 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
                       unsigned char direction);  // S 33 go straight, C 34 go bent
 void sol_off(); // Solonoid ID
 // define a function that takes a char array as a parameter
-//void tc1(char *arr) {
-int train_controller(char *command, char **num, int command_part_count);
 void init_track();
