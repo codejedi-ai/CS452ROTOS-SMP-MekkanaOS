@@ -13,7 +13,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 5
+#define DISPLAY 3
 #define GETC 32
 #define PUTC 33
 #define CTS 34
