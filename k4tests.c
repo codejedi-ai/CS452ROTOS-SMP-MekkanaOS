@@ -158,7 +158,7 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
           return 1;
         }
         int train_number = atoi_64(num[2]);
-        execute_reverse_command(train_number);
+        // execute_reverse_command(train_number);
         return 0;
       }
       // sw <switch number> <C/S>
