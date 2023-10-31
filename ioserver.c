@@ -272,7 +272,7 @@ void io_CTS_MARKLIN_server()
 			if (char_ch == get_CTS(MARKLIN)){
 				Reply(tid, recieve, 8);
 			} else {
-				awaitcts[char_ch] = tid;
+				awaitcts[char_ch][awaitcts_size[char_ch]] = tid;
 				awaitcts_size[char_ch]++;
 			}
 			// enqueue the function call
