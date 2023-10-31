@@ -1,3 +1,0 @@
-- Test the init solonoids
-- Test the marklin read for read multiples
-- Test the train command on train 54

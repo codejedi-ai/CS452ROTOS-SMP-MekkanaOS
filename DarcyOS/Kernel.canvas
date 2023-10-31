@@ -1,7 +1,0 @@
-{
-	"nodes":[
-		{"id":"c960095035eaa371","type":"text","text":"# System Call (sync) Hander\n","x":280,"y":-98,"width":400,"height":400},
-		{"id":"3586684b3054fe9b","type":"text","text":"# Interrupt (async) Hander\n","x":-480,"y":-98,"width":398,"height":400}
-	],
-	"edges":[]
-}
