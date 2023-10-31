@@ -108,7 +108,6 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         uart_printf(CONSOLE, "print_char[0] = \"%c\" = \"%d\"\r\n", print_char2, print_char2);
         int ioserver_PID = WhoIs("io_TXIC_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
-        awaitCTS(ioserver_PID, MARKLIN, 1);
         return 0;
     } else if (strcmp_ret(num[0], "k4tc")){
         int tid;
