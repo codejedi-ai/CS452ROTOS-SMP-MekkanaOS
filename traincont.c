@@ -37,7 +37,7 @@ static const size_t COMMANDMAX_LEN = 64;
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
-uint32_t io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid;
+uint32_t io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, io_CTS_MARKLIN_server_pid;
 uint64_t l2(uint64_t x){
     if (x == 1) return 0;
     return l2(x / 2) + 1;
@@ -48,11 +48,16 @@ uint64_t get_i(uint64_t x){
 void init_ioserver(){
     io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
     io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
+    io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
 }
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // Put2c(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1, byte_2);
+    uart_printf(CONSOLE, "enqueue: byte_1 = %d, byte_2 = %d\r\n", byte_1, byte_2);
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_2);
+    // await CTS 
+    // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
+    awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);

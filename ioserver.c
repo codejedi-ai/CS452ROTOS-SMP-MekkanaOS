@@ -59,7 +59,7 @@ struct intFun
 struct fi_list
 {
 	struct intFun call[QUEUELENGTH];
-	uint8_t size;
+	int size;
 	uint8_t begin;
 	uint8_t end;
 };
@@ -71,14 +71,18 @@ void set_io_logging(int val)
 void io_TXIC_MARKLIN_server()
 {
 	// It is automatically assumed the channel is 2
-	struct fi_list interrupts_list;
 	struct fi_list call_list;
+	struct fi_list interrupt_list;
 	RegisterAs("io_TXIC_MARKLIN_server");
 	int8_t io_notifier_tid = WhoIs("io_notifier");
 	// set the size of the lists to 0
 	// define STATE car
 	// STATE: 0 not STATE: 1 STATE
-	uint8_t STATE = 0;
+	// set call list size to 0
+	// set interrupt list size to 0
+	call_list.size = 0;
+	interrupt_list.size = 0;
+	uint8_t STATE = 1;
 	while (1)
 	{
 		int tid;
@@ -88,42 +92,32 @@ void io_TXIC_MARKLIN_server()
 		uint8_t channel = recieve[1];
 		uint8_t char_ch = recieve[2];
 		uint8_t char_ch2 = recieve[3];
-		if(type ==CTSMIM){
-			uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
+		
+		if (io_notifier_tid == tid){
+			Reply(tid, recieve, 0);
 		}
+
 		if(type == TXIC){
-			uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 			// enqueue the interrupt
 			// pop the call list queue and reply to the task
-			if (call_list.size && STATE == 1){
-				// is there another bullet the soldier can fire
-				// soldier <tid>'s bullet has landed
-				int tid_ret = call_list.call[call_list.begin].tid;
-				uart_printf(CONSOLE, "	soldier %u's bullet has landed\r\n", tid_ret);
-				recieve[0] = call_list.call[call_list.begin].type;
-				recieve[1] = call_list.call[call_list.begin].channel;
-				recieve[2] = call_list.call[call_list.begin].char_ch;
-				recieve[3] = call_list.call[call_list.begin].char_ch2;
-				char char_ch = recieve[2];
-				char char_ch2 = recieve[3];
-				if (recieve[3] != -1){
-					// sends another command need to wait for the CTS 
-					uart_printf(CONSOLE, "	soldier %u is firing his second gun, char_ch2 = %d\r\n", ret_pid, char_ch2);
-					uart_printf(MARKLIN, char_ch2);
-					call_list.call[call_list.begin].char_ch2 = -1;
-					
-				}else{
-					uart_printf(CONSOLE, "	soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
-					call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
-					call_list.size--;
-					STATE = 0;
-				}
-			}
-		} else if(type == PUTC){
-			uart_printf(CONSOLE, "PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
+			// is there another bullet the soldier can fire
+			// soldier <tid>'s bullet has landed
+			
+			// add interrupt to the interrupt list
+			interrupt_list.call[interrupt_list.end].tid = tid;
+			interrupt_list.call[interrupt_list.end].type = type;
+			interrupt_list.call[interrupt_list.end].channel = channel;
+			interrupt_list.call[interrupt_list.end].char_ch = char_ch;
+			interrupt_list.call[interrupt_list.end].char_ch2 = char_ch2;
+			interrupt_list.end = (interrupt_list.end + 1) % QUEUELENGTH;
+			interrupt_list.size++;	
+		} 
+		
+		if(type == PUTC){
+			uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
 			// enqueue the function call
 			// print soldier <tid> entered firing queue print it a Kernel is like a military
-			uart_printf(CONSOLE, "	soldier %u entered firing queue\r\n", tid);
+			uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size);
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;
@@ -133,21 +127,32 @@ void io_TXIC_MARKLIN_server()
 			call_list.size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list.size && STATE == 0)
+		if (call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 1)
 		{
-			
-			
-			STATE = 1;
+			STATE = 0;
+			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
+			// print in green
+			uart_printf(CONSOLE, "\033[32m");
+			uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);
+			// print in white
+			uart_printf(CONSOLE, "\033[37m");
+		}
+		
+		if(call_list.size > 0 && interrupt_list.size > 0){
 			int ret_pid = call_list.call[call_list.begin].tid;
-			recieve[0] = call_list.call[call_list.begin].type;
-			recieve[1] = call_list.call[call_list.begin].channel;
-			recieve[2] = call_list.call[call_list.begin].char_ch;
-			recieve[3] = call_list.call[call_list.begin].char_ch2;
-			char char_ch = recieve[2];
-			char char_ch2 = recieve[3];
-			// soldier <tid> is firing his gun
-			uart_printf(CONSOLE, "soldier %u is firing his gun, char_ch = %d\r\n", ret_pid, char_ch);
-			uart_printf(MARKLIN, char_ch);
+			recieve[0] = interrupt_list.call[interrupt_list.begin].type;
+			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
+			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
+			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
+			// uart_printf(CONSOLE, "\033[37m");
+			Reply(ret_pid, recieve, 8);
+			call_list.call[call_list.begin].tid = 0;
+			call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
+
+			call_list.size--;
+			interrupt_list.begin = (interrupt_list.begin + 1) % QUEUELENGTH;
+			interrupt_list.size--;
+			STATE = 1;
 		}
 	}
 	
@@ -161,7 +166,7 @@ void io_RXIC_MARKLIN_server()
 	int io_notifier_tid = WhoIs("io_notifier");
 	// for the recieve interrupts I need to handle cases in which the interrupt happened before a task picked it up
 	// this doubles of as a queue for the interrupts
-	struct fi_list interrupts_list;
+	struct fi_list interrupt_list;
 	struct fi_list call_list;
 	// set the size of the lists to 0
 	// 0 is nothing
@@ -181,16 +186,17 @@ void io_RXIC_MARKLIN_server()
 		uint8_t char_ch = recieve[2];
 		// get arrives after interrupt
 		// interrupt arrives after get
+		if (io_notifier_tid == tid){
+			Reply(tid, recieve, 0);
+		}
 		if (type == RXIC)
 		{
-			// uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
-			Reply(tid, recieve, 0);
-			interrupts_list.call[interrupts_list.end].tid = tid;
-			interrupts_list.call[interrupts_list.end].type = type;
-			interrupts_list.call[interrupts_list.end].channel = channel;
-			interrupts_list.call[interrupts_list.end].char_ch = char_ch;
-			interrupts_list.end = (interrupts_list.end + 1) % QUEUELENGTH;
-			interrupts_list.size++;
+			interrupt_list.call[interrupt_list.end].tid = tid;
+			interrupt_list.call[interrupt_list.end].type = type;
+			interrupt_list.call[interrupt_list.end].channel = channel;
+			interrupt_list.call[interrupt_list.end].char_ch = char_ch;
+			interrupt_list.end = (interrupt_list.end + 1) % QUEUELENGTH;
+			interrupt_list.size++;
 		}
 		else if (type == GETC)
 		{
@@ -205,19 +211,20 @@ void io_RXIC_MARKLIN_server()
 			call_list.size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list.size && interrupts_list.size)
+		if (call_list.size > 0 && interrupt_list.size > 0)
 		{
 			int ret_pid = call_list.call[call_list.begin].tid;
-			recieve[0] = interrupts_list.call[interrupts_list.begin].type;
-			recieve[1] = interrupts_list.call[interrupts_list.begin].channel;
-			recieve[2] = interrupts_list.call[interrupts_list.begin].char_ch;
-			recieve[3] = interrupts_list.call[interrupts_list.begin].char_ch2;
+			recieve[0] = interrupt_list.call[interrupt_list.begin].type;
+			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
+			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
+			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
 			// uart_printf(CONSOLE, "\033[37m");
 			Reply(ret_pid, recieve, 8);
+			call_list.call[call_list.begin].tid = 0;
 			call_list.begin = (call_list.begin + 1) % QUEUELENGTH;
 			call_list.size--;
-			interrupts_list.begin = (interrupts_list.begin + 1) % QUEUELENGTH;
-			interrupts_list.size--;
+			interrupt_list.begin = (interrupt_list.begin + 1) % QUEUELENGTH;
+			interrupt_list.size--;
 		}
 		// print in white
 		// uart_printf(CONSOLE, "\033[37m");
@@ -227,15 +234,49 @@ void io_RXIC_MARKLIN_server()
 void io_CTS_MARKLIN_server()
 {
 	// It is automatically assumed the channel is 2
-	struct fi_list interrupts_list;
+	// awaitcts[0] is awaiting for down, awaitcts[1] is awaiting for up
+	uint32_t awaitcts[2][NUMPROCS]; 
+	
+	// awaitcts_size[0] is the size of the list that is awaiting for down, 
+	// awaitcts_size[1] is the size of the list that is awaiting for up
+	uint32_t awaitcts_size[2]; 
+	// register the server
+	RegisterAs("io_CTS_MARKLIN_server");
+	int io_notifier_tid = WhoIs("io_notifier");
+	uint8_t STATE = 0;
 	while (1)
 	{
+		int tid;
 		char recieve[8];
 		Receive(&tid, recieve, 8);
 		uint8_t type = recieve[0];
 		uint8_t channel = recieve[1];
 		uint8_t char_ch = recieve[2];
 		/* code */
+		if (io_notifier_tid == tid){
+			Reply(tid, recieve, 0);
+		}
+		if(type ==CTSMIM){
+			uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
+			int cur_cts = get_CTS();
+			for (int i = 0; i < NUMPROCS; i++){
+				int tid_free = awaitcts[cur_cts][i];
+				recieve[2] = cur_cts;
+				Reply(tid_free, recieve, 8);
+			}
+			awaitcts_size[cur_cts] = 0;
+		} else if(type == CTS){
+			uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);
+			if (char_ch == get_CTS()){
+				Reply(tid, recieve, 8);
+			} else {
+				awaitcts[char_ch] = tid;
+				awaitcts_size[char_ch]++;
+			}
+			// enqueue the function call
+			// print soldier <tid> entered firing queue print it a Kernel is like a military
+			// this is different in essence that it would 
+		}
 	}
 	
 	Exit();
@@ -243,6 +284,8 @@ void io_CTS_MARKLIN_server()
 
 void io_notifier()
 {
+	// The handler in the kernel only handels different type of interrupt of the same ID
+	// However in between different interrupts of the same ID, it is handeled in here
 	RegisterAs("io_notifier");
 	int io_TXIC_MARKLIN_server_tid = Create(0, io_TXIC_MARKLIN_server);
 	int io_RXIC_MARKLIN_server_tid = Create(0, io_RXIC_MARKLIN_server);
@@ -256,19 +299,24 @@ void io_notifier()
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;
 		uint8_t char_ch = (event >> 16) & 0xFF;
-		if (cha)
+		if (channel == CONSOLE){
+			// there exist no server for the console
+		}
 		if (channel == MARKLIN)
 		{
 			if (type == RXIC)
 			{
+				uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
+				uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
+				uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 		}

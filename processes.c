@@ -164,7 +164,9 @@ void FirstUserTask() // First task as dictated in the reqs
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	tid = Create(-2, main);
-	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
+	//tid = Create(-2, main);
+	execute_train_command(0, 54);
+	execute_train_command(10, 54);
+	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();
 }
