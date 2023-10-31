@@ -67,11 +67,17 @@ void set_io_logging(int val)
 {
 	io_logging = val;
 }
+// one queue to wait to be fired, another queue to await for the send to be returned
 void io_TXIC_server()
 {
 	struct fi_list interrupts_list[3];
 	struct fi_list call_list[3];
 	RegisterAs("io_TXIC_server");
+	int8_t io_notifier_tid = WhoIs("io_notifier");
+	// set the size of the lists to 0
+	// define clear car
+	// clear: 0 not clear: 1 clear
+	uint8_t clear = 1;
 	while (1)
 	{
 		int tid;
@@ -83,13 +89,17 @@ void io_TXIC_server()
 		uint8_t char_ch2 = recieve[3];
 		if(type == TXIC){
 			// enqueue the interrupt
-			interrupts_list[channel].call[interrupts_list[channel].end].tid = tid;
-			interrupts_list[channel].call[interrupts_list[channel].end].type = type;
-			interrupts_list[channel].call[interrupts_list[channel].end].channel = channel;
-			interrupts_list[channel].call[interrupts_list[channel].end].char_ch = char_ch;
-			interrupts_list[channel].call[interrupts_list[channel].end].char_ch2 = char_ch2;
-			interrupts_list[channel].end = (interrupts_list[channel].end + 1) % QUEUELENGTH;
-			interrupts_list[channel].size++;
+			// pop the call list queue and reply to the task
+			if (call_list[channel].size && !clear){
+				recieve[0] = call_list[channel].call[call_list[channel].begin].type;
+				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
+				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
+				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
+				Reply(call_list[channel].call[call_list[channel].begin].tid, recieve, 8);
+				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
+				call_list[channel].size--;
+			}
+
 		} else if(type == PUTC){
 			// enqueue the function call
 			call_list[channel].call[call_list[channel].end].tid = tid;
@@ -101,24 +111,20 @@ void io_TXIC_server()
 			call_list[channel].size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list[channel].size && interrupts_list[channel].size)
+		if (call_list[channel].size && clear)
 		{
+			clear = 0;
 			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
-			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
-			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
-			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
-			recieve[3] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch2;
+			recieve[0] = call_list[channel].call[call_list[channel].begin].type;
+			recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
+			recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
+			recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
 			char char_ch = recieve[2];
 			char char_ch2 = recieve[3];
 			uart_printf(MARKLIN, char_ch);
 			if (recieve[3] != -1){
 				uart_printf(MARKLIN, char_ch2);
 			}
-			Reply(ret_pid, recieve, 8);
-			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
-			call_list[channel].size--;
-			interrupts_list[channel].begin = (interrupts_list[channel].begin + 1) % QUEUELENGTH;
-			interrupts_list[channel].size--;
 		}
 	}
 	
