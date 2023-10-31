@@ -229,14 +229,12 @@ void io_server_MARKLIN()
 
 		if (type == CTSMIM){
 			// uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
-			/*
 			if(tid_list[CTS - GETC][channel] != 0){
 				// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 				recieve[2] = char_ch;
 				Reply(tid_list[CTS - GETC][channel], recieve, 8);
 				tid_list[CTS - GETC][channel] = 0;
 			} 
-			*/
 			if(tid_list[PUTC - GETC][channel] != 0){
 				if(STATE[channel] == 2 && char_ch == 0){
 					STATE[channel] = 3;
@@ -249,7 +247,10 @@ void io_server_MARKLIN()
 				}
 			} 
 		} else if(type == TXIC){
+			// uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
 			if(tid_list[PUTC - GETC][channel] != 0) {
+				// print reply to channel and putc
+				// uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
 				STATE[channel] = 2;
 			}
 		} else if(type == PUTC){
@@ -265,7 +266,12 @@ void io_server_MARKLIN()
 				recieve[2] = -1;
 				Reply(tid_list[type - GETC][channel], recieve, 8);
 			}
+		} else if(type == CTS){
+			// uart_printf(CONSOLE, "CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
+			tid_list[type - GETC][channel] = tid;
 		}
+		// print in white
+		// uart_printf(CONSOLE, "\033[37m");
 	}
 
 	Exit();
