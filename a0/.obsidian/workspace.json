@@ -1,0 +1,163 @@
+{
+  "main": {
+    "id": "387716eca74e8750",
+    "type": "split",
+    "children": [
+      {
+        "id": "cd92437ccc87eaf9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6eee005f65da9765",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CS452-a0-Description.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f24989ed580f1001",
+    "type": "split",
+    "children": [
+      {
+        "id": "839df86bd1a879b6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ecf5846f0a51cde4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "10794bc9f094b3f8",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "7141e6a00f726e25",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "3bbd7c3978b70ec0",
+    "type": "split",
+    "children": [
+      {
+        "id": "a6791fe4e793e0bd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "75527a47ea8cf7fe",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "CS452-a0-Description.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "384e8a3818aadb80",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "CS452-a0-Description.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "fea3761bd274f07c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "04a933e416babf28",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "CS452-a0-Description.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "6eee005f65da9765",
+  "lastOpenFiles": [
+    "Model Train Control Program 1f438fc35677473f8e243df518035009/Untitled 1.png.md",
+    "CS452-a0-Description.md",
+    "Model Train Control Program 1f438fc35677473f8e243df518035009",
+    "CS452-a0-Description.pdf",
+    "a0readme.md",
+    "a0 program description.md",
+    "@CS452 - Assignment 0 1fdf0b2d5d3b405db9f066c9e391612d.md",
+    "Model Train Control Program 1f438fc35677473f8e243df518035009/Untitled 1.png",
+    "Model Train Control Program 1f438fc35677473f8e243df518035009/Untitled 2.png",
+    "Model Train Control Program 1f438fc35677473f8e243df518035009/Untitled.png",
+    "@CS452 - Assignment 0 1fdf0b2d5d3b405db9f066c9e391612d/image.jpg"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+	"nodes":[
+		{"id":"ddb819bec860b775","type":"file","file":"Lecture Notes/Kernel.md","x":-280,"y":-100,"width":400,"height":204},
+		{"id":"923b2876b316c80b","type":"file","file":"Lecture Notes/Exceptions.md","x":-280,"y":-360,"width":400,"height":187},
+		{"id":"1060bbf0a18a64af","type":"file","file":"Lecture Notes/Synchronous Exception.md","x":-720,"y":-360,"width":380,"height":187},
+		{"id":"593362ba3ad0eefa","type":"file","file":"Lecture Notes/Asynchronous Exception.md","x":-720,"y":-600,"width":380,"height":160},
+		{"id":"fb3823c6881e41cd","type":"file","file":"Lecture Notes/Micro-kernel.md","x":-720,"y":-100,"width":400,"height":204},
+		{"id":"c76ec93a82be86c5","x":-160,"y":-800,"width":400,"height":400,"type":"file","file":"Lecture Notes/Exceptions Lecture.canvas"}
+	],
+	"edges":[]
+}

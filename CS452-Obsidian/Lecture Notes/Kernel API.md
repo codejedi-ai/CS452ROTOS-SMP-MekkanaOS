@@ -1,0 +1,2 @@
+# 10.2.3 System calls 
+Some instructions or system functions can only be carried out at a ==specific Exception level==. If code running at a lower Exception level needs to perform a privileged operation, for example, when application code requests functionality from the kernel. One way to do this is by using the SVC instruction. This allows applications to generate an exception. Parameters may be passed in registers, or coded within the System call
