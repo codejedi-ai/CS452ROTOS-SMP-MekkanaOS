@@ -54,10 +54,10 @@ void init_ioserver(){
     io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
 }
 // make functions to get the marklin IO PIDs
-uint32_t get_Marklin_mouth_pid(){
+uint32_t MARKLIN_PUT_SERVER(){
     return io_TXIC_MARKLIN_server_pid;
 }
-uint32_t get_Marklin_ear_pid(){
+uint32_t MARKLIN_GET_SERVER(){
     return io_RXIC_MARKLIN_server_pid;
 }
 uint32_t get_Marklin_CTS_pid(){

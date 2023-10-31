@@ -27,6 +27,6 @@ void sol_off(); // Solonoid ID
 void init_track();
 void init_ioserver();
 
-uint32_t get_Marklin_ear_pid();
-uint32_t get_Marklin_mouth_pid();
+uint32_t MARKLIN_GET_SERVER();
+uint32_t MARKLIN_PUT_SERVER();
 uint32_t get_Marklin_CTS_pid();
