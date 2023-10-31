@@ -13,7 +13,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 1
+#define DISPLAY 5
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -115,10 +115,12 @@ void io_TXIC_MARKLIN_server()
 		} 
 		
 		if(type == PUTC){
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);#endif
-			// enqueue the function call
-			// print soldier <tid> entered firing queue print it a Kernel is like a military
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); #endif
+			# if DISPLAY == 1 
+				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
+				// enqueue the function call
+				// print soldier <tid> entered firing queue print it a Kernel is like a military
+				uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); 
+			#endif
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;
@@ -133,10 +135,12 @@ void io_TXIC_MARKLIN_server()
 			STATE = 0;
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
 			// print in green
-			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[32m");#endif
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);#endif
-			// print in white
-			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");#endif
+			# if DISPLAY == 1 
+				uart_printf(CONSOLE, "\033[32m");
+				uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);
+				// print in white
+				uart_printf(CONSOLE, "\033[37m");
+			#endif
 		}
 		
 		if(call_list.size > 0 && interrupt_list.size > 0){
@@ -145,8 +149,10 @@ void io_TXIC_MARKLIN_server()
 			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
-			# if DISPLAY == 4 uart_printf(CONSOLE, "\033[37m");#endif
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);#endif
+			# if DISPLAY == 1 
+				uart_printf(CONSOLE, "\033[37m");
+				uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
+			#endif
 			// print in green
 			Reply(ret_pid, recieve, 8);
 			call_list.call[call_list.begin].tid = 0;
@@ -260,7 +266,9 @@ void io_CTS_MARKLIN_server()
 			Reply(tid, recieve, 0);
 		}
 		if(type ==CTSMIM){
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);#endif
+			# if DISPLAY == 3
+				uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
+			#endif
 			int cur_cts = get_CTS(MARKLIN);
 			for (int i = 0; i < NUMPROCS; i++){
 				int tid_free = awaitcts[cur_cts][i];
@@ -269,7 +277,9 @@ void io_CTS_MARKLIN_server()
 			}
 			awaitcts_size[cur_cts] = 0;
 		} else if(type == CTS){
-			# if DISPLAY == 4 uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);#endif
+			# if DISPLAY == 3 
+				uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);
+			#endif
 			if (char_ch == get_CTS(MARKLIN)){
 				Reply(tid, recieve, 8);
 			} else {
@@ -309,17 +319,23 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
-				# if DISPLAY == 4 uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");#endif
+				# if DISPLAY == 1
+					uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
+				#endif
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
-				# if DISPLAY == 4 uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");#endif
+				# if DISPLAY == 2
+					uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
+				#endif
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
-				# if DISPLAY == 4 uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");#endif
+				# if DISPLAY == 3 
+					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");#
+				endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 		}
