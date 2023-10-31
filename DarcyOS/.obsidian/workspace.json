@@ -1,0 +1,193 @@
+{
+  "main": {
+    "id": "6dc6c8a8af30600c",
+    "type": "split",
+    "children": [
+      {
+        "id": "8dc2b320689410c1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fe15dd1aa99e8de9",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "0-DarcyOS.canvas",
+                "viewState": {
+                  "x": 190.57940341393038,
+                  "y": 161.28866899336361,
+                  "zoom": -1.5732326477689427
+                }
+              }
+            }
+          },
+          {
+            "id": "d3bcbddebcf3ac45",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "0-DarcyOS.canvas",
+                "viewState": {
+                  "x": -600,
+                  "y": -260,
+                  "zoom": 0
+                }
+              }
+            }
+          },
+          {
+            "id": "697e8d37c1bcc965",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "K4Tests.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3ac1dc16c9d6275a",
+    "type": "split",
+    "children": [
+      {
+        "id": "6111d7862751bdc6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f3249103a2477f40",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "8e450bc16e6b1971",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "a8cf27bf1da2168a",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c3cd982000570c81",
+    "type": "split",
+    "children": [
+      {
+        "id": "3b4395f6d07ae2ba",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8fc59b5b588965fd",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "K4Tests.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "f6967b7c21b659ae",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "K4Tests.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "2f2bac08a342ab3e",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "2fe0a4ed2c482834",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "K4Tests.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "697e8d37c1bcc965",
+  "lastOpenFiles": [
+    "K4 Readme.md",
+    "Pasted image 20231030175847.png",
+    "0-DarcyOS.canvas",
+    "Kernel.md",
+    "K4Tests.md",
+    "Shell Workers.md",
+    "Track Datasheet.md",
+    "Namespace Server.md",
+    "Shell.md",
+    "Kernel.canvas"
+  ]
+}

@@ -1,0 +1,1 @@
+The Shell should never block, always awaiting for user command input, for every command that I inputed it should be enqueued into another task. In essence this is also a notifier of some sorts just without the blocked until 

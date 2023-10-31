@@ -1,0 +1,1 @@
+The kernel have the highest privilege, it must use as less time as possible since in kernel mode the CPU would not be able to receive interrupts. For every turnaround it would typically cost 200$\mu s$ 
