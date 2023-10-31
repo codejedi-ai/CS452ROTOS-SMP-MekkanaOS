@@ -39,43 +39,7 @@ int k3ExecuteCommands(char *command, char **num, int command_part_count){
       return 1;
 }
 
-void clock_proc(){
-    uart_printf(CONSOLE, "clock_proc: Started\r\n");
-    uint64_t tid = MyTid();
-    char name[8] = "clock_proc";
-    int delay = 10;
-    int numberOfDelays = 20;
-    RegisterAs(name);
 
-    Receive(&tid, name, 8);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s\r\n", tid, name);
-    Reply(tid, name, 8);
-    
-
-    Receive(&tid, &delay, 4);
-    Reply(tid, &delay, 4);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d\r\n", tid, name, delay);
-
-    Receive(&tid, &numberOfDelays, 4);
-    Reply(tid, &numberOfDelays, 4);
-    // uart_printf(CONSOLE, "clock_proc: tid = %d, name = %s, delay = %d, numberOfDelays = %d\r\n", tid, name, delay, numberOfDelays);
-    
-    RegisterAs(name);
-    
-    for(int i = 0; i < numberOfDelays; i++){
-        int clock_server = WhoIs("clock_server");
-        if (clock_server == -1){
-            uart_printf(CONSOLE, "clock_proc: clock_server not found\r\n");
-            Exit();
-        }
-        int delayret = Delay(clock_server, delay);
-        uart_printf(CONSOLE, "i = %d, %s Reawakened after %d ticks\r\n",i, (char *)name, delay);
-    }
-    
-   uart_printf(CONSOLE, "Clock proc exit \r\n");
-
-    Exit();
-}
 int32_t init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int numberOfDelays){
     // uart_printf(CONSOLE, "init_clock_proc: clockname_buf = %s\r\n", clockname_buf);
     char clockname[8];
