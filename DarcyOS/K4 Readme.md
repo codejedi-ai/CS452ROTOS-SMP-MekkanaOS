@@ -12,3 +12,7 @@ The UART server also have similar mechanisms to catch missed interrupts in a que
 
 RXIC server:
 this server imitates the FIFO queue that I do not have the luxury to enjoy. 
+
+I have simulated the UART queue. I made two data structures that are meant to push and pull. 
+
+Instead of having one IO server, I have an I server and an O server. the I server is responsible for the input
