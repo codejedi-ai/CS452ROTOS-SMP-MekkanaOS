@@ -45,6 +45,7 @@ uint64_t l2(uint64_t x){
 uint64_t get_i(uint64_t x){
     return 8 - l2(x);
 }
+uint32_t io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, io_CTS_MARKLIN_server_pid;
 void init_ioserver(){
     io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
     io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
