@@ -93,12 +93,13 @@ void io_TXIC_server()
 			// pop the call list queue and reply to the task
 			if (call_list[channel].size && !clear){
 				// soldier <tid>'s bullet has landed
-				uart_printf(CONSOLE, "soldier %u's bullet has landed\r\n", tid);
+				int tid_ret = call_list[channel].call[call_list[channel].begin].tid;
+				uart_printf(CONSOLE, "soldier %u's bullet has landed\r\n", tid_ret);
 				recieve[0] = call_list[channel].call[call_list[channel].begin].type;
 				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
 				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
-				Reply(call_list[channel].call[call_list[channel].begin].tid, recieve, 8);
+				Reply(tid_ret, recieve, 8);
 				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 				call_list[channel].size--;
 				clear = 1;
