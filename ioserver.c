@@ -226,7 +226,7 @@ void io_server_MARKLIN()
 			if(STATE == 1) {
 				STATE = 0;
 				recieve[2] = 1;
-				reply(tid_ret, recieve, 8);
+				Reply(tid_ret, recieve, 8);
 			}
 		} else if(type == PUTC){
 			if(STATE == 0){
