@@ -228,9 +228,9 @@ void io_server_MARKLIN()
 		}
 
 		if (type == CTSMIM){
-			// uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
+			uart_printf(CONSOLE, "CTS SYSINTERRUPT channel = %u, tid = %u CTS = %d\r\n", channel, tid_list[CTS - GETC][channel], char_ch);
 			if(tid_list[CTS - GETC][channel] != 0){
-				// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+				uart_printf(CONSOLE, "tid_list[CTS - GETC][channel] != 0: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 				recieve[2] = char_ch;
 				Reply(tid_list[CTS - GETC][channel], recieve, 8);
 				tid_list[CTS - GETC][channel] = 0;
@@ -240,7 +240,7 @@ void io_server_MARKLIN()
 					STATE[channel] = 3;
 				} else if(STATE[channel] = 3 && char_ch == 1){
 					STATE[channel] = 0;
-					// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
+					uart_printf(CONSOLE, "tid_list[PUTC - GETC][channel]: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 					recieve[2] = char_ch;
 					Reply(tid_list[PUTC - GETC][channel], recieve, 8);
 					tid_list[PUTC - GETC][channel] = 0;
@@ -255,7 +255,7 @@ void io_server_MARKLIN()
 			}
 		} else if(type == PUTC){
 			if(STATE[channel] == 0){
-				// uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
+				uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
 				tid_list[PUTC - GETC][channel] = tid;
 				STATE[channel] = 1;
 				uart_putc(channel, char_ch);
@@ -267,7 +267,7 @@ void io_server_MARKLIN()
 				Reply(tid_list[PUTC - GETC][channel], recieve, 8);
 			}
 		} else if(type == CTS){
-			// uart_printf(CONSOLE, "CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
+			uart_printf(CONSOLE, "type == CTS: CTS FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
 			tid_list[CTS - GETC][channel] = tid;
 		}
 		// print in white
