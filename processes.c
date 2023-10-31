@@ -168,5 +168,10 @@ void FirstUserTask() // First task as dictated in the reqs
 	execute_train_command(0, 54);
 	execute_train_command(10, 54);
 	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
+	// print in green process finnished
+	uart_printf(CONSOLE, "\033[32m");
+	uart_printf(CONSOLE, "FirstUserTask: FIRST TASK FINISHED\r\n");
+	// print in white
+	uart_printf(CONSOLE, "\033[37m");
 	Exit();
 }
