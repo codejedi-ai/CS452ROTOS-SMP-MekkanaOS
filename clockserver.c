@@ -17,8 +17,8 @@ void clock_notifier(){
     {
         uint64_t event = AwaitEvent(CLOCKINTID);
         int ret;
-        uart_printf(CONSOLE, "clock_notifier: event = %d\r\n", event);
-        Send(clock_server_tid, "Time", 4, &ret, 0);
+        // uart_printf(CONSOLE, "clock_notifier: event = %d\r\n", event);
+        Send(clock_server_tid, "", 0, &ret, 0);
     }
     Exit();
 }
@@ -50,7 +50,7 @@ void clock_server(){
         }
         
          if (tid == not_tid){
-            Reply(tid, &ticks, 8);
+            Reply(tid, &ticks, 0);
             ticks++;
             continue;
         } 

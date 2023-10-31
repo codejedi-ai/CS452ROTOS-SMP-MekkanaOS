@@ -221,32 +221,11 @@ void ExceptionASYNC(uint64_t esr_el1){
 	// if (CLOCKINTID != interruptid) uart_printf(CONSOLE, "NON CLOCK INTURRUPT\n\r");
 	switch (interruptid) {
 		case CLOCKINTID:
-			// 
-			// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
 			// end the interrupt d
-			
 			// set the next timer
 			// get the time
-			// print in megenta
-			uart_printf(CONSOLE, "\033[35m");
-			uart_printf(CONSOLE, "Timer Interrupt\n\r");
-			uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
-			// print in white
-			uart_printf(CONSOLE, "\033[37m");
-			
-			
-
-			uint32_t time = get_timerLO();
-			set_timerC3(time + 10000);
+			set_timerC3(get_timerLO() + 10000);
 			resetCS(3);
-			/*
-			//set_timerC3(time);
-			// scrSchedule(PID, PROCS[p].priority, READY);
-
-			
-			// after this I want to see the time fire repeatitvely
-			
-			*/
 			unblock_return(CLOCKINTID, 1);
 			break;
 		case UARTINTER:
@@ -254,8 +233,6 @@ void ExceptionASYNC(uint64_t esr_el1){
 			// the first byte of the char is the type of interrupt given
 			// the second byte of the char is the line number
 			// the last byte of the char is the return value
-			// uart_printf(CONSOLE, "UART Interrupt\n\r");
-			// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
 			uint32_t* RIS_CONSOLE = get_RIS(CONSOLE);
 			uint32_t* ICR_CONSOLE = get_ICR(CONSOLE);
 
