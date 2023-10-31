@@ -55,7 +55,6 @@ void init_trains(){
     execute_train_command(64, train_numbers[i]);
   }
   uart_printf(CONSOLE, "init_trains: All trains are set to speed 0\r\n");
-  Exit();
 }
 
 void init_track_test(){
@@ -77,7 +76,6 @@ void init_track_test(){
   solonoid_command(0x9a, 'S');
   solonoid_command(0x9b, 'C');
   solonoid_command(0x9c, 'S');
-  Exit();
 }
 
 int k4ExecuteCommands(char *command, char **num, int command_part_count){
@@ -119,9 +117,8 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
             // create a process that initializes the track
             // Create(1, &k4t1_init_test);
             
-            tid = Create(2, init_track_test);
-            uart_printf(CONSOLE, "init_track_test: tid = %d\r\n", tid);
-            tid = Create(3, init_trains);
+            init_track_test();
+            init_trains();
             uart_printf(CONSOLE, "init_trains: tid = %d\r\n", tid);
             return 0;
         }if(strcmp_ret(num[1], "read-many")){
