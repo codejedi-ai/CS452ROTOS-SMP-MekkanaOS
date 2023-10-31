@@ -13,6 +13,7 @@
 #include "k4tests.h"
 #include "asm.h"
 #include "ioserver.h"
+#include "traincont.h"
 
 #define DISPLAY 1
 /*

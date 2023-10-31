@@ -25,3 +25,4 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
 void sol_off(); // Solonoid ID
 // define a function that takes a char array as a parameter
 void init_track();
+void init_ioserver();
