@@ -11,7 +11,7 @@
 #include "gic.h"
 #include "processes.h"
 void* STACK_EL0_START; // Maybe delete this later
-
+#define CLOCKINTID 99
 int kmain(void *reg) {  
 
   STACK_EL0_START = reg; // Immediately calls this to store stack_end point as x0

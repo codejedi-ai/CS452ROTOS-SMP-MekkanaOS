@@ -226,10 +226,6 @@ void ExceptionASYNC(uint64_t esr_el1){
 			
 			// set the next timer
 			// get the time
-			uint32_t time = get_timerLO();
-			set_timerC3(time + 10000);
-			set_timerC3(time);
-			// scrSchedule(PID, PROCS[p].priority, READY);
 			// print in megenta
 			uart_printf(CONSOLE, "\033[35m");
 			uart_printf(CONSOLE, "Timer Interrupt\n\r");
@@ -237,6 +233,11 @@ void ExceptionASYNC(uint64_t esr_el1){
 			
 			// print in white
 			uart_printf(CONSOLE, "\033[37m");
+			uint32_t time = get_timerLO();
+			set_timerC3(time + 10000);
+			set_timerC3(time);
+			// scrSchedule(PID, PROCS[p].priority, READY);
+
 			resetCS(3);
 			unblock_return(CLOCKINTID, 1);
 			// after this I want to see the time fire repeatitvely
