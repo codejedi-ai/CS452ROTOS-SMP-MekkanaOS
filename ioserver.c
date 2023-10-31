@@ -411,7 +411,6 @@ int awaitCTS(int tid, int channel, uint8_t val)
 	channel64[2] = val;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	if (io_logging)
-		// uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
