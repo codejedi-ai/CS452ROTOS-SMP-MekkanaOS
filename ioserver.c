@@ -203,11 +203,12 @@ void io_server_MARKLIN()
 		tid_list[2][i] = 0;
 		STATE[i] = 0;
 	}
-	uint8_t tid_ret = 0;
+	uint8_t send_queue_size = 0;
 	uint8_t send_queue_begin = 0;
 	uint8_t send_queue_end = 0;
 	int i = 0;
 	uint8_t caller_TID_PUTC = 0, caller_TID_GETC = 0;
+
 	while (1)
 	{
 		// recieve the message
@@ -227,28 +228,29 @@ void io_server_MARKLIN()
 		}
 
 		if (type == CTSMIM){
-			if(tid_ret != 0){
+
+			if(tid_list[PUTC - GETC][channel] != 0){
 				if(STATE[channel] == 2 && char_ch == 0){
 					STATE[channel] = 3;
 				} else if(STATE[channel] = 3 && char_ch == 1){
 					STATE[channel] = 0;
 					// uart_printf(CONSOLE, "REPLIED: CTS channel = %u, tid = %u\r\n", channel, tid_list[CTS - GETC][channel]);
 					recieve[2] = char_ch;
-					Reply(tid_ret, recieve, 8);
-					tid_ret = 0;
+					Reply(tid_list[PUTC - GETC][channel], recieve, 8);
+					tid_list[PUTC - GETC][channel] = 0;
 				}
 			} 
 		} else if(type == TXIC){
-			// uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_ret);
-			if(tid_ret != 0) {
+			// uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
+			if(tid_list[PUTC - GETC][channel] != 0) {
 				// print reply to channel and putc
-				// uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_ret);
+				// uart_printf(CONSOLE, "REPLIED: PUTC channel = %u, tid = %u\r\n", channel, tid_list[PUTC - GETC][channel]);
 				STATE[channel] = 2;
 			}
 		} else if(type == PUTC){
 			if(STATE[channel] == 0){
 				// uart_printf(CONSOLE, "PUTC FUNCTION channel = %u, tid = %u\r\n", channel, tid_list[type - GETC][channel]);
-				tid_ret = tid;
+				tid_list[PUTC - GETC][channel] = tid;
 				STATE[channel] = 1;
 				uart_putc(channel, char_ch);
 				if (recieve[3] != -1){
@@ -256,7 +258,7 @@ void io_server_MARKLIN()
 				}
 			} else {
 				recieve[2] = -1;
-				Reply(tid_ret, recieve, 8);
+				Reply(tid_list[PUTC - GETC][channel], recieve, 8);
 			}
 		}
 	}
