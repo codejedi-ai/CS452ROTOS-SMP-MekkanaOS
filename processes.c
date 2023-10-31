@@ -172,9 +172,9 @@ void FirstUserTask() // First task as dictated in the reqs
 	execute_train_command(10, 54);
 	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
-	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 20));
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 200));
 	execute_reverse_command(54);
-	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 20));
+	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 200));
 	execute_train_command(10, 54);
 	uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
 	execute_train_command(0, 54);
