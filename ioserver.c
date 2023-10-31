@@ -17,8 +17,7 @@
 #define GETC 32
 #define PUTC 33
 #define CTS 34
-# if DISPLAY
-#elif
+
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
