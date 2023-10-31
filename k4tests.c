@@ -143,8 +143,9 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
           uart_printf(CONSOLE, "tr command requires 3 arguments, argcount = %d\r\n", command_part_count);
           return 1;
         }
-        int speed = atoi_64(num[2]);
-        int train_number = atoi_64(num[3]);
+        int speed = atoi_64(num[3]);
+        int train_number = atoi_64(num[2]);
+        uart_printf(CONSOLE, "tr command: speed = %d, train_number = %d\r\n", speed, train_number);
         execute_train_command(speed, train_number);
         return 0;
         
