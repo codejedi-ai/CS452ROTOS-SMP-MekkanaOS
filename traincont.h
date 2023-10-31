@@ -4,9 +4,7 @@
 #include "custstr.h"
 #include <stdio.h>
 #include "custstr.h"
-uint32_t io_TXIC_MARKLIN_server_pid;
-uint32_t io_RXIC_MARKLIN_server_pid;
-uint32_t io_CTS_MARKLIN_server_pid;
+
 // Serial line 1 on the RPi hat is used for the console
 #define SWITCH_COUNT 18
 
@@ -28,3 +26,7 @@ void sol_off(); // Solonoid ID
 // define a function that takes a char array as a parameter
 void init_track();
 void init_ioserver();
+
+uint32_t get_Marklin_ear_pid();
+uint32_t get_Marklin_mouth_pid();
+uint32_t get_Marklin_CTS_pid();

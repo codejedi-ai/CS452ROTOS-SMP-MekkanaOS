@@ -45,10 +45,23 @@ uint64_t l2(uint64_t x){
 uint64_t get_i(uint64_t x){
     return 8 - l2(x);
 }
+uint32_t io_TXIC_MARKLIN_server_pid;
+uint32_t io_RXIC_MARKLIN_server_pid;
+uint32_t io_CTS_MARKLIN_server_pid;
 void init_ioserver(){
     io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
     io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
     io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
+}
+// make functions to get the marklin IO PIDs
+uint32_t get_Marklin_mouth_pid(){
+    return io_TXIC_MARKLIN_server_pid;
+}
+uint32_t get_Marklin_ear_pid(){
+    return io_RXIC_MARKLIN_server_pid;
+}
+uint32_t get_Marklin_CTS_pid(){
+    return io_CTS_MARKLIN_server_pid;
 }
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // Put2c(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1, byte_2);

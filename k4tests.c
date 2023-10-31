@@ -112,7 +112,7 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
     io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
     */
 //        int ioserver_PID = WhoIs("io_TXIC_MARKLIN_server");
-        Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, print_char2);
+        Putc(get_Marklin_mouth_pid(), MARKLIN, print_char2);
         return 0;
     } else if (strcmp_ret(num[0], "k4tc")){
         int tid;
