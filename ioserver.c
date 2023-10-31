@@ -88,9 +88,12 @@ void io_TXIC_server()
 		uint8_t char_ch = recieve[2];
 		uint8_t char_ch2 = recieve[3];
 		if(type == TXIC){
+			
 			// enqueue the interrupt
 			// pop the call list queue and reply to the task
 			if (call_list[channel].size && !clear){
+				// soldier <tid>'s bullet has landed
+				uart_printf(CONSOLE, "soldier %u's bullet has landed\r\n", tid);
 				recieve[0] = call_list[channel].call[call_list[channel].begin].type;
 				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
@@ -98,10 +101,13 @@ void io_TXIC_server()
 				Reply(call_list[channel].call[call_list[channel].begin].tid, recieve, 8);
 				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 				call_list[channel].size--;
+				clear = 1;
 			}
 
 		} else if(type == PUTC){
 			// enqueue the function call
+			// print soldier <tid> entered firing queue print it a Kernel is like a military
+			uart_printf(CONSOLE, "soldier %u entered firing queue\r\n", tid);
 			call_list[channel].call[call_list[channel].end].tid = tid;
 			call_list[channel].call[call_list[channel].end].type = type;
 			call_list[channel].call[call_list[channel].end].channel = channel;
@@ -113,6 +119,8 @@ void io_TXIC_server()
 		// if there exist an interrupt to match up with a request
 		if (call_list[channel].size && clear)
 		{
+			
+			
 			clear = 0;
 			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
 			recieve[0] = call_list[channel].call[call_list[channel].begin].type;
@@ -121,6 +129,8 @@ void io_TXIC_server()
 			recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
 			char char_ch = recieve[2];
 			char char_ch2 = recieve[3];
+			// soldier <tid> is firing his gun
+			uart_printf(CONSOLE, "soldier %u is firing his gun\r\n", ret_pid);
 			uart_printf(MARKLIN, char_ch);
 			if (recieve[3] != -1){
 				uart_printf(MARKLIN, char_ch2);
