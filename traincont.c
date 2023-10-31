@@ -69,7 +69,7 @@ void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
-    
+
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_2);
     // await CTS 
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
@@ -114,7 +114,6 @@ void execute_train_command(unsigned char speed, // Binary: 00001010
       trains_speed[id] = speed;
 }
 void execute_reverse_command(unsigned char id){  // Binary: 00000001)
-      enqueue(0, id);
       enqueue(15, id);
       enqueue(trains_speed[id], id);
 }
