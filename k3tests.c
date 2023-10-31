@@ -17,8 +17,9 @@ Print -1 if there is an error
 */
 int k3ExecuteCommands(char *command, char **num, int command_part_count){
 	  // the command is not found
+      int clock_server_pid = WhoIs("clock_server");
       if (strcmp_ret(num[0], "time")){
-         uart_printf(CONSOLE, "Ticks passed: %d\r\n", Time(WhoIs("clock_server")));
+         uart_printf(CONSOLE, "Ticks passed: %d\r\n", Time(clock_server_pid));
       } else if (strcmp_ret(num[0], "delay")){
         if (command_part_count != 4){
             uart_printf(CONSOLE, "Delay command: delay <name> <delaytime> <delaycount>, argcount = %d\r\n", command_part_count);
@@ -61,14 +62,13 @@ void k3_clock_proc(){
     // uart_printf(CONSOLE, "k3_clock_proc: tid = %d, name = %s, delay = %d, numberOfDelays = %d\r\n", tid, name, delay, numberOfDelays);
     
     RegisterAs(name);
-    int clock_server = WhoIs("clock_server");
+    int clock_server_pid = WhoIs("clock_server");
     for(int i = 0; i < numberOfDelays; i++){
-        int clock_server = WhoIs("clock_server");
-        if (clock_server == -1){
-            uart_printf(CONSOLE, "k3_clock_proc: clock_server not found\r\n");
+        if (clock_server_pid == -1){
+            uart_printf(CONSOLE, "k3_clock_proc: clock_server_pid not found\r\n");
             Exit();
         }
-        int delayret = Delay(clock_server, delay);
+        int delayret = Delay(clock_server_pid, delay);
         uart_printf(CONSOLE, "i = %d, %s Reawakened after %d ticks\r\n",i, (char *)name, delay);
     }
     
