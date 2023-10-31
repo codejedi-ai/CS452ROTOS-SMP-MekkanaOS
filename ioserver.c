@@ -99,10 +99,6 @@ void io_TXIC_server()
 			call_list[channel].call[call_list[channel].end].char_ch2 = char_ch2;
 			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
 			call_list[channel].size++;
-			uart_printf(MARKLIN, char_ch);
-			if (recieve[3] != -1){
-				uart_printf(MARKLIN, char_ch2);
-			}
 		}
 		// if there exist an interrupt to match up with a request
 		if (call_list[channel].size && interrupts_list[channel].size)
@@ -112,6 +108,12 @@ void io_TXIC_server()
 			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
 			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
 			recieve[3] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch2;
+			char char_ch = recieve[2];
+			char char_ch2 = recieve[3];
+			uart_printf(MARKLIN, char_ch);
+			if (recieve[3] != -1){
+				uart_printf(MARKLIN, char_ch2);
+			}
 			Reply(ret_pid, recieve, 8);
 			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 			call_list[channel].size--;
