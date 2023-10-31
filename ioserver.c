@@ -233,10 +233,12 @@ void io_server_MARKLIN()
 		else if (type == TXIC)
 		{
 			uart_printf(CONSOLE, "TXIC SYSINTERRUPT channel = %u, tid = %u STATE = %u\r\n", channel, put_wait_queue.call[put_wait_queue.begin].tid, STATE);
-			if (STATE == 1)
-			{
-				// print reply to channel and putc
-				STATE = 2;
+			if (put_wait_queue.size){
+				if (STATE == 1)
+				{
+					// print reply to channel and putc
+					STATE = 2;
+				}
 			}
 		}
 		else if (type == PUTC)
