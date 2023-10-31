@@ -74,12 +74,20 @@ void io_TXIC_server()
 	RegisterAs("io_TXIC_server");
 	while (1)
 	{
+		int tid;
+		char recieve[8];
+		Receive(&tid, recieve, 8);
+		uint8_t type = recieve[0];
+		uint8_t channel = recieve[1];
+		uint8_t char_ch = recieve[2];
+		uint8_t char_ch2 = recieve[3];
 		if(type == TXIC){
 			// enqueue the interrupt
 			interrupts_list[channel].call[interrupts_list[channel].end].tid = tid;
 			interrupts_list[channel].call[interrupts_list[channel].end].type = type;
 			interrupts_list[channel].call[interrupts_list[channel].end].channel = channel;
 			interrupts_list[channel].call[interrupts_list[channel].end].char_ch = char_ch;
+			interrupts_list[channel].call[interrupts_list[channel].end].char_ch2 = char_ch2;
 			interrupts_list[channel].end = (interrupts_list[channel].end + 1) % QUEUELENGTH;
 			interrupts_list[channel].size++;
 		} else if(type == PUTC){
@@ -88,8 +96,13 @@ void io_TXIC_server()
 			call_list[channel].call[call_list[channel].end].type = type;
 			call_list[channel].call[call_list[channel].end].channel = channel;
 			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
+			call_list[channel].call[call_list[channel].end].char_ch2 = char_ch2;
 			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
 			call_list[channel].size++;
+			uart_printf(MARKLIN, char_ch);
+			if (recieve[3] != -1){
+				uart_printf(MARKLIN, char_ch2);
+			}
 		}
 		// if there exist an interrupt to match up with a request
 		if (call_list[channel].size && interrupts_list[channel].size)
@@ -98,6 +111,7 @@ void io_TXIC_server()
 			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
 			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
 			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
+			recieve[3] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch2;
 			Reply(ret_pid, recieve, 8);
 			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
 			call_list[channel].size--;
@@ -164,13 +178,8 @@ void io_RXIC_server()
 			call_list[channel].call[call_list[channel].end].type = type;
 			call_list[channel].call[call_list[channel].end].channel = channel;
 			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
-			call_list[channel].call[call_list[channel].end].char_ch2 = recieve[3];
 			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
 			call_list[channel].size++;
-			uart_printf(MARKLIN, char_ch);
-			if (recieve[3] != -1){
-				uart_printf(MARKLIN, recieve[3]);
-			}
 		}
 		// if there exist an interrupt to match up with a request
 		if (call_list[channel].size && interrupts_list[channel].size)
