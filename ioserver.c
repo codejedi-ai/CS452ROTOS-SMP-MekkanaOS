@@ -228,7 +228,7 @@ void io_notifier()
 // was thinking about doing a three server layout. It is possible that two tasks are waiting for the same interrupt
 void io_TXIC_server_old()
 {
-
+/*
 	if (io_logging)
 		// uart_printf(CONSOLE, "io_TXIC_server: Registered at %u\n", MyTid());
 	RegisterAs("io_TXIC_server");
@@ -282,7 +282,7 @@ void io_TXIC_server_old()
 			}
 		}
 	}
-
+*/
 	Exit();
 }
 
