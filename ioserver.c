@@ -472,7 +472,9 @@ int Putc(int tid, int channel, unsigned char ch)
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
 	//if (io_logging)
-	# if DISPLAY == 4 uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	#if DISPLAY == 1
+	 uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
+	#endif
 	return channel64[2];
 }
 // cannot get over the waitCTS thing. I want the my code to unblock when the CTS is high
@@ -487,14 +489,17 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 	channel64[3] = ch2;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 1);
 	//if (io_logging)
-	# if DISPLAY == 4 uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
+	#if DISPLAY == 2 
+	uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
+	#endif
 	return channel64[2];
 }
 
 int awaitCTS(int tid, int channel, uint8_t val)
 {	
 	// print the params
-	# if DISPLAY == 4 uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
+	# if DISPLAY == 3
+	 uart_printf(CONSOLE, "awaitCTS: tid = %u, channel = %u, val = %u\r\n", tid, channel, val);
 	char channel64[8];
 	*((uint32_t *)channel64 + 1) = ((uint32_t)channel);
 	channel64[0] = CTS;
@@ -502,6 +507,8 @@ int awaitCTS(int tid, int channel, uint8_t val)
 	channel64[2] = val;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	# if DISPLAY == 4 uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	# if DISPLAY == 3 
+	uart_printf(CONSOLE, "awaitCTS: sendret = %d\r\n", sendret);
+	#endif
 	return channel64[2];
 }
