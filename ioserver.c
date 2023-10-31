@@ -260,7 +260,7 @@ void io_CTS_MARKLIN_server()
 		}
 		if(type ==CTSMIM){
 			uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
-			int cur_cts = get_CTS();
+			int cur_cts = get_CTS(MARKLIN);
 			for (int i = 0; i < NUMPROCS; i++){
 				int tid_free = awaitcts[cur_cts][i];
 				recieve[2] = cur_cts;
@@ -269,7 +269,7 @@ void io_CTS_MARKLIN_server()
 			awaitcts_size[cur_cts] = 0;
 		} else if(type == CTS){
 			uart_printf(CONSOLE, "	CTS FUNCTION tid = %u, char_ch = %u\r\n", channel, tid, char_ch);
-			if (char_ch == get_CTS()){
+			if (char_ch == get_CTS(MARKLIN)){
 				Reply(tid, recieve, 8);
 			} else {
 				awaitcts[char_ch] = tid;
