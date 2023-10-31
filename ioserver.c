@@ -13,7 +13,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 15
+#define DISPLAY 30
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -97,30 +97,52 @@ void io_TXIC_MARKLIN_server()
 			Reply(tid, recieve, 0);
 		}
 
+		if(type == CTSMIM){
+			// uart print with the CTS wrapped in green and the #if DISPLAY % 2 == 0
+			# if DISPLAY % 2== 0
+				uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
+			#endif
+			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && char_ch == 1 && STATE == 3){
+				# if DISPLAY % 2== 0
+					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+				#endif
+				interrupt_list.call[interrupt_list.end].tid = tid;
+				interrupt_list.call[interrupt_list.end].type = type;
+				interrupt_list.call[interrupt_list.end].channel = channel;
+				interrupt_list.call[interrupt_list.end].char_ch = char_ch;
+				interrupt_list.call[interrupt_list.end].char_ch2 = char_ch2;
+				interrupt_list.end = (interrupt_list.end + 1) % QUEUELENGTH;
+				interrupt_list.size++;	
+			}
+			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && char_ch == 0 && STATE == 2){
+				# if DISPLAY % 2== 0
+					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+				#endif
+				STATE = 3;
+			}
+		}
 		if(type == TXIC){
 			// pop the call list queue and reply to the task
-			// is there another bullet the soldier can fire
-			// soldier <tid>'s bullet has landed
+			// is there another bullet the Process can fire
+			// Process <tid>'s bullet has landed
 			# if DISPLAY % 2== 0 
-				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
-				// print soldier <tid> entered firing queue print it a Kernel is like a military
-				uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); 
+				// print Process <tid> entered firing queue print it a Kernel is like a military
+				uart_printf(CONSOLE, "	Interrupt %u entered interrupt queue. %u Interrupts already in queue.\r\n", tid, call_list.size); 
 			#endif
 			// add interrupt to the interrupt list
-			interrupt_list.call[interrupt_list.end].tid = tid;
-			interrupt_list.call[interrupt_list.end].type = type;
-			interrupt_list.call[interrupt_list.end].channel = channel;
-			interrupt_list.call[interrupt_list.end].char_ch = char_ch;
-			interrupt_list.call[interrupt_list.end].char_ch2 = char_ch2;
-			interrupt_list.end = (interrupt_list.end + 1) % QUEUELENGTH;
-			interrupt_list.size++;	
+			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 0){
+				# if DISPLAY % 2== 0 
+					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+				#endif
+				STATE = 2;
+			}
 		} 
 		
 		if(type == PUTC){
 			# if DISPLAY % 2== 0 
 				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
-				// print soldier <tid> entered firing queue print it a Kernel is like a military
-				uart_printf(CONSOLE, "	soldier %u entered firing queue. %u already in.\r\n", tid, call_list.size); 
+				// print Process <tid> entered firing queue print it a Kernel is like a military
+				uart_printf(CONSOLE, "	Process %u entered firing queue. %u processes already in the queue.\r\n", tid, call_list.size); 
 			#endif
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
@@ -135,10 +157,11 @@ void io_TXIC_MARKLIN_server()
 		{
 			STATE = 0;
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
-			// print in green
+			
 			# if DISPLAY % 2== 0 
+			// print in green
 				uart_printf(CONSOLE, "\033[32m");
-				uart_printf(CONSOLE, "	soldier %u fired. %u left.\r\n", call_list.call[call_list.begin].tid, call_list.size - 1);
+				uart_printf(CONSOLE, "	Process %u sent %u to the marklin.\r\n", call_list.call[call_list.begin].tid, call_list.call[call_list.begin].char_ch);
 				// print in white
 				uart_printf(CONSOLE, "\033[37m");
 			#endif
@@ -152,7 +175,7 @@ void io_TXIC_MARKLIN_server()
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
 			# if DISPLAY % 2== 0 
 				uart_printf(CONSOLE, "\033[37m");
-				uart_printf(CONSOLE, "	soldier %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
+				uart_printf(CONSOLE, "	Process %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
 			#endif
 			// print in green
 			Reply(ret_pid, recieve, 8);
@@ -188,7 +211,7 @@ void io_RXIC_MARKLIN_server()
 	while (1)
 	{
 		// change font to orange
-		// # if DISPLAY == 4 uart_printf(CONSOLE, "\033[33m");
+		// 
 		char recieve[8];
 		Receive(&tid, recieve, 8);
 		uint8_t type = recieve[0];
@@ -334,6 +357,7 @@ void io_notifier()
 					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
 				#endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
+				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 		}
 	}

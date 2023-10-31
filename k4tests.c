@@ -14,6 +14,7 @@
 #include "asm.h"
 #include "ioserver.h"
 #include "traincont.h"
+#define delay 1
 void read_s88_test_sensor_A(){
     uart_printf(CONSOLE, "First s88_id = 1");
     uint32_t outchar = read_one_s88(1);
@@ -59,22 +60,32 @@ void init_trains(){
 
 void init_track_test(){
     // set all the turnabouts to straight
+  int clock_server_tid = WhoIs("clock_server");
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
     solonoid_command(i, 'S');
+    Delay(clock_server_tid, delay);
   }
   // set all the turnabouts to curved
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
     solonoid_command(i, 'C');
+    Delay(clock_server_tid, delay);
   }
   solonoid_command(0x99, 'S');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9a, 'C');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9b, 'S');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9c, 'C');
-
+  Delay(clock_server_tid, delay);
   solonoid_command(0x99, 'C');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9a, 'S');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9b, 'C');
+  Delay(clock_server_tid, delay);
   solonoid_command(0x9c, 'S');
+  Delay(clock_server_tid, delay);
 }
 
 int k4ExecuteCommands(char *command, char **num, int command_part_count){
