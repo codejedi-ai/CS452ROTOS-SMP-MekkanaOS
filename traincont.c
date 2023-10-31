@@ -66,6 +66,7 @@ uint32_t get_Marklin_CTS_pid(){
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
     // Put2c(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1, byte_2);
     uart_printf(CONSOLE, "enqueue: byte_1 = %d, byte_2 = %d\r\n", byte_1, byte_2);
+    int clock_server_tid = WhoIs("clock_server");
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
