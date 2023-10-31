@@ -79,7 +79,8 @@ uint16_t read_many_s88(char s88_no, uint16_t* ret){
       }else if(b != 0){
         display = get_i(b) + 8;
       }
-      uart_printf(CONSOLE, "display = 0x%x\r\n", display);
+      uart_printf(CONSOLE, "a = 0x%x\r\n", a);
+      uart_printf(CONSOLE, "b = 0x%x\r\n", b);
     }
     return 0; // Dummy return
 }
@@ -116,7 +117,7 @@ void sol_off(){  // Solonoid ID
 }
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
-int train_controller(char *command, char **num, int command_part_count){
+  /*
   // execute here
   if (num[0][0] == 't' && num[0][1] == 'r'){
     // set train speed
@@ -201,3 +202,4 @@ int train_controller(char *command, char **num, int command_part_count){
   }
   return 0;
 }
+*/

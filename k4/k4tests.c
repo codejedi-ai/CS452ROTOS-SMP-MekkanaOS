@@ -22,13 +22,15 @@ void read_s88_test_sensor_A(){
     Exit();
 }
 void read_s88_test_many(){
-  // clear screen
+  set_io_logging(1);
   uart_printf(CONSOLE, "\033[2J");
-  // remove cursor
+  // hide cursor
   uart_printf(CONSOLE, "\033[?25l");
-  
   while(1){
+    // clear the screen
+    // set cursor to 0,0
     uart_printf(CONSOLE, "\033[H");
+
     char s88_no = 5;
     uint16_t ret[s88_no];
     for (int i = 0; i < s88_no; i ++){
@@ -56,28 +58,6 @@ void init_trains(){
   Exit();
 }
 
-void test_trains(){
-  int clock_server_tid = WhoIs("clock_server");
-  char train_numbers[] = {1, 2, 24, 47, 54, 58};
-  char *num[3];
-  char *command[100];//= "tr 54 10";
-  strcpy(command, 100, "tr 54 10", 8);
-  int command_part_count = parse_char_arr(command, train_numbers, 3);
-  train_controller(command, num, command_part_count);
-  uart_printf(CONSOLE, "test_trains: train 54 is set to speed 10\r\n");
-  Delay(clock_server_tid, 100);
-  // reverse the train
-  strcpy(command, 100, "rv 54",7);
-  parse_char_arr(command, train_numbers, 3);
-  uart_printf(CONSOLE, "test_trains: train 54 is reversed\r\n");
-  Delay(clock_server_tid, 100);
-  // stop the train
-  //command = "tr 54 0";
-  strcpy(command, 100, "tr 54 0",7);
-  parse_char_arr(command, train_numbers, 3);
-  uart_printf(CONSOLE, "test_trains: train 54 is stopped\r\n");
-  Exit();
-}
 void init_track_test(){
     // set all the turnabouts to straight
   for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
@@ -101,11 +81,20 @@ void init_track_test(){
 }
 
 int k4ExecuteCommands(char *command, char **num, int command_part_count){
-    //int tr_exec = train_controller(command, num, command_part_count);
     //if(tr_exec != -1){
     //  return tr_exec;
     // }
-    if (strcmp_ret(num[0], "putc")){
+    // run the set_io_logging command
+
+      if (strcmp_ret(num[0], "set_io_logging")){
+        if (command_part_count != 2){
+            uart_printf(CONSOLE, "set_io_logging command requires 1 argument, argcount = %d\r\n", command_part_count);
+            return 1;
+        }
+        int io_logging = atoi_64(num[1]);
+        set_io_logging(io_logging);
+        return 0; 
+      }if (strcmp_ret(num[0], "putc")){
         if (command_part_count != 2){
             uart_printf(CONSOLE, "putc command requires 1 argument, argcount = %d\r\n", command_part_count);
             return 1;
@@ -124,28 +113,58 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         awaitCTS(ioserver_PID, MARKLIN, 1);
         return 0;
     } else if (strcmp_ret(num[0], "k4tc")){
-        
+        int tid;
         if(strcmp_ret(num[1], "init")){
             // create process 
             // create a process that initializes the track
             // Create(1, &k4t1_init_test);
+            
+            tid = Create(2, init_track_test);
+            uart_printf(CONSOLE, "init_track_test: tid = %d\r\n", tid);
+            tid = Create(3, init_trains);
+            uart_printf(CONSOLE, "init_trains: tid = %d\r\n", tid);
+            return 0;
+        }if(strcmp_ret(num[1], "read-many")){
+            // create process 
+            // create a process that initializes the track
+            // Create(1, &k4t1_init_test);
 
+            tid = Create(5, read_s88_test_many);
+            uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
             return 0;
         }
-        else if(strcmp_ret(num[1], "54") && strcmp_ret(num[2], "10")){
-            // create process 
-            // create a process that initializes the track
-            execute_train_command(10, 54);
-            return 0;
+        if(strcmp_ret(num[1], "read-A")){
+            tid = Create(1, read_s88_test_sensor_A);
+            uart_printf(CONSOLE, "read_s88_test_sensor_A: tid = %d\r\n", tid);
         }
-        if(strcmp_ret(num[1], "54") && strcmp_ret(num[2], "0")){
-            // create process 
-            // create a process that initializes the track
-            execute_train_command(0, 54);
-            return 0;
+        if (strcmp_ret(num[1], "tr")){
+          if(command_part_count != 4){
+            uart_printf(CONSOLE, "tr command requires 3 arguments, argcount = %d\r\n", command_part_count);
+            return 1;
+          }
+          int speed = atoi_64(num[2]);
+          int train_number = atoi_64(num[3]);
+          execute_train_command(speed, train_number);
+          return 0;
+          
         }
-        
-        return 0;
-    } 
+        // rv <train number>
+        if (strcmp_ret(num[1], "rv")){
+          if(command_part_count != 3){
+            uart_printf(CONSOLE, "rv command requires 2 arguments, argcount = %d\r\n", command_part_count);
+            return 1;
+          }
+          int train_number = atoi_64(num[2]);
+          execute_reverse_command(train_number);
+          return 0;
+        }
+        // sw <switch number> <C/S>
+        if (strcmp_ret(num[1], "sw")){
+          char switch_number = atoi_64(num[2]);
+          char direction = *num[3];
+          solonoid_command(switch_number, direction);
+          return 0;
+        }
+    }
     return -1;
 }
