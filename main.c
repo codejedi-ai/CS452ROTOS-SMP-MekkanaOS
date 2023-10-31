@@ -41,8 +41,8 @@ int kmain(void *reg) {
   tid = KernelCreate(0, io_notifier, 0);
   uart_printf(CONSOLE, "io_notifier: tid = %d\r\n", tid);
 
-	//tid = KernelCreate(-1, idle, 0);
-  //uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
+	tid = KernelCreate(-1, idle, 0);
+  uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
   
   uart_printf(CONSOLE, "FirstUserTask\r\n", tid);
   KernelCreate(10, FirstUserTask, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
