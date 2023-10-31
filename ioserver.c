@@ -22,7 +22,7 @@
 These are the most essential terminal control sequences that you will need for your train program.
 
 Code	Effect
-"\033[2J"	Clear the screen.
+"\033[2J"	STATE the screen.
 "\033[H"	Move the cursor to the upper-left corner of the screen.
 "\033[r;cH"	Move the cursor to row r, column c. Note that both the rows and columns are indexed starting at 1.
 "\033[?25l"	Hide the cursor.
@@ -75,9 +75,9 @@ void io_TXIC_server()
 	RegisterAs("io_TXIC_server");
 	int8_t io_notifier_tid = WhoIs("io_notifier");
 	// set the size of the lists to 0
-	// define clear car
-	// clear: 0 not clear: 1 clear
-	uint8_t clear = 1;
+	// define STATE car
+	// STATE: 0 not STATE: 1 STATE
+	uint8_t STATE = 0;
 	while (1)
 	{
 		int tid;
@@ -94,7 +94,8 @@ void io_TXIC_server()
 			uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 			// enqueue the interrupt
 			// pop the call list queue and reply to the task
-			if (call_list[channel].size && !clear){
+			if (call_list[channel].size && STATE == 1){
+				// is there another bullet the soldier can fire
 				// soldier <tid>'s bullet has landed
 				int tid_ret = call_list[channel].call[call_list[channel].begin].tid;
 				uart_printf(CONSOLE, "	soldier %u's bullet has landed\r\n", tid_ret);
@@ -102,13 +103,15 @@ void io_TXIC_server()
 				recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
 				recieve[2] = call_list[channel].call[call_list[channel].begin].char_ch;
 				recieve[3] = call_list[channel].call[call_list[channel].begin].char_ch2;
-				
-				uart_printf(CONSOLE, "	soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
-				call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
-				call_list[channel].size--;
-				clear = 1;
+				if (recieve[3] != -1){
+					uart_printf(MARKLIN, char_ch2);
+				}else{
+					uart_printf(CONSOLE, "	soldier returned home: %u\r\n", Reply(tid_ret, recieve, 1));
+					call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
+					call_list[channel].size--;
+					STATE = 0;
+				}
 			}
-
 		} else if(type == PUTC){
 			uart_printf(CONSOLE, "PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
 			// enqueue the function call
@@ -123,11 +126,11 @@ void io_TXIC_server()
 			call_list[channel].size++;
 		}
 		// if there exist an interrupt to match up with a request
-		if (call_list[channel].size && clear)
+		if (call_list[channel].size && STATE == 0)
 		{
 			
 			
-			clear = 0;
+			STATE = 1;
 			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
 			recieve[0] = call_list[channel].call[call_list[channel].begin].type;
 			recieve[1] = call_list[channel].call[call_list[channel].begin].channel;
@@ -138,9 +141,6 @@ void io_TXIC_server()
 			// soldier <tid> is firing his gun
 			uart_printf(CONSOLE, "soldier %u is firing his gun, char_ch = %d, char_ch2 = %d\r\n", ret_pid, char_ch, char_ch2);
 			uart_printf(MARKLIN, char_ch);
-			if (recieve[3] != -1){
-				// uart_printf(MARKLIN, char_ch2);
-			}
 		}
 	}
 	
