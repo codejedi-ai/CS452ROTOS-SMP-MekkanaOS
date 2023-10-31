@@ -1,0 +1,12 @@
+# Ignore image files
+*.img
+
+# Ignore ELF files
+*.elf
+
+# Ignore object files
+*.o
+
+# Ignore dependency files
+*.d
+

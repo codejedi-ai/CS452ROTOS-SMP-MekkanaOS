@@ -1,6 +1,0 @@
-{
-	"nodes":[
-		{"id":"947e74ed8e36e328","x":-125,"y":-306,"width":250,"height":60,"type":"text","text":"EL0 - User code\nEL1 - Kernel code"}
-	],
-	"edges":[]
-}

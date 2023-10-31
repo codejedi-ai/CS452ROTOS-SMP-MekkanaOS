@@ -1,6 +1,0 @@
-syscall.o: syscall.c syscall.h asm.h processes.h rpi.h util.h
-syscall.h:
-asm.h:
-processes.h:
-rpi.h:
-util.h:

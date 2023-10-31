@@ -1,4 +1,0 @@
-- thing that implements tasks. 
-- resource manager
-- device manager
-- privilege execute
