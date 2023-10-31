@@ -4,7 +4,7 @@
 #include "custstr.h"
 #include <stdio.h>
 #include "custstr.h"
-
+uint32_t io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, io_CTS_MARKLIN_server_pid;
 // Serial line 1 on the RPi hat is used for the console
 #define SWITCH_COUNT 18
 

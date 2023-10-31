@@ -171,7 +171,7 @@ void io_RXIC_MARKLIN_server()
 	// It is automatically assumed the channel is 2
 	int tid;
 	RegisterAs("io_RXIC_MARKLIN_server");
-	int io_notifier_tid = WhoIs("io_notifier");
+	int8_t io_notifier_tid = WhoIs("io_notifier");
 	// for the recieve interrupts I need to handle cases in which the interrupt happened before a task picked it up
 	// this doubles of as a queue for the interrupts
 	struct fi_list interrupt_list;
@@ -250,7 +250,7 @@ void io_CTS_MARKLIN_server()
 	uint32_t awaitcts_size[2]; 
 	// register the server
 	RegisterAs("io_CTS_MARKLIN_server");
-	int io_notifier_tid = WhoIs("io_notifier");
+	int8_t io_notifier_tid = WhoIs("io_notifier");
 	uint8_t STATE = 0;
 	while (1)
 	{

@@ -128,6 +128,7 @@ void gameserver(){
 		games[i].tid2 = 0;
 		games[i].tid2_move[0] = 0;
 	}
+	const int mainpid = WhoIs("main");
 	while (1)
 	{
 		for (int i = 0; i < 10; i++)
@@ -135,7 +136,7 @@ void gameserver(){
 			if (!full_game(&games[i])){
 				// print the plays
 				// if one of the PIDs equal to main's pid then we need to reply to main
-				int mainpid = WhoIs("main");
+				
 				if (mainpid == games[i].tid2 || mainpid == games[i].tid1){
 					int repret = Reply(mainpid, "Q", 2);
 				}
@@ -196,7 +197,6 @@ void gameserver(){
 			}
 			for (int i = 0; i < 10; i++)
 			{	
-				int mainpid = WhoIs("main");
 				if (games[i].tid1 == tid){
 					games[i].tid1 = 0;
 					games[i].tid1_move[0] = 0;

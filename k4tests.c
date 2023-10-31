@@ -106,8 +106,13 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         */
         char print_char2 = *num[1];
         uart_printf(CONSOLE, "print_char[0] = \"%c\" = \"%d\"\r\n", print_char2, print_char2);
-        int ioserver_PID = WhoIs("io_TXIC_MARKLIN_server");
-        Putc(ioserver_PID, MARKLIN, print_char2);
+        /*
+            io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
+    io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
+    io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
+    */
+//        int ioserver_PID = WhoIs("io_TXIC_MARKLIN_server");
+        Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, print_char2);
         return 0;
     } else if (strcmp_ret(num[0], "k4tc")){
         int tid;

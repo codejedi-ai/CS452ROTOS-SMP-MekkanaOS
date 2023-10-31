@@ -8,7 +8,7 @@
 #include "custstr.h"
 #define CLOCKINTID 99
 void clock_notifier(){
-    int tid = Create(0, clock_server);
+    int clock_server_tid = Create(0, clock_server);
     uart_printf(CONSOLE, "clock_server: tid = %d\r\n", tid);
     RegisterAs("clock_notifier");
     // uart_printf(CONSOLE, "clock_notifier:Registered\n");
@@ -16,7 +16,7 @@ void clock_notifier(){
     {
         uint64_t event = AwaitEvent(CLOCKINTID);
         int ret;
-        Send(WhoIs("clock_server"), "Time", 4, &ret, 0);
+        Send(clock_server_tid, "Time", 4, &ret, 0);
     }
     Exit();
 }
@@ -26,6 +26,7 @@ void clock_server(){
     int waketicks[NUMPROCS];
     memset(waketicks, -1, NUMPROCS * sizeof(int));
     int ticks = 0;
+    const int not_tid = WhoIs("clock_notifier");
     while (1)
     {
         /* code */
@@ -45,8 +46,8 @@ void clock_server(){
                 Reply(i, &ticks, 4);
             }
         }
-        int notif = WhoIs("clock_notifier");
-         if (tid == notif){
+        
+         if (tid == not_tid){
             Reply(tid, &ticks, 8);
             ticks++;
             continue;

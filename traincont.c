@@ -37,7 +37,7 @@ static const size_t COMMANDMAX_LEN = 64;
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
-uint32_t io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, io_CTS_MARKLIN_server_pid;
+
 uint64_t l2(uint64_t x){
     if (x == 1) return 0;
     return l2(x / 2) + 1;
