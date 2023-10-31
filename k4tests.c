@@ -106,7 +106,7 @@ int k4ExecuteCommands(char *command, char **num, int command_part_count){
         */
         char print_char2 = *num[1];
         uart_printf(CONSOLE, "print_char[0] = \"%c\" = \"%d\"\r\n", print_char2, print_char2);
-        int ioserver_PID = WhoIs("io_server_MARKLIN");
+        int ioserver_PID = WhoIs("io_TXIC_server");
         Putc(ioserver_PID, MARKLIN, print_char2);
         awaitCTS(ioserver_PID, MARKLIN, 1);
         return 0;

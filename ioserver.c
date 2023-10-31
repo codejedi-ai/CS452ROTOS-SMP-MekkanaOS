@@ -69,6 +69,43 @@ void set_io_logging(int val)
 }
 void io_TXIC_server()
 {
+	struct fi_list interrupts_list[3];
+	struct fi_list call_list[3];
+	RegisterAs("io_TXIC_server");
+	while (1)
+	{
+		if(type == TXIC){
+			// enqueue the interrupt
+			interrupts_list[channel].call[interrupts_list[channel].end].tid = tid;
+			interrupts_list[channel].call[interrupts_list[channel].end].type = type;
+			interrupts_list[channel].call[interrupts_list[channel].end].channel = channel;
+			interrupts_list[channel].call[interrupts_list[channel].end].char_ch = char_ch;
+			interrupts_list[channel].end = (interrupts_list[channel].end + 1) % QUEUELENGTH;
+			interrupts_list[channel].size++;
+		} else if(type == PUTC){
+			// enqueue the function call
+			call_list[channel].call[call_list[channel].end].tid = tid;
+			call_list[channel].call[call_list[channel].end].type = type;
+			call_list[channel].call[call_list[channel].end].channel = channel;
+			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
+			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
+			call_list[channel].size++;
+		}
+		// if there exist an interrupt to match up with a request
+		if (call_list[channel].size && interrupts_list[channel].size)
+		{
+			int ret_pid = call_list[channel].call[call_list[channel].begin].tid;
+			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
+			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
+			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
+			Reply(ret_pid, recieve, 8);
+			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
+			call_list[channel].size--;
+			interrupts_list[channel].begin = (interrupts_list[channel].begin + 1) % QUEUELENGTH;
+			interrupts_list[channel].size--;
+		}
+	}
+	
 	Exit();
 }
 void io_RXIC_server()
@@ -127,8 +164,13 @@ void io_RXIC_server()
 			call_list[channel].call[call_list[channel].end].type = type;
 			call_list[channel].call[call_list[channel].end].channel = channel;
 			call_list[channel].call[call_list[channel].end].char_ch = char_ch;
+			call_list[channel].call[call_list[channel].end].char_ch2 = recieve[3];
 			call_list[channel].end = (call_list[channel].end + 1) % QUEUELENGTH;
 			call_list[channel].size++;
+			uart_printf(MARKLIN, char_ch);
+			if (recieve[3] != -1){
+				uart_printf(MARKLIN, recieve[3]);
+			}
 		}
 		// if there exist an interrupt to match up with a request
 		if (call_list[channel].size && interrupts_list[channel].size)
@@ -137,6 +179,7 @@ void io_RXIC_server()
 			recieve[0] = interrupts_list[channel].call[interrupts_list[channel].begin].type;
 			recieve[1] = interrupts_list[channel].call[interrupts_list[channel].begin].channel;
 			recieve[2] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch;
+			recieve[3] = interrupts_list[channel].call[interrupts_list[channel].begin].char_ch2;
 			// uart_printf(CONSOLE, "\033[37m");
 			Reply(ret_pid, recieve, 8);
 			call_list[channel].begin = (call_list[channel].begin + 1) % QUEUELENGTH;
@@ -157,7 +200,7 @@ void io_CTS_server()
 void io_notifier()
 {
 	RegisterAs("io_notifier");
-	int io_server_MARKLIN_tid = Create(0, io_server_MARKLIN);
+	int io_TXIC_server_tid = Create(0, io_TXIC_server);
 	int io_TXIC_tid = Create(0, io_TXIC_server);
 	int io_RXIC_tid = Create(0, io_RXIC_server);
 	int io_CTS_tid = Create(0, io_CTS_server);
@@ -176,19 +219,19 @@ void io_notifier()
 		}
 		else if (channel == MARKLIN)
 		{
-			Send(io_server_MARKLIN_tid, &event, 8, &ret, 0);
+			Send(io_TXIC_server_tid, &event, 8, &ret, 0);
 		}
 	}
 	Exit();
 }
 
 // was thinking about doing a three server layout. It is possible that two tasks are waiting for the same interrupt
-void io_server_MARKLIN()
+void io_TXIC_server_old()
 {
 
 	if (io_logging)
-		// uart_printf(CONSOLE, "io_server_MARKLIN: Registered at %u\n", MyTid());
-	RegisterAs("io_server_MARKLIN");
+		// uart_printf(CONSOLE, "io_TXIC_server: Registered at %u\n", MyTid());
+	RegisterAs("io_TXIC_server");
 	int io_notifier_tid = WhoIs("io_notifier");
   	int tid = 0;
 
@@ -197,10 +240,6 @@ void io_server_MARKLIN()
 
 
 	uint8_t tid_ret = 0;
-	uint8_t send_queue_begin = 0;
-	uint8_t send_queue_end = 0;
-	int i = 0;
-	uint8_t caller_TID_PUTC = 0, caller_TID_GETC = 0;
 
 	while (1)
 	{

@@ -37,7 +37,7 @@ static const size_t COMMANDMAX_LEN = 64;
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
-uint32_t io_server_MARKLIN_pid, io_RXIC_server_pid;
+uint32_t io_TXIC_server_pid, io_RXIC_server_pid;
 uint64_t l2(uint64_t x){
     if (x == 1) return 0;
     return l2(x / 2) + 1;
@@ -46,15 +46,15 @@ uint64_t get_i(uint64_t x){
     return 8 - l2(x);
 }
 void init_ioserver(){
-    io_server_MARKLIN_pid = WhoIs("io_server_MARKLIN");
+    io_TXIC_server_pid = WhoIs("io_TXIC_server");
     io_RXIC_server_pid = WhoIs("io_RXIC_server");
 }
 void enqueue(unsigned char byte_1, unsigned char byte_2 ){
-    Put2c(io_server_MARKLIN_pid, MARKLIN, byte_1, byte_2);
+    Put2c(io_TXIC_server_pid, MARKLIN, byte_1, byte_2);
 }
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
-    Putc(io_server_MARKLIN_pid, MARKLIN, byte_1);
+    Putc(io_TXIC_server_pid, MARKLIN, byte_1);
     uint16_t a = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
     uint16_t b = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
     a = (b << 8) | a;
@@ -68,7 +68,7 @@ uint16_t read_one_s88(char s88_id){
 // the size of the ret is s88_on
 uint16_t read_many_s88(char s88_no, uint16_t* ret){ 
     char byte_1 = ( 128 + s88_no);
-    Putc(io_server_MARKLIN_pid, MARKLIN, byte_1);
+    Putc(io_TXIC_server_pid, MARKLIN, byte_1);
     for (uint32_t i = 0; i < s88_no; i ++){
       uint16_t a = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
       uint16_t b = Getc(io_RXIC_server_pid, MARKLIN); // would only return if interrupt is recieved
@@ -107,7 +107,7 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
     }
     byte_2 = solonoid_id;
     enqueue(byte_1, byte_2);
-    Putc(io_server_MARKLIN_pid, MARKLIN, 32);
+    Putc(io_TXIC_server_pid, MARKLIN, 32);
 }
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
