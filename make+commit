@@ -1,3 +1,4 @@
+#!/bin/bash
 git pull
 make
 git commit -a -m "Make commit ON $(date)"
