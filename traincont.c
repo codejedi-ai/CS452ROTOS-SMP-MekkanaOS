@@ -76,36 +76,49 @@ void command_wrapper(unsigned char byte_1, unsigned char byte_2 ){
     // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     while(get_CTS(MARKLIN) == 0) awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
 }
+/*
+sockets binary number
+1 = 128
+2 = 64
+3 = 32
+4 = 16
+5 = 8
+6 = 4
+7 = 2
+8 = 1
+*/
+// return a value from 1 to 16 depending which sensor got triggered
 uint16_t read_one_s88(char s88_id){  
     char byte_1 = (192 + s88_id);
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     uint16_t a = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
     uint16_t b = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-    a = (b << 8) | a;
-    // print in green
-    uart_printf(CONSOLE, "\033[32m");
-    uart_printf(CONSOLE, "a = 0x%x\r\n", a);
-    // print in white
-    uart_printf(CONSOLE, "\033[37m");
-    return a;
+    if (a != 0){
+      return get_i(a);
+    }else if(b != 0){
+      return get_i(b) + 8;
+    }
+    return 0;
 }
 // the size of the ret is s88_on
-uint16_t read_many_s88(char s88_no, uint16_t* ret){ 
+uint16_t read_many_s88(char s88_no, uint8_t* ret){ 
     char byte_1 = ( 128 + s88_no);
     Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
     for (uint32_t i = 0; i < s88_no; i ++){
-      uint16_t a = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-      uint16_t b = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-      int display = 0;
+      uint8_t a = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
+      uint8_t b = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
+      uint8_t display = 0;
 
       if (a != 0){
         display = get_i(a);
       }else if(b != 0){
         display = get_i(b) + 8;
       }
-      uart_printf(CONSOLE, "a = 0x%x\r\n", a);
-      uart_printf(CONSOLE, "b = 0x%x\r\n", b);
+      *(ret + i) = display;
+      //uart_printf(CONSOLE, "a = 0x%x\r\n", a);
+      //uart_printf(CONSOLE, "b = 0x%x\r\n", b);
     }
+    
     return 0; // Dummy return
 }
 

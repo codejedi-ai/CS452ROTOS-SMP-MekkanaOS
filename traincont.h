@@ -14,7 +14,7 @@ each bit in the byte would reflect the state of the sensor
 
 */
 uint16_t read_one_s88(char s88_id);
-uint16_t read_many_s88(char s88_no, uint16_t* ret);
+uint16_t read_many_s88(char s88_no, uint8_t* ret);
 void command_wrapper(unsigned char byte_1, unsigned char byte_2 );
 void print_error(char *error);
 void execute_train_command(unsigned char speed, // Binary: 00001010 

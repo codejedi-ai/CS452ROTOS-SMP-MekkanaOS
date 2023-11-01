@@ -62,11 +62,17 @@ void read_s88_test_many(){
     uart_printf(CONSOLE, "\033[H");
 
     char s88_no = 5;
-    uint16_t ret[s88_no];
+    uint64_t ret;
+    ret = 0;
+    uint32_t outchar = read_many_s88(s88_no, &ret);
+    // print in green
+    uart_printf(CONSOLE, "\033[32m");
+    uart_printf(CONSOLE, "Sensor Data:");
     for (int i = 0; i < s88_no; i ++){
-        ret[i] = 0;
+      uart_putc(CONSOLE, ' ');
+      uart_putc(CONSOLE, 'A' + i);
+      uart_printf(CONSOLE, "%d", (uint8_t)*((uint8_t*)&ret + i));
     }
-    uint32_t outchar = read_many_s88(s88_no, ret);
   }
   Exit();
 }

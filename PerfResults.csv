@@ -1,4 +1,4 @@
-,Compiler Optimization,Receive OR Send first (R/S),String length,Ms,Var,
+,Compiler Optimization,Receive OR Send first (R/S),String length,microseconds,Var,
 ,Noopt,R,4,306,4144,
 ,Noopt,R,64,516,4033,
 ,Noopt,R,256,1131,4329,
