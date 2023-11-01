@@ -14,7 +14,7 @@
 #include "asm.h"
 #include "ioserver.h"
 #include "traincont.h"
-#define delay 1
+#define delay 0
 void read_s88_test_sensor_A(){
     uart_printf(CONSOLE, "First s88_id = 1");
     uint32_t outchar = read_one_s88(1);
