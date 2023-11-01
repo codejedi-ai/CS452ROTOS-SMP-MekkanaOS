@@ -10,3 +10,4 @@
 # Ignore dependency files
 *.d
 
+.vscode
