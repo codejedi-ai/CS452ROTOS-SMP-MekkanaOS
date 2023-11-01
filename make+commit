@@ -1,1 +1,1 @@
-make && git pull && git commit -a -m "Make commit ON $(date)" && git push
+git pull && make && git commit -a -m "Make commit ON $(date)" && git push
