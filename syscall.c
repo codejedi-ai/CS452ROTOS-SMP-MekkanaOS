@@ -103,61 +103,70 @@ struct state extractMin_state_heap( struct MinHeapState *h)
 	bubbleDown_state_heap(h, 0);
 	return root;
 }
+
 void scrSchedule(int pid, uint64_t priority)
 {
-	// this function enqueues the process into the ready queue
-	// get the time in 64 bit
-	uint64_t time = get_timerLO();
-	// get the time in 32 bit
-	uint32_t timehi = get_timerHI();
-	// get the time in 32 bit
-	time = (timehi << 32) | time;
-	// create a state struct
-	struct state currItem = {pid, priority, time};
-	// enqueue the state struct
-	// iterate through the 
-	insertKey_state_heap(&READY_HEAP, currItem);
-	return 0;
-}
-// scrSchedule(pid, priority)
-int queue_unblock(int pid, uint64_t priority)
-{
-	// first need to check is the PID in the BLOCKED_QUEUE
-	// if it is not in the BLOCKED_QUEUE then return -1
-	if(BLOCKED_LIST[pid].pid == 0) return -1;
-	// this function enqueues the process into the ready queue
-	// get the time in 64 bit
-	uint64_t time = get_timerLO();
-	// get the time in 32 bit
-	uint32_t timehi = get_timerHI();
-	// get the time in 32 bit
-	time = (timehi << 32) | time;
-	// create a state struct
-	struct state currItem = {pid, priority, time};
-	BLOCKED_LIST[pid].pid = 0;
-	// enqueue the state struct
-	insertKey_state_heap(&READY_HEAP, currItem);
+	struct state currItem = {pid, priority, get_timerLO()};
+	struct state nextItem;
+	int insert = 0;
+	for (int i = 0; i < NUMPROCS; i++) {
+		if (READY_QUEUE[i].pid == 0) {
+			READY_QUEUE[i] = currItem;
+			return 0;	
+		}
+		else if (READY_QUEUE[i].priority > priority) {
+			insert = 1;
+		}
+		if (insert) {
+			nextItem = READY_QUEUE[i];
+			READY_QUEUE[i] = currItem;
+			currItem = nextItem;
+		}
+	}
 	return 0;
 }
 void queue_unblock_state(struct state currItem)
 {
-	// first need to check is the PID in the BLOCKED_QUEUE
-	// if it is not in the BLOCKED_QUEUE then return -1
-	if(BLOCKED_LIST[currItem.pid].pid == 0) return -1;
-	BLOCKED_LIST[currItem.pid].pid = 0;
-	currItem.time = get_timerLO();
-	// enqueue the state struct
-	insertKey_state_heap(&READY_HEAP, currItem);
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	uint32_t pid = currItem.pid;
+	uint32_t priority = currItem.priority;
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	
+	struct state nextItem;
+	int insert = 0;
+	scrSchedule(pid, priority);
 	return 0;
 }
+// scrSchedule(pid, priority, ready)
+int queue_unblock(int pid, uint64_t priority, int ready)
+{
+	
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	struct state currItem = {pid, priority, ready};
+	queue_unblock_state(currItem);
+	return 0;
+}
+
 int scrPick()
 {
 	int pid = -1;
-	if (isEmpty_state_heap(&READY_HEAP)) return -1;
-	struct state currItem = extractMin_state_heap(&READY_HEAP);
-	pid = currItem.pid;
+	int bump = 0;
+	struct state emptyItem = {0, 0, 0};
+	
+	for (int i = 0; i < NUMPROCS; i++) {
+		if (bump) {
+			READY_QUEUE[i - 1] = READY_QUEUE[i];
+		}
+		else if (READY_QUEUE[i].pid > 0) {
+			pid = READY_QUEUE[i].pid;
+			bump = 1;
+		}
+		
+	}
+	if (bump) {READY_QUEUE[NUMPROCS - 1] = emptyItem;}
 	return pid;
 }
+
 void debugPrint(char *str){
 	#if DEBUG == 4
 	uart_printf(CONSOLE, str);
