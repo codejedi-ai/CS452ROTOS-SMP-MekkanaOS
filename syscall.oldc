@@ -39,10 +39,10 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 	return 0;
 }
 // scrSchedule(pid, priority, ready)
-int queue_unblock(int pid, uint64_t priority, int ready)
+int unblock_ind(int pid, uint64_t priority, int ready)
 {
 	
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
 	int insert = 0;
@@ -57,13 +57,13 @@ int queue_unblock(int pid, uint64_t priority, int ready)
 	}
 	return 0;
 }
-void queue_unblock_state(struct state currItem)
+void unblock(struct state currItem)
 {
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	uint32_t pid = currItem.pid;
 	uint32_t priority = currItem.priority;
 	uint32_t ready = currItem.ready;
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
 	
 	struct state nextItem;
 	int insert = 0;
@@ -185,7 +185,7 @@ int unblock_return(uint32_t interruptid, uint64_t ret){
 						freed_state.pid, 
 						freed_state.priority);
 		# endif
-		queue_unblock_state(freed_state);
+		unblock(freed_state);
 		PROCS[freed_state.pid - 1].registervalues[0] = ret; // the clock was interrupted
 	}
 	ret = AWAIT_INTERRUPT[interruptid].len;
@@ -504,7 +504,7 @@ void recieve_helper(int PID){
 	}
 	PROCS[p].waiting_recieve_head %= QUEUESIZE;
 	PROCS[p].registervalues[0] = msglen;
-	queue_unblock(PID, PROCS[PID - 1].priority, READY);
+	unblock_ind(PID, PROCS[PID - 1].priority, READY);
 	// return msglen;
 	
 	// this is the sender process. The sender is ready for a reply
@@ -542,7 +542,7 @@ void reply_helper(){
 	# endif
 	// 
 	// now unblock the target task
-	queue_unblock(tid, PROCS[tid - 1].priority, READY);
+	unblock_ind(tid, PROCS[tid - 1].priority, READY);
 	// return a reply length for the send function
 	PROCS[tid - 1].registervalues[0] = replylen;
 	PROCS[tid - 1].waiting_reply = 0;

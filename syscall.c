@@ -16,7 +16,6 @@
 // first you 
 uint32_t kernelStartTime = 0;
 uint8_t NO_PARAMS = 0;
-// scrSchedule(pid, priority)
 // HEAP IMPLEMENTATION
 
 uint8_t compare_state(struct state a, struct state b)
@@ -35,14 +34,27 @@ uint8_t compare_state(struct state a, struct state b)
 			return 0;
 	}
 }
+void swap_state(struct state *a, struct state *b)
+{
+	struct state temp;
+	temp.pid = a->pid;
+	temp.priority = a->priority;
+	temp.time = a->time;
+	// *a = *b;
+	a->pid = b->pid;
+	a->priority = b->priority;
+	a->time = b->time;
+	// *b = temp;
+	b->pid = temp.pid;
+	b->priority = temp.priority;
+	b->time = temp.time;
+}
 void _bubbleUp_state_heap( struct MinHeapState *h, int i)
 {
 	int parent = (i - 1) / 2;
 	if (1 == compare_state(h->harr[i], h->harr[parent]))
 	{
-		struct state temp = h->harr[parent];
-		h->harr[parent] = h->harr[i];
-		h->harr[i] = temp;
+		swap_state(&h->harr[i], &h->harr[parent]);
 		_bubbleUp_state_heap(h, parent);
 	}
 }
@@ -65,15 +77,16 @@ void bubbleDown_state_heap( struct MinHeapState *h, int i)
 		smallest = right;
 	if (smallest != i)
 	{
-		struct state temp = h->harr[smallest];
-		h->harr[smallest] = h->harr[i];
-		h->harr[i] = temp;
+		swap_state(&h->harr[i], &h->harr[smallest]);
 		bubbleDown_state_heap(h, smallest);
 	}
 }
 // add to the heap
 void insertKey_state_heap( struct MinHeapState *h, struct state k)
 {
+	k.time = get_timerHI();
+	k.time = k.time << 32;
+	k.time += get_timerLO();
 	if (h->size == h->capacity)
 	{
 		return;
@@ -97,8 +110,12 @@ struct state extractMin_state_heap( struct MinHeapState *h)
 		h->size--;
 		return h->harr[0];
 	}
-	struct state root = h->harr[0];
-	h->harr[0] = h->harr[h->size - 1];
+	struct state root;
+	root.pid = 0;
+	root.priority = -1;
+	root.time = -1;
+	swap_state(&h->harr[0], &root);
+	swap_state(&h->harr[0], &h->harr[h->size - 1]);
 	h->size--;
 	bubbleDown_state_heap(h, 0);
 	return root;
@@ -106,10 +123,12 @@ struct state extractMin_state_heap( struct MinHeapState *h)
 
 //HEAP IMPLEMENTATION END
 
-// scrSchedule(pid, priority, ready)
-void scrSchedule(int pid, uint64_t priority, int ready)
+// scrSchedule(pid, priority)
+void scrSchedule(int pid, uint64_t priority)
 {
-	struct state currItem = {pid, priority, ready};
+	
+	struct state currItem = {pid, priority, get_timerHI() << 32 + get_timerLO()};
+	/*
 	struct state nextItem;
 	int insert = 0;
 	for (int i = 0; i < NUMPROCS; i++) {
@@ -126,16 +145,18 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 			currItem = nextItem;
 		}
 	}
+	*/
+	// put the process into the heap
+	insertKey_state_heap(&READY_HEAP, currItem);
 	return 0;
 }
-void queue_unblock_state(struct state currItem)
+
+// scrSchedule(pid, priority)
+int unblock_ind(int pid, uint64_t priority)
 {
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
-	uint32_t pid = currItem.pid;
-	uint32_t priority = currItem.priority;
-	uint32_t ready = currItem.time;
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
-	
+	/*
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority);
+	struct state currItem = {pid, priority, ready};
 	struct state nextItem;
 	int insert = 0;
 	for (int i = 0; i < NUMPROCS; i++) {
@@ -147,21 +168,40 @@ void queue_unblock_state(struct state currItem)
 			READY_QUEUE[i].time = ready;
 		}
 	}
-}
-// scrSchedule(pid, priority, ready)
-int queue_unblock(int pid, uint64_t priority, int ready)
-{
-	
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
-	struct state currItem = {pid, priority, ready};
-	queue_unblock_state(currItem);
+	*/
+	if(BLOCKED_LIST[pid - 1].pid == 0 && BLOCKED_LIST[pid - 1].priority == priority) return 0;
+	int p = PID - 1;
+	scrSchedule(pid, priority);
+	BLOCKED_LIST[pid - 1].pid = 0;
 	return 0;
 }
+/*
+scrSchedule(PID, PROCS[p].priority, BLOCKED);
+block(PID, PROCS[p].priority);
+					*/
+void block(int pid, uint64_t priority){
+	// uart_printf(CONSOLE, "block: pid = %u priority = %u\r\n", pid, priority);
+	//scrSchedule(pid, priority, BLOCKED);
+	BLOCKED_LIST[pid - 1].pid = pid;
+	BLOCKED_LIST[pid - 1].priority = priority;
+	BLOCKED_LIST[pid - 1].time = BLOCKED;
 
+}
+void unblock(struct state currItem)
+{
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority);
+	int pid = currItem.pid;
+	uint64_t priority = currItem.priority;
+	int ready = currItem.time;
+	// uart_printf(CONSOLE, "unblock: pid = %u priority = %u ready =%u\r\n", pid, priority);
+	
+	unblock_ind(pid, priority);
+}
 int scrPick()
 {
 	int pid = -1;
 	int bump = 0;
+	/*
 	struct state emptyItem = {0, 0, 0};
 	
 	for (int i = 0; i < NUMPROCS; i++) {
@@ -175,6 +215,10 @@ int scrPick()
 		
 	}
 	if (bump) {READY_QUEUE[NUMPROCS - 1] = emptyItem;}
+	*/
+	if (isEmpty_state_heap(&READY_HEAP)) return -1;
+	struct state currItem = extractMin_state_heap(&READY_HEAP);
+	pid = currItem.pid;
 	return pid;
 }
 void debugPrint(char *str){
@@ -186,6 +230,9 @@ void debugPrint(char *str){
 void InitSys(void* reg)
 {	// For some reason, normal init to 0 just.. doesn't work?
 	kernelStartTime = get_timerLO();
+	READY_HEAP.size = 0;
+	READY_HEAP.capacity = NUMPROCS;
+	READY_HEAP.harr = READY_QUEUE;
 	STACKSTART = reg;
 	PID = 0;
 	for (int event = 0; event < MAXEVENT; event++){
@@ -210,10 +257,13 @@ void InitSys(void* reg)
 			PROCS[idx].registervalues[jdx] = 10 + jdx;
 		
 		}
-		
+		BLOCKED_LIST[idx].pid = 0;
+		BLOCKED_LIST[idx].priority = 0;
+		BLOCKED_LIST[idx].time = 0;
+
 		READY_QUEUE[idx].pid = 0;
-		READY_QUEUE[idx].time = 0;
-		READY_QUEUE[idx].priority = 0;
+		READY_QUEUE[idx].time = -1;
+		READY_QUEUE[idx].priority = -1;
 		
 		
 	}
@@ -265,7 +315,7 @@ int unblock_return(uint32_t interruptid, uint64_t ret){
 						freed_state.pid, 
 						freed_state.priority);
 		# endif
-		queue_unblock_state(freed_state);
+		unblock(freed_state);
 		 
 	}
 	ret = AWAIT_INTERRUPT[interruptid].len;
@@ -294,7 +344,7 @@ void ExceptionASYNC(uint64_t esr_el1){
     #endif
 	setActiveInterrupt(interruptid);
 	// make switch signal
-	scrSchedule(PID, PROCS[p].priority, READY);
+	scrSchedule(PID, PROCS[p].priority);
 	
 	// if (CLOCKINTID != interruptid) uart_printf(CONSOLE, "NON CLOCK INTURRUPT\n\r");
 	switch (interruptid) {
@@ -385,7 +435,7 @@ void ExceptionASYNC(uint64_t esr_el1){
 			# if DEBUG == 4
 				uart_printf(CONSOLE, "Unknown Interrupt\n\r");
 			# endif
-			//scrSchedule(PID, PROCS[p].priority, READY);
+			//scrSchedule(PID, PROCS[p].priority);
 			break;
 	}
 	INTERRUPT_CLEAR_ACTIVE_REGS(interruptid);
@@ -584,7 +634,7 @@ void recieve_helper(int PID){
 	}
 	PROCS[p].waiting_recieve_head %= QUEUESIZE;
 	PROCS[p].registervalues[0] = msglen;
-	queue_unblock(PID, PROCS[p].priority, READY);
+	unblock_ind(PID, PROCS[p].priority);
 	// return msglen;
 	
 	// this is the sender process. The sender is ready for a reply
@@ -622,7 +672,7 @@ void reply_helper(){
 	# endif
 	// 
 	// now unblock the target task
-	queue_unblock(tid, PROCS[tid - 1].priority, READY);
+	unblock_ind(tid, PROCS[tid - 1].priority);
 	// return a reply length for the send function
 	PROCS[tid - 1].registervalues[0] = replylen;
 	PROCS[tid - 1].waiting_reply = 0;
@@ -653,21 +703,21 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			Kill(p);
 			break;
 		case 1: // Yield
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			break;
 		case 2: // Create
-			scrSchedule(PID, PROCS[p].priority, READY);
-			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
+			scrSchedule(PID, PROCS[p].priority);
+			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
 			PROCS[p].registervalues[0] = ret;
 			break;
 		case 3: // mytid
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = PROCS[p].pid;
 			break;
 		case 4: // parenttid
 			// // uart_printf(CONSOLE, "PPID is %u\n\r", PROCS[p].parentpid); // DEBUG PRINT
 		
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = PROCS[p].parentpid;
 			break;
 		case 5: // send blocks and unblocks other tasks
@@ -680,7 +730,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// uart_printf(CONSOLE, "%u is dead\r\n", dest_tid);
 				# endif
 				// The destination task does not exist
-				scrSchedule(PID, PROCS[p].priority, READY);
+				scrSchedule(PID, PROCS[p].priority);
 				PROCS[p].registervalues[0] = -1;
 			} else if (PROCS[dest_p].queuesize >= QUEUESIZE){
 				// the message failed to send due to the queue size being over QUEUESIZE
@@ -688,7 +738,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				uart_printf(CONSOLE, "Message failed to send due to the queue size being over QUEUESIZE, head = %u, tails = %u, PROCS[dest_tid].queuesize = %d\r\n", PROCS[dest_tid].waiting_recieve_head, PROCS[dest_tid].waiting_recieve_tail, PROCS[dest_tid].queuesize);
 				# endif
 	
-				scrSchedule(PID, PROCS[p].priority, READY);
+				scrSchedule(PID, PROCS[p].priority);
 				PROCS[p].registervalues[0] = -2;
 			}
 			else
@@ -696,22 +746,23 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// the destination does exist
 				// Alright unblock the recieving task if it is blocked and expecting message
 				// Blocks until a reply is generated
-				scrSchedule(PID, PROCS[p].priority, BLOCKED);
+				// scrSchedule(PID, PROCS[p].priority, BLOCKED);
+				block(PID, PROCS[p].priority);
 				//PROCS[p].registervalues[0] = 
 				send_helper();
 			}
 			// however there is another case in which the task unblocks
 			break;
 		case 6: // recieve blocks
-
+			// scrSchedule(PID, PROCS[p].priority, BLOCKED);
 			// There is a message in the mailbox
-			scrSchedule(PID, PROCS[p].priority, BLOCKED);
+			block(PID, PROCS[p].priority);
 			//PROCS[p].registervalues[0] = 
 			recieve_helper(PID);
 			
 			break;
 		case 7: // reply
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			dest_tid = PROCS[p].registervalues[0];
 			if(dead(dest_tid - 1)){
 				# if DEBUG == 2
@@ -739,12 +790,12 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				reply_helper();
 			break;
 		case 8: // MyPriority
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = PROCS[p].priority;
 			break;
 		case 9: // Create args
-			scrSchedule(PID, PROCS[p].priority, READY);
-			ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], p + 1);
+			scrSchedule(PID, PROCS[p].priority);
+			ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
 			
 			if (PROCS[p].registervalues[2] > 0) {
 				// theis is create with arguments
@@ -780,7 +831,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// check the interrupt queue, if the queue is empty then block the task
 				if (AWAIT_INTERRUPT[eventType].eventq_len){
 					// pop the queue
-					scrSchedule(PID, PROCS[p].priority, READY);
+					scrSchedule(PID, PROCS[p].priority);
 					PROCS[p].registervalues[0] = AWAIT_INTERRUPT[eventType].event_q[AWAIT_INTERRUPT[eventType].eventq_head];
 					AWAIT_INTERRUPT[eventType].eventq_head++;
 					AWAIT_INTERRUPT[eventType].eventq_head %= NUMPROCS;
@@ -789,28 +840,29 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				}
 				else{
 					// uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
-					scrSchedule(PID, PROCS[p].priority, BLOCKED);
+					//scrSchedule(PID, PROCS[p].priority, BLOCKED);
+					block(PID, PROCS[p].priority);
 					struct state currItem = {PID, PROCS[p].priority, BLOCKED};
 					AWAIT_INTERRUPT[eventType].pid_ls[AWAIT_INTERRUPT[eventType].len] = currItem;
 					AWAIT_INTERRUPT[eventType].len = AWAIT_INTERRUPT[eventType].len + 1;
 				}
 			}else{
-				scrSchedule(PID, PROCS[p].priority, READY);
+				scrSchedule(PID, PROCS[p].priority);
 			}
 
 			break;
 		case 11: // get total time
 			// uart_printf(CONSOLE, "Awaiting Interrupt %u\r\n", eventType);
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = PROCS[p].totaltime;
 			break;
 		case 12: // get kernel runtime
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = get_timerLO() - kernelStartTime;
 			break;
 
 		default:
-			scrSchedule(PID, PROCS[p].priority, READY);
+			scrSchedule(PID, PROCS[p].priority);
 			# if DEBUG == 3
 			uart_printf(CONSOLE, "Unknown SVC Call: %x\n\r", i); // DEBUG PRINT
 			# endif
@@ -869,7 +921,7 @@ int KernelCreate(uint64_t priority, void (*function)(), int parent)
 			PROCS[p].waiting_recieve_tail = 0;
 			PROCS[p].queuesize = 0;
 			PROCS[p].totaltime = 0;
-			scrSchedule(p + 1, PROCS[p].priority, READY);
+			scrSchedule(p + 1, PROCS[p].priority);
 			
 			return p + 1;
 		}
