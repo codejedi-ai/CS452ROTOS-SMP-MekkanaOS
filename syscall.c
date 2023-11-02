@@ -795,29 +795,27 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 9: // Create args
 			scrSchedule(PID, PROCS[p].priority);
-			ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
+			uint64_t retd = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
 			
 			if (PROCS[p].registervalues[2] > 0) {
 				// theis is create with arguments
 				// // uart_printf(CONSOLE, "Reg 3: %x\n\r", PROCS[p].registervalues[3
 				// copy the first 8 registers from retptr to the registervalues
 				for (int j = 0; j < 8; j++) {
-					PROCS[ret - 1].registervalues[j] = ((int64_t *)PROCS[p].registervalues[3])[j];
+					PROCS[retd - 1].registervalues[j] = ((int64_t *)PROCS[p].registervalues[3])[j];
 				}
 				// the rest of the parameters would be stored on the stack of the new process
 				// remember the stack is a uint64_t array
 				// store all the elements in args that cannot be stored in the registers into the stack
 				if (PROCS[p].registervalues[2] > 8){
-					int64_t *newsp = (int64_t *)PROCS[ret - 1].stackpointer;
+					int64_t *newsp = (int64_t *)PROCS[retd - 1].stackpointer;
 					uint8_t stack_offset = PROCS[p].registervalues[2] - 8;
 					newsp = newsp - (PROCS[p].registervalues[2] - 8); 
 					if (stack_offset > 0){
 						for (int j = 0; j < stack_offset; j++) {
 							newsp[j] = ((int64_t *)PROCS[p].registervalues[3])[j + 8];
-							// uart_printf(CONSOLE, "Stack Reg %u: %x\n\r", j, newsp[j]);
 						}
-						// uart_printf(CONSOLE, "Stack Reg before%x: After %x\n\r", PROCS[ret - 1].stackpointer, (int64_t)newsp);
-						PROCS[ret - 1].stackpointer = (int64_t)newsp;
+						PROCS[retd - 1].stackpointer = (int64_t)newsp;
 					}
 				}
 			}
