@@ -95,7 +95,7 @@ static struct state READY_QUEUE[NUMPROCS];
 static struct state BLOCKED_LIST[NUMPROCS];
 static struct MinHeapState READY_HEAP;
 static struct interrupt AWAIT_INTERRUPT[MAXEVENT];
-void scrSchedule(int pid, uint64_t priority);
+void scrSchedule(int pid, uint64_t priority, int ready);
 int scrPick();
 void HandleASYNC(void* sp);
 void ExceptionASYNC(uint64_t esr_el1);
