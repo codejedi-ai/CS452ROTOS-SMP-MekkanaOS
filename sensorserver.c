@@ -57,6 +57,7 @@ uint16_t read_many_s88(char io_TXIC_MARKLIN_server_pid, char io_RXIC_MARKLIN_ser
     return 0; // Dummy return
 }
 void sensor_server_notifier(){
+  // create sensor_server
   uint32_t io_TXIC_MARKLIN_server_pid;
   uint32_t io_RXIC_MARKLIN_server_pid;
   // uint32_t io_CTS_MARKLIN_server_pid;
@@ -76,7 +77,9 @@ void sensor_server_notifier(){
 
     uint64_t ret;
     ret = 0;
+    uint32_t get_time_local = get_timerLO();
     uint32_t outchar = read_many_s88(io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, &ret);
+    uart_printf(CONSOLE, "time = %d\r\n", get_timerLO() - get_time_local);
     // print in green
     for (int i = 0; i < s88_no; i ++){
       char s88_name = 'A' + i;
@@ -88,7 +91,7 @@ void sensor_server_notifier(){
         send_message = send_message | (s88_name << 24); // 8 bits for the sensor name
         send_message = send_message | (prev_i_state << 16); // 8 bits for the old value
         send_message = send_message | (ret_i_state << 8); // 8 bits for the new value
-        Send(sensor_server_tid, &send_message, sizeof(send_message), &send_message, 0);
+        //Send(sensor_server_tid, &send_message, sizeof(send_message), &send_message, 0);
       }
       // 0 means released any non 0 number means the sensor at that number is pressed
     }
@@ -108,7 +111,7 @@ void sensor_server(){
     char s88_name = (char)(recieved_message >> 24);
     uint8_t prev_i_state = (uint8_t)(recieved_message >> 16);
     uint8_t ret_i_state = (uint8_t)(recieved_message >> 8);
-
+    Reply(tid, &recieved_message, sizeof(recieved_message));
   }
   
 }

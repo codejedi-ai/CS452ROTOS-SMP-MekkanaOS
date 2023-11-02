@@ -51,7 +51,7 @@ void clock_server(){
         for (int i = 0; i < NUMPROCS; i++)
         {
             if (waketicks[i] != -1 && waketicks[i] <= ticks){
-                uart_printf(CONSOLE, "\033[35mWaking up %d\r\n", i);
+                //uart_printf(CONSOLE, "\033[35mWaking up %d\r\n", i);
                 waketicks[i] = -1;
                 Reply(i, &ticks, 4);
             }

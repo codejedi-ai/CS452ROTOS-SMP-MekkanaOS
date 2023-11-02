@@ -2,13 +2,16 @@
 #include "rpi.h"
 #include "asm.h"
 #include "syscall.h"
-#include "nameserver.h"
+
 #include "custstr.h"
+#include "nameserver.h"
 #include "gameserver.h"
+#include "clockserver.h"
+#include "sensorserver.h"
 #include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
-#include "clockserver.h"
+
 #include "k3tests.h"
 #include "k4tests.h"
 #include "asm.h"
@@ -160,7 +163,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	// uart_printf(CONSOLE, "FirstUserTask: FIRST TASK FINISHED\r\n");
 	// print in white
 	// uart_printf(CONSOLE, "\033[37m");
-
+	// tid = Create(-2, sensor_server_notifier);
 	tid = Create(-2, main);
 	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();

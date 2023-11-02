@@ -895,34 +895,121 @@ void Schedule()
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	return 0;
 }
+// MINHEAP===================================== GET THE SMALLEST AVAILABLE PID
 
+
+// if the heap is empty then increment the untouched_pid
+// if the heap is not empty then pop the heap
+struct MinHeap
+{
+	unsigned size;
+	unsigned capacity;
+	int harr[NUMPROCS];
+};
+void bubbleUp( struct MinHeap *h, int i)
+{
+	int parent = (i - 1) / 2;
+	if (h->harr[parent] > h->harr[i])
+	{
+		int temp = h->harr[parent];
+		h->harr[parent] = h->harr[i];
+		h->harr[i] = temp;
+		bubbleUp(h, parent);
+	}
+}
+void bubbleDown( struct MinHeap *h, int i)
+{
+	int left = 2 * i + 1;
+	int right = 2 * i + 2;
+	int smallest = i;
+	// if there is no child
+	if (left >= h->size && right >= h->size)
+		return;
+	// if there is only left child
+	if (left < h->size && right >= h->size && h->harr[left] < h->harr[smallest])
+		smallest = left;
+	// no need to look for the case of only right child as it is a complete binary tree, no right child implies no left child implies no child
+	// this is given there are two children
+	if (left < h->size && h->harr[left] < h->harr[smallest])
+		smallest = left;
+	if (right < h->size && h->harr[right] < h->harr[smallest])
+		smallest = right;
+	if (smallest != i)
+	{
+		int temp = h->harr[smallest];
+		h->harr[smallest] = h->harr[i];
+		h->harr[i] = temp;
+		bubbleDown(h, smallest);
+	}
+}
+// add to the heap
+void insertKey( struct MinHeap *h, int k)
+{
+	if (h->size == h->capacity)
+	{
+		// printf("\nOverflow: Could not insertKey\n");
+		return;
+	}
+	h->harr[h->size] = k;
+	bubbleUp(h, h->size);
+	h->size++;
+}
+// check if the heap is empty
+uint8_t isEmpty( struct MinHeap *h)
+{
+	return h->size == 0;
+}
+// pop the minimum element
+int extractMin( struct MinHeap *h)
+{
+	if (h->size <= 0)
+		return -1;
+	if (h->size == 1)
+	{
+		h->size--;
+		return h->harr[0];
+	}
+	int root = h->harr[0];
+	h->harr[0] = h->harr[h->size - 1];
+	h->size--;
+	bubbleDown(h, 0);
+	return root;
+}
+
+
+struct MinHeap pidheap;
+int untouched_pid = 0;
 int KernelCreate(uint64_t priority, void (*function)(), int parent)
 {	
-	// Error Check to see if the pid is correct or not?
-	// if (priority < 0) {return -1;} // All prios are valid now
-	for (int p = 0; p < NUMPROCS; p++) {
+	
+	int p = 0;
+	if (isEmpty(&pidheap)) {
+		p = untouched_pid;
+		untouched_pid++;
+	} else {
+		p = extractMin(&pidheap);
+	}
+	// uart_printf(CONSOLE, "KERNEL, KernelCreate: p is %u\r\n", p);
+	while (PROCS[p].pcpointer != NULL) p++;
+	if (PROCS[p].pcpointer == NULL) {
+		// This PID is currently not taken
+		PROCS[p].pcpointer = function;
+		PROCS[p].stackpointer = ((uint8_t*)STACKSTART) + (0x10000 * (p + 1)); // We need to check this
+		// Maybe initialize PSTATE???
+		// Registers initialized all to 0??
+		PROCS[p].parentpid = parent; // MAYBE CHANGE THIS
+		PROCS[p].priority = priority;
+		PROCS[p].pid = p + 1;
+		PROCS[p].pstate = 0;
+		PROCS[p].waiting_reply = 0;
+		PROCS[p].waiting_send = 0;
+		PROCS[p].waiting_recieve_head = 0;
+		PROCS[p].waiting_recieve_tail = 0;
+		PROCS[p].queuesize = 0;
+		PROCS[p].totaltime = 0;
+		scrSchedule(p + 1, PROCS[p].priority);
 		
-		// // uart_printf(CONSOLE, "%u %u\r\n", PRIORITY[p], p); // DEBUG code
-		if (PROCS[p].pcpointer == NULL) {
-			// This PID is currently not taken
-			PROCS[p].pcpointer = function;
-			PROCS[p].stackpointer = ((uint8_t*)STACKSTART) + (0x10000 * (p + 1)); // We need to check this
-			// Maybe initialize PSTATE???
-			// Registers initialized all to 0??
-			PROCS[p].parentpid = parent; // MAYBE CHANGE THIS
-			PROCS[p].priority = priority;
-			PROCS[p].pid = p + 1;
-			PROCS[p].pstate = 0;
-			PROCS[p].waiting_reply = 0;
-			PROCS[p].waiting_send = 0;
-			PROCS[p].waiting_recieve_head = 0;
-			PROCS[p].waiting_recieve_tail = 0;
-			PROCS[p].queuesize = 0;
-			PROCS[p].totaltime = 0;
-			scrSchedule(p + 1, PROCS[p].priority);
-			
-			return p + 1;
-		}
+		return p + 1;
 	}
 	
 	return -2;
@@ -931,6 +1018,7 @@ void Kill(int p) // p is the position of the process in the PROCS array
 {
 	PROCS[p].stackpointer = NULL;
 	PROCS[p].pcpointer = NULL;
+	insertKey(&pidheap, p); // gotta return the PID back to the original state
 }
 // k2 send receive reply
 // k2 send
