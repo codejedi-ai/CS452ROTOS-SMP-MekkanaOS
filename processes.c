@@ -5,7 +5,7 @@
 #include "nameserver.h"
 #include "custstr.h"
 #include "gameserver.h"
-#include "k2TimeTests.h"
+#include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
 #include "clockserver.h"
@@ -58,7 +58,8 @@ void idle(){
 	Exit();
 }
 void main(){
-	
+	// print in white font
+	uart_printf(CONSOLE, "\033[37m");
 	// register the k2
 	RegisterAs("main");
 	char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
@@ -87,9 +88,7 @@ void main(){
 			for (int i = 0; i < command_part_count; i++){
 				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
 			}
-			if (k2ExecuteCommands(command, num, command_part_count) != -1);
 			if (k3ExecuteCommands(command, num, command_part_count) != -1);
-			if(k4ExecuteCommands(command, num, command_part_count) != -1);
 			else {
 				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
 			}
@@ -121,31 +120,6 @@ void main(){
 	Exit();
 }
 
-
-void FirstUserTaskk3() // First task as dictated in the reqs
-{	// need to set the timer interrupt
-	uint32_t timer = get_timerLO();
-	set_timerC3(timer + 10000);
-	uart_printf(CONSOLE, "Timer C3: %u\r\n", get_timerC3());
-	
-	// We are assuming that FirstUserTask has a priority of 1
-	// start gameserver
-	RegisterAs("FirstUserTask");
-	
-	char clockproc1[8] = "cl10";
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
-	char clockproc2[8] = "cl23";
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(4, clockproc2, 23, 9));
-	char clockproc3[8] = "cl33";
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(5, clockproc3, 33, 6));
-	char clockproc4[8] = "cl71";
-    uart_printf(CONSOLE, "%d \r\n", init_clock_proc(6, clockproc4, 71, 3));
-	// tid = Create(7, idle);
-	// uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
-	// Create(2000, main);
-	uart_printf(CONSOLE, "FirstUserTaskk3: Started\r\n");
-	Exit();
-}
 void busyloop(){
 	while(1) uart_printf(CONSOLE, "busyloop\r\n");
 	uart_printf(CONSOLE, "busyloopexit\r\n");
@@ -155,18 +129,20 @@ void busyloop(){
 // new paradymn, run tests for each k# assignment (other than 3) before running the shell
 void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
+	RegisterAs("FirstUserTask");
 	int tid;
 	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
 	uint32_t clock_server_tid = WhoIs("clock_server");
 	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
-	init_ioserver();
-	set_io_logging(1);
+	// tid = Create(1, k2FirstUserTask);
+	
+	tid = Create(-3, k3FirstUserTask);
 	// Commented out the old code
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
 	// tid = Create(1, read_s88_test_many);
 	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	//tid = Create(7, FirstUserTaskk3);
+	//tid = Create(7, k3FirstUserTask);
 	//uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
 	//execute_train_command(0, 54);
 	//execute_train_command(0, 54);

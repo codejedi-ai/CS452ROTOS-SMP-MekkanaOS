@@ -3,7 +3,6 @@
 #include "ioserver.h"
 #include "clockserver.h"
 #include "custstr.h"
-#include <stdio.h>
 #include "traincont.h"
 
 static const size_t COMMANDMAX_LEN = 64;
@@ -45,6 +44,7 @@ uint64_t l2(uint64_t x){
 uint64_t get_i(uint64_t x){
     return 8 - l2(x);
 }
+  /*
 uint32_t io_TXIC_MARKLIN_server_pid;
 uint32_t io_RXIC_MARKLIN_server_pid;
 uint32_t io_CTS_MARKLIN_server_pid;
@@ -76,6 +76,8 @@ void command_wrapper(unsigned char byte_1, unsigned char byte_2 ){
     // awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 0);
     while(get_CTS(MARKLIN) == 0) awaitCTS(io_CTS_MARKLIN_server_pid, MARKLIN, 1);
 }
+*/
+
 /*
 sockets binary number
 1 = 128
@@ -88,40 +90,10 @@ sockets binary number
 8 = 1
 */
 // return a value from 1 to 16 depending which sensor got triggered
-uint16_t read_one_s88(char s88_id){  
-    char byte_1 = (192 + s88_id);
-    Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
-    uint16_t a = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-    uint16_t b = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-    if (a != 0){
-      return get_i(a);
-    }else if(b != 0){
-      return get_i(b) + 8;
-    }
-    return 0;
-}
+
 // the size of the ret is s88_on
-uint16_t read_many_s88(char s88_no, uint8_t* ret){ 
-    char byte_1 = ( 128 + s88_no);
-    Putc(io_TXIC_MARKLIN_server_pid, MARKLIN, byte_1);
-    for (uint32_t i = 0; i < s88_no; i ++){
-      uint8_t a = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-      uint8_t b = Getc(io_RXIC_MARKLIN_server_pid, MARKLIN); // would only return if interrupt is recieved
-      uint8_t display = 0;
 
-      if (a != 0){
-        display = get_i(a);
-      }else if(b != 0){
-        display = get_i(b) + 8;
-      }
-      *(ret + i) = display;
-      //uart_printf(CONSOLE, "a = 0x%x\r\n", a);
-      //uart_printf(CONSOLE, "b = 0x%x\r\n", b);
-    }
-    
-    return 0; // Dummy return
-}
-
+/*
 void execute_train_command(unsigned char speed, // Binary: 00001010 
                            unsigned char id){  // Binary: 00000001)
       command_wrapper(speed, id);
@@ -148,7 +120,7 @@ void solonoid_command(unsigned char solonoid_id, // Solonoid ID. .
 }
 // define a function that takes a char array as a parameter
 //void tc1(char *arr) {
-  /*
+
   // execute here
   if (num[0][0] == 't' && num[0][1] == 'r'){
     // set train speed

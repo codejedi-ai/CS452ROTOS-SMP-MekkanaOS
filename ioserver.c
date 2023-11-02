@@ -6,7 +6,6 @@
 #include "custstr.h"
 #include "gameserver.h"
 #include "systimer.h"
-#include "k2TimeTests.h"
 #include "k2rps.h"
 #include "k3tests.h"
 #include "clockserver.h"
@@ -44,7 +43,7 @@ Code	Effect
 
 #define uartINTER 153
 #define QUEUELENGTH 100
-io_logging = 0;
+
 // this struct can be used to store the function call and interrupts
 struct intFun
 {
@@ -63,10 +62,7 @@ struct fi_list
 	uint8_t begin;
 	uint8_t end;
 };
-void set_io_logging(int val)
-{
-	io_logging = val;
-}
+
 // one queue to wait to be fired, another queue to await for the send to be returned
 void io_TXIC_MARKLIN_server()
 {
@@ -398,7 +394,7 @@ int Getc(int tid, int channel)
 	channel64[2] = 0;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	if (io_logging)
+
 		// # if DISPLAY == 4 uart_printf(CONSOLE, "GETC: sendret = %d\r\n", sendret);
 	return channel64[2];
 }
@@ -432,7 +428,6 @@ int Putc(int tid, int channel, unsigned char ch)
 	channel64[2] = ch;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	//if (io_logging)
 	#if DISPLAY == 1
 	 uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
 	#endif
@@ -449,7 +444,7 @@ int Put2c(int tid, int channel, unsigned char ch, unsigned char ch2)
 	channel64[2] = ch;
 	channel64[3] = ch2;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 1);
-	//if (io_logging)
+
 	#if DISPLAY == 2 
 	uart_printf(CONSOLE, "Put2c: sendret = %d\r\n", sendret);
 	#endif

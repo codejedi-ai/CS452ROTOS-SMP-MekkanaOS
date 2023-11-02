@@ -31,19 +31,27 @@ void clock_server(){
     const int not_tid = WhoIs("clock_notifier");
     while (1)
     {
+
         /* code */
-        ticks++;
+        
         uint32_t tid;
         char command[50];
         Receive(&tid, command, 50);
+        if(tid == not_tid){
+            // print in magenta
+            uart_printf(CONSOLE, "\033[35m");
+            uart_printf(CONSOLE, "clock_server: ticks = %d\r\n", ticks);
+        } else if (tid != not_tid){
+            uart_printf(CONSOLE, "\033[35m");
+            uart_printf(CONSOLE, "clock_server: tid = %d called with ticks = %d\r\n", tid, ticks);
+        }
         char *num[10]; // array to store the numbers
 		// int parse_char_arr(char *arr, char **num, int num_size)
         int command_part_count = 0;
         for (int i = 0; i < NUMPROCS; i++)
         {
             if (waketicks[i] != -1 && waketicks[i] <= ticks){
-                // wake up the task
-                //uart_printf(CONSOLE, "Waking up %d\r\n", i);
+                uart_printf(CONSOLE, "\033[35mWaking up %d\r\n", i);
                 waketicks[i] = -1;
                 Reply(i, &ticks, 4);
             }
@@ -69,6 +77,7 @@ void clock_server(){
         } else if (strcmp_ret(num[0], "DelayUntil")){
             waketicks[tid] = atoi_64(num[1]);
         }
+        ticks++;
     }
     Exit();
 }
@@ -80,6 +89,9 @@ int Time(int tid){
 }
 // must provide the PID of the clock server
 int Delay(int tid, int ticks){
+    // print in megenta
+    uart_printf(CONSOLE, "\033[35m");
+    uart_printf(CONSOLE, "Delay called from %d ticks = %d\r\n", tid, ticks);
     char sendmsg[50] = "Delay ";
     char str[5];
     i2a(ticks, str);

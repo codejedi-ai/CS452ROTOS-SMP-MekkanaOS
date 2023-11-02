@@ -1,7 +1,7 @@
 #include "rpi.h"
 void io_TXIC_MARKLIN_server();
 void io_notifier();
-void set_io_logging(int val);
+
 /*
 int Getc(int tid, int channel)
 returns the next un-returned character from the given channel. 

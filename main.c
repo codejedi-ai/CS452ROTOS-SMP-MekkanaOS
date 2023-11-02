@@ -5,7 +5,6 @@
 #include "clockserver.h"
 #include "ioserver.h"
 #include "gameserver.h"
-#include "k2TimeTests.h"
 #include "traincont.h"
 #include "k2rps.h"
 #include "gic.h"
@@ -36,15 +35,10 @@ int kmain(void *reg) {
   int tid = KernelCreate(0, nameserver, 0);
   tid = KernelCreate(0, io_notifier, 0);
   tid = KernelCreate(0, clock_notifier, 0);
-  uart_printf(CONSOLE, "io_notifier: tid = %d\r\n", tid);
 
-	tid = KernelCreate(-1, idle, 0);
-  uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
   
   uart_printf(CONSOLE, "FirstUserTask\r\n", tid);
-  KernelCreate(10, FirstUserTask, 0); // Priority, Task, Parent // Parent of 0 means Kernel is parent
-  // uart_printf(CONSOLE, "Process %u %u\r\n", p, p_1);
-  
+  KernelCreate(10, FirstUserTask, 0); 
   
   
   

@@ -7,7 +7,6 @@
 #include "custstr.h"
 #include "gameserver.h"
 #include "systimer.h"
-#include "k2TimeTests.h"
 #include "k2rps.h"
 #include "k3tests.h"
 #include "clockserver.h"
