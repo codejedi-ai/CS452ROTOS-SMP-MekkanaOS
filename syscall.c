@@ -128,25 +128,6 @@ void scrSchedule(int pid, uint64_t priority, int ready)
 	}
 	return 0;
 }
-// scrSchedule(pid, priority, ready)
-int queue_unblock(int pid, uint64_t priority, int ready)
-{
-	
-	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
-	struct state currItem = {pid, priority, ready};
-	struct state nextItem;
-	int insert = 0;
-	for (int i = 0; i < NUMPROCS; i++) {
-		if (READY_QUEUE[i].pid == 0) {
-			// reached the end of the queue so ret
-			return 0;	
-		}
-		else if (READY_QUEUE[i].priority == priority && READY_QUEUE[i].pid == pid) {
-			READY_QUEUE[i].time = ready;
-		}
-	}
-	return 0;
-}
 void queue_unblock_state(struct state currItem)
 {
 	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
@@ -166,8 +147,17 @@ void queue_unblock_state(struct state currItem)
 			READY_QUEUE[i].time = ready;
 		}
 	}
+}
+// scrSchedule(pid, priority, ready)
+int queue_unblock(int pid, uint64_t priority, int ready)
+{
+	
+	// uart_printf(CONSOLE, "queue_unblock: pid = %u priority = %u ready =%u\r\n", pid, priority, ready);
+	struct state currItem = {pid, priority, ready};
+	queue_unblock_state(currItem);
 	return 0;
 }
+
 int scrPick()
 {
 	int pid = -1;
