@@ -682,12 +682,12 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 5: // send blocks and unblocks other tasks
 			// This unblocks the recieving task
-			int tid_dest = PROCS[p].registervalues[0];
-			int dest_p = tid_dest - 1;
+			int dest_tid = PROCS[p].registervalues[0];
+			int dest_p = dest_tid - 1;
 			if (dead(dest_p)){
 				# if DEBUG == 2
-				// print apparentlly tid_dest is dead
-				// uart_printf(CONSOLE, "%u is dead\r\n", tid_dest);
+				// print apparentlly dest_tid is dead
+				// uart_printf(CONSOLE, "%u is dead\r\n", dest_tid);
 				# endif
 				// The destination task does not exist
 				scrSchedule(PID, PROCS[p].priority, READY);
@@ -695,7 +695,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			} else if (PROCS[dest_p].queuesize >= QUEUESIZE){
 				// the message failed to send due to the queue size being over QUEUESIZE
 				# if DEBUG == 3
-				uart_printf(CONSOLE, "Message failed to send due to the queue size being over QUEUESIZE, head = %u, tails = %u, PROCS[tid_dest].queuesize = %d\r\n", PROCS[tid_dest].waiting_recieve_head, PROCS[tid_dest].waiting_recieve_tail, PROCS[tid_dest].queuesize);
+				uart_printf(CONSOLE, "Message failed to send due to the queue size being over QUEUESIZE, head = %u, tails = %u, PROCS[dest_tid].queuesize = %d\r\n", PROCS[dest_tid].waiting_recieve_head, PROCS[dest_tid].waiting_recieve_tail, PROCS[dest_tid].queuesize);
 				# endif
 	
 				scrSchedule(PID, PROCS[p].priority, READY);
@@ -722,16 +722,16 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 7: // reply
 			scrSchedule(PID, PROCS[p].priority, READY);
-			tid_dest = PROCS[p].registervalues[0];
-			if(dead(tid_dest - 1)){
+			dest_tid = PROCS[p].registervalues[0];
+			if(dead(dest_tid - 1)){
 				# if DEBUG == 2
-				// print apparentlly tid_dest is dead
-				// uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
+				// print apparentlly dest_tid is dead
+				// uart_printf(CONSOLE, "Reply %u is dead\r\n", dest_tid);
 				# endif
 				//-1	tid is not the task id of an existing task.
 				PROCS[p].registervalues[0] = -1;
 			}
-			else if(PROCS[tid_dest - 1].waiting_reply != 1){
+			else if(PROCS[dest_tid - 1].waiting_reply != 1){
 				// the message is not recieved, thus reply is not possible
 				// messsage is in three statges
 				// sent, recieved, reply
@@ -739,11 +739,11 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// sent 1 returns -3
 				// recieved 2
 				# if DEBUG == 2
-				// print apparentlly tid_dest is dead
-				// uart_printf(CONSOLE, "Reply %u is dead\r\n", tid_dest);
+				// print apparentlly dest_tid is dead
+				// uart_printf(CONSOLE, "Reply %u is dead\r\n", dest_tid);
 				# endif
 				//-2	tid is not the task id of a reply-blocked task.
-				PROCS[p].registervalues[0] = -2 - PROCS[tid_dest - 1].waiting_reply;
+				PROCS[p].registervalues[0] = -2 - PROCS[dest_tid - 1].waiting_reply;
 			}
 			else 
 				reply_helper();
