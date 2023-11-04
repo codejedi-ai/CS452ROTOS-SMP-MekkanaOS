@@ -169,10 +169,11 @@ void FirstUserTask() // First task as dictated in the reqs
 	// tid = Create(-2, sensor_server_notifier);
 	int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
 	int TXIC_server = WhoIs("io_TXIC_MARKLIN_server");
-	//Putc(RXIC_server, MARKLIN, 100 );
-	
-	//tid = Create(-2, sensor_server_monitor);
-	for (int i = 0; i < 10; i ++)Putc(TXIC_server, MARKLIN, 100);
+	uart_printf(CONSOLE, "RXIC_server: tid = %d\r\n", RXIC_server);
+	uart_printf(CONSOLE, "TXIC_server: tid = %d\r\n", TXIC_server);
+	Putc(TXIC_server, MARKLIN, 193 );
+	uart_printf(CONSOLE, "Byte 1: %x\r\n", 	Getc(RXIC_server, MARKLIN));
+	uart_printf(CONSOLE, "Byte 2: %x\r\n", Getc(RXIC_server, MARKLIN));
 	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
 	Exit();
 }

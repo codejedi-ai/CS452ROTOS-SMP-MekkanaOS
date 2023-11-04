@@ -122,6 +122,9 @@ void io_TXIC_MARKLIN_server()
 		} 
 		
 		if(type == PUTC){
+			#if DISPLAY % 3== 0
+				uart_printf(CONSOLE, "	type == PUTC\r\n");
+			#endif
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;

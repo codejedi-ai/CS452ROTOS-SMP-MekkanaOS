@@ -7,7 +7,7 @@
 #include "custstr.h"
 # include "systimer.h"
 #include "gic.h"
-#define DEBUG 4
+#define DEBUG 5
 #define DEBUG_EXIT 1
 # define READY 0
 # define BLOCKED 1

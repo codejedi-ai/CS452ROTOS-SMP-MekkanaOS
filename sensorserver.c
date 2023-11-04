@@ -47,8 +47,8 @@ uint16_t read_many_s88(char io_TXIC_MARKLIN_server_pid, char io_RXIC_MARKLIN_ser
       uint8_t display = 0;
       *(reta + i) = a;
       *(retb + i) = b;
-      //uart_printf(CONSOLE, "a = 0x%x\r\n", a);
-      //uart_printf(CONSOLE, "b = 0x%x\r\n", b);
+      uart_printf(CONSOLE, "a = 0x%x\r\n", a);
+      uart_printf(CONSOLE, "b = 0x%x\r\n", b);
     }
     
     return 0; // Dummy return
@@ -73,6 +73,7 @@ void sensor_server_monitor(){
   char prev_reta[s88_no];
   char prev_retb[s88_no];
   uint64_t sensor_prev = read_many_s88(io_TXIC_MARKLIN_server_pid, io_RXIC_MARKLIN_server_pid, &prev_reta, &prev_retb);
+  /*
   while(1){
     // clear the screen
     // set cursor to 0,0
@@ -100,6 +101,7 @@ void sensor_server_monitor(){
       }
     }
   }
+  */
   Exit();
 }
 void sensor_server(){
