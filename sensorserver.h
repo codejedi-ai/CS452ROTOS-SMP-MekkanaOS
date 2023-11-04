@@ -11,5 +11,5 @@
 #include "k3tests.h"
 #include "clockserver.h"
 
-void sensor_server_notifier();
+void sensor_server_monitor();
 void sensor_server();

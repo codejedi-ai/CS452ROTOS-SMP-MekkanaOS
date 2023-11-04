@@ -26,7 +26,11 @@ uint8_t compare_state(struct state a, struct state b)
 		return 2;
 	else
 	{
-		if (a.time < b.time)
+		if(a.time == -1)
+			return 2;
+		else if (b.time == -1)
+			return 1;
+		else if (a.time < b.time)
 			return 1;
 		else if (a.time > b.time)
 			return 2;
@@ -110,12 +114,13 @@ struct state extractMin_state_heap( struct MinHeapState *h)
 		h->size--;
 		return h->harr[0];
 	}
-	struct state root;
-	root.pid = 0;
-	root.priority = -1;
-	root.time = -1;
-	swap_state(&h->harr[0], &root);
-	swap_state(&h->harr[0], &h->harr[h->size - 1]);
+	/*
+		int root = h->harr[0];
+	h->harr[0] = h->harr[h->size - 1];
+	h->size--;
+	*/
+	struct state root = h->harr[0];
+	h->harr[0] = h->harr[h->size - 1];
 	h->size--;
 	bubbleDown_state_heap(h, 0);
 	return root;
@@ -303,14 +308,14 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 
 int unblock_return(uint32_t interruptid, uint64_t ret){
 	# if DEBUG == 4
-		uart_printf(CONSOLE, "KERNEL: unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
+		if (interruptid != CLOCKINTID)  uart_printf(CONSOLE, "KERNEL: unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
 	# endif
 	// AWAIT_INTERRUPT[eventType][AWAIT_INTERRUPT_LIST_LEN[eventType]] = currItem;	
 	for (int i = 0; i < AWAIT_INTERRUPT[interruptid].len; i++) {
 		struct state freed_state = AWAIT_INTERRUPT[interruptid].pid_ls[i];
 		freed_state.time = READY;
 		# if DEBUG == 4
-			uart_printf(CONSOLE, "KERNEL: unblocked-process interruptid = %u, i = %u, pid = %u, priority = %u\r\n", 
+			if (interruptid != CLOCKINTID) uart_printf(CONSOLE, "KERNEL: unblocked-process interruptid = %u, i = %u, pid = %u, priority = %u\r\n", 
 						interruptid, i, 
 						freed_state.pid, 
 						freed_state.priority);
@@ -829,6 +834,9 @@ void handlerExceptionHelper(uint64_t esr_el1)
 				// check the interrupt queue, if the queue is empty then block the task
 				if (AWAIT_INTERRUPT[eventType].eventq_len){
 					// pop the queue
+					#if DEBUG == 4
+					if (eventType != CLOCKINTID) uart_printf(CONSOLE, "PID: %u, popped Interrupt %u event queue\r\n", PID, eventType);
+					#endif
 					scrSchedule(PID, PROCS[p].priority);
 					PROCS[p].registervalues[0] = AWAIT_INTERRUPT[eventType].event_q[AWAIT_INTERRUPT[eventType].eventq_head];
 					AWAIT_INTERRUPT[eventType].eventq_head++;
@@ -837,7 +845,9 @@ void handlerExceptionHelper(uint64_t esr_el1)
 
 				}
 				else{
-					// uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
+					#if DEBUG == 4
+					if (eventType != CLOCKINTID) uart_printf(CONSOLE, "PID: %u, Awaiting Interrupt %u\r\n", PID, eventType);
+					#endif
 					//scrSchedule(PID, PROCS[p].priority, BLOCKED);
 					block(PID, PROCS[p].priority);
 					struct state currItem = {PID, PROCS[p].priority, BLOCKED};
@@ -877,14 +887,12 @@ void Schedule()
 	int p = PID - 1;
 	// We need to reset the EL1 stack pointer as well
 	
-	#if DEBUG == 1
-	// // uart_printf(CONSOLE, "Beginning pcpointer: %x stackpointer: %x registervalues: %x registervalues: %x %x %x %x %x %x %x %x\r\n", p, PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].registervalues[0], PROCS[p].registervalues[24], PROCS[p].registervalues[25], PROCS[p].registervalues[26], PROCS[p].registervalues[27], PROCS[p].registervalues[28], PROCS[p].registervalues[29], PROCS[p].registervalues[30]); // DEBUG
+	#if DEBUG == 4
+	uart_printf(CONSOLE, "Beginning pcpointer: %x stackpointer: %x registervalues: %x registervalues: %x %x %x %x %x %x %x %x\r\n", p, PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].registervalues[0], PROCS[p].registervalues[24], PROCS[p].registervalues[25], PROCS[p].registervalues[26], PROCS[p].registervalues[27], PROCS[p].registervalues[28], PROCS[p].registervalues[29], PROCS[p].registervalues[30]); // DEBUG
 	// print all the register values
-	// // uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
-	// // uart_printf(CONSOLE, "PC is %x\n\r", PROCS[p].pcpointer); // DEBUG PRINT
-	// // uart_printf(CONSOLE, "SP is %x\n\r", PROCS[p].stackpointer); // DEBUG PRINT
-
-	
+	uart_printf(CONSOLE, "PID is %u ", PID); // DEBUG PRINT
+	uart_printf(CONSOLE, "PC is %x\n\r", PROCS[p].pcpointer); // DEBUG PRINT
+	uart_printf(CONSOLE, "SP is %x\n\r", PROCS[p].stackpointer); // DEBUG PRINT
 	// uart_getc(1); /// Spins to stop it from keep on running // DEBUG
 	#endif
 	// this begins the process, I would be keeping a timer here
@@ -892,6 +900,7 @@ void Schedule()
 	// begibn 
 	// WAKE UP For real
 	PROCS[p].waketime = get_timerLO();
+
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
 	return 0;
 }
@@ -989,7 +998,9 @@ int KernelCreate(uint64_t priority, void (*function)(), int parent)
 	} else {
 		p = extractMin(&pidheap);
 	}
-	// uart_printf(CONSOLE, "KERNEL, KernelCreate: p is %u\r\n", p);
+	#if DEBUG == 4
+	uart_printf(CONSOLE, "KERNEL, KernelCreate: p is %u\r\n", p);
+	#endif
 	while (PROCS[p].pcpointer != NULL) p++;
 	if (PROCS[p].pcpointer == NULL) {
 		// This PID is currently not taken

@@ -128,7 +128,7 @@ int32_t init_clock_proc(uint64_t priority, char *clockname_buf, int delay, int n
         return -1;
     uart_printf(CONSOLE, "\033[34m");
     uart_printf(CONSOLE, "init_clock_proc: %s, %d\r\n", clockname, numberOfDelays);
-    return 0;
+    return tid;
 }
 
 void k3FirstUserTask()
@@ -140,26 +140,22 @@ void k3FirstUserTask()
 
     // We are assuming that FirstUserTask has a priority of 1
     // start gameserver
-    RegisterAs("FirstUserTask");
+    RegisterAs("k3FirstUserTask");
 
     char clockproc1[8] = "cl10";
-    uart_printf(CONSOLE, "\033[34m");
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(3, clockproc1, 10, 20));
+    int clockproc1tid = init_clock_proc(3, clockproc1, 10, 20);
+    uart_printf(CONSOLE, "\033[34m%d\r\n", clockproc1tid);
     char clockproc2[8] = "cl23";
-    uart_printf(CONSOLE, "\033[34m");
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(4, clockproc2, 23, 9));
+    int clockproc2tid =  init_clock_proc(4, clockproc2, 23, 9);
+    uart_printf(CONSOLE, "\033[34m%d\r\n",clockproc2tid);
     char clockproc3[8] = "cl33";
-    uart_printf(CONSOLE, "\033[34m");
-    uart_printf(CONSOLE, "%d\r\n", init_clock_proc(5, clockproc3, 33, 6));
+    int clockproc3tid = init_clock_proc(5, clockproc3, 33, 6);
+    uart_printf(CONSOLE, "\033[34m%d\r\n", clockproc3tid);
     char clockproc4[8] = "cl71";
-    uart_printf(CONSOLE, "\033[34m");
-    uart_printf(CONSOLE, "%d \r\n", init_clock_proc(6, clockproc4, 71, 3));
-    int tid = Create(-1, idle);
-    uart_printf(CONSOLE, "\033[34m");
-    uart_printf(CONSOLE, "idle: tid = %d\r\n", tid);
+    int clockproc4tid = init_clock_proc(6, clockproc4, 71, 3);
+    uart_printf(CONSOLE, "\033[34m%d \r\n", clockproc4tid);
     // Create(2000, main);
     uart_printf(CONSOLE, "\033[34m");
     uart_printf(CONSOLE, "k3FirstUserTask: Completed\r\n");
-   // print in cyan
     Exit();
 }

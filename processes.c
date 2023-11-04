@@ -52,8 +52,9 @@ void print_error(char *error){
 void idle(){
 	while(1){
 		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
-		//uart_printf(CONSOLE, "idle: time = %u\r\n", get_timerLO());
+		uart_printf(CONSOLE, "idle: time = %u\r\n", get_timerLO());
 		asm("WFI");
+		//Yield();
 		uint32_t runtime = GetRuntime();
 		uint32_t kernelrt = GetKernelRuntime();
 		//uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
@@ -138,8 +139,10 @@ void FirstUserTask() // First task as dictated in the reqs
 	uint32_t clock_server_tid = WhoIs("clock_server");
 	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
 	// tid = Create(1, k2FirstUserTask);
-	
-	tid = Create(-3, k3FirstUserTask);
+	int idle_tid = Create(-1, idle);
+    uart_printf(CONSOLE, "\033[34midle: tid = %d\r\n", idle_tid);
+	//tid = Create(-3, k3FirstUserTask);
+	// Delay(clock_server_tid, 300);
 	// Commented out the old code
 	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
 	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
@@ -164,7 +167,9 @@ void FirstUserTask() // First task as dictated in the reqs
 	// print in white
 	// uart_printf(CONSOLE, "\033[37m");
 	// tid = Create(-2, sensor_server_notifier);
-	tid = Create(-2, main);
+	int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
+	Putc(RXIC_server, MARKLIN, 100 );
+	//tid = Create(-2, sensor_server_monitor);
 	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();
 }

@@ -12,7 +12,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 1
+#define DISPLAY 10
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -94,14 +94,7 @@ void io_TXIC_MARKLIN_server()
 		}
 
 		if(type == CTSMIM){
-			// uart print with the CTS wrapped in green and the #if DISPLAY % 2 == 0
-			# if DISPLAY % 2== 0
-				uart_printf(CONSOLE, "	CTS = %d\r\n", char_ch);
-			#endif
 			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && char_ch == 1 && STATE == 3){
-				# if DISPLAY % 2== 0
-					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
-				#endif
 				interrupt_list.call[interrupt_list.end].tid = tid;
 				interrupt_list.call[interrupt_list.end].type = type;
 				interrupt_list.call[interrupt_list.end].channel = channel;
@@ -111,35 +104,17 @@ void io_TXIC_MARKLIN_server()
 				interrupt_list.size++;	
 			}
 			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && char_ch == 0 && STATE == 2){
-				# if DISPLAY % 2== 0
-					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
-				#endif
 				STATE = 3;
 			}
 		}
 		if(type == TXIC){
-			// pop the call list queue and reply to the task
-			// is there another bullet the Process can fire
-			// Process <tid>'s bullet has landed
-			# if DISPLAY % 2== 0 
-				// print Process <tid> entered firing queue print it a Kernel is like a military
-				uart_printf(CONSOLE, "	Interrupt %u entered interrupt queue. %u Interrupts already in queue.\r\n", tid, call_list.size); 
-			#endif
 			// add interrupt to the interrupt list
 			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 0){
-				# if DISPLAY % 2== 0 
-					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
-				#endif
 				STATE = 2;
 			}
 		} 
 		
 		if(type == PUTC){
-			# if DISPLAY % 2== 0 
-				uart_printf(CONSOLE, "	PUTC FUNCTION tid = %u, char_ch = %u, char_ch2 = %u\r\n", channel, tid, char_ch, char_ch2);
-				// print Process <tid> entered firing queue print it a Kernel is like a military
-				uart_printf(CONSOLE, "	Process %u entered firing queue. %u processes already in the queue.\r\n", tid, call_list.size); 
-			#endif
 			call_list.call[call_list.end].tid = tid;
 			call_list.call[call_list.end].type = type;
 			call_list.call[call_list.end].channel = channel;
@@ -153,14 +128,6 @@ void io_TXIC_MARKLIN_server()
 		{
 			STATE = 0;
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
-			
-			# if DISPLAY % 2== 0 
-			// print in green
-				uart_printf(CONSOLE, "\033[32m");
-				uart_printf(CONSOLE, "	Process %u sent %u to the marklin.\r\n", call_list.call[call_list.begin].tid, call_list.call[call_list.begin].char_ch);
-				// print in white
-				uart_printf(CONSOLE, "\033[37m");
-			#endif
 		}
 		
 		if(call_list.size > 0 && interrupt_list.size > 0){
@@ -169,10 +136,6 @@ void io_TXIC_MARKLIN_server()
 			recieve[1] = interrupt_list.call[interrupt_list.begin].channel;
 			recieve[2] = interrupt_list.call[interrupt_list.begin].char_ch;
 			recieve[3] = interrupt_list.call[interrupt_list.begin].char_ch2;
-			# if DISPLAY % 2== 0 
-				uart_printf(CONSOLE, "\033[37m");
-				uart_printf(CONSOLE, "	Process %u returned. %u left.\r\n", ret_pid, call_list.size - 1);
-			#endif
 			// print in green
 			Reply(ret_pid, recieve, 8);
 			call_list.call[call_list.begin].tid = 0;
@@ -315,13 +278,16 @@ void io_notifier()
 {
 	// The handler in the kernel only handels different type of interrupt of the same ID
 	// However in between different interrupts of the same ID, it is handeled in here
+	
 	RegisterAs("io_notifier");
+	uart_printf(CONSOLE, "io_notifier registered\r\n");
 	int io_TXIC_MARKLIN_server_tid = Create(0, io_TXIC_MARKLIN_server);
 	int io_RXIC_MARKLIN_server_tid = Create(0, io_RXIC_MARKLIN_server);
 	int io_CTS_MARKLIN_server_tid = Create(0, io_CTS_MARKLIN_server);
 	while (1)
 	{
 		uint64_t event = AwaitEvent(uartINTER);
+		uart_printf(CONSOLE, "event = %d\r\n", event);
 		int ret;
 		// the 0 th byte is the interrupt id
 
@@ -335,23 +301,17 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
-				# if DISPLAY % 2 == 0
-					uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
-				#endif
+				uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
-				# if DISPLAY % 5 == 0
-					uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
-				#endif
+				uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
-				# if DISPLAY % 3 == 0 
-					uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
-				#endif
+				uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}

@@ -37,14 +37,18 @@ void clock_server(){
         uint32_t tid;
         char command[50];
         Receive(&tid, command, 50);
-        if(tid == not_tid){
+        if(tid == not_tid && ticks < 10){
             // print in magenta
             uart_printf(CONSOLE, "\033[35m");
             uart_printf(CONSOLE, "clock_server: ticks = %d\r\n", ticks);
-        } else if (tid != not_tid){
+        } 
+        /*
+        
+        else if (tid != not_tid){
             uart_printf(CONSOLE, "\033[35m");
             uart_printf(CONSOLE, "clock_server: tid = %d called with ticks = %d\r\n", tid, ticks);
         }
+        */
         char *num[10]; // array to store the numbers
 		// int parse_char_arr(char *arr, char **num, int num_size)
         int command_part_count = 0;
@@ -90,8 +94,8 @@ int Time(int tid){
 // must provide the PID of the clock server
 int Delay(int tid, int ticks){
     // print in megenta
-    uart_printf(CONSOLE, "\033[35m");
-    uart_printf(CONSOLE, "Delay called from %d ticks = %d\r\n", tid, ticks);
+    // uart_printf(CONSOLE, "\033[35m");
+    // uart_printf(CONSOLE, "Delay called from %d ticks = %d\r\n", tid, ticks);
     char sendmsg[50] = "Delay ";
     char str[5];
     i2a(ticks, str);
