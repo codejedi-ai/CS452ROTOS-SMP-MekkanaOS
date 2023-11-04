@@ -37,11 +37,6 @@ void clock_server(){
         uint32_t tid;
         char command[50];
         Receive(&tid, command, 50);
-        if(tid == not_tid && ticks < 10){
-            // print in magenta
-            uart_printf(CONSOLE, "\033[35m");
-            uart_printf(CONSOLE, "clock_server: ticks = %d\r\n", ticks);
-        } 
         /*
         
         else if (tid != not_tid){

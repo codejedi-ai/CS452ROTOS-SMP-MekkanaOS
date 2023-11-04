@@ -140,7 +140,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
 	// tid = Create(1, k2FirstUserTask);
 	int idle_tid = Create(-1, idle);
-    uart_printf(CONSOLE, "\033[34midle: tid = %d\r\n", idle_tid);
+    //uart_printf(CONSOLE, "\033[34midle: tid = %d\r\n", idle_tid);
 	//tid = Create(-3, k3FirstUserTask);
 	// Delay(clock_server_tid, 300);
 	// Commented out the old code
@@ -167,9 +167,12 @@ void FirstUserTask() // First task as dictated in the reqs
 	// print in white
 	// uart_printf(CONSOLE, "\033[37m");
 	// tid = Create(-2, sensor_server_notifier);
-	//int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
+	int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
+	int TXIC_server = WhoIs("io_TXIC_MARKLIN_server");
 	//Putc(RXIC_server, MARKLIN, 100 );
-	tid = Create(-2, sensor_server_monitor);
-	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
+	
+	//tid = Create(-2, sensor_server_monitor);
+	for (int i = 0; i < 10; i ++)Putc(TXIC_server, MARKLIN, 100);
+	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
 	Exit();
 }

@@ -12,7 +12,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 10
+#define DISPLAY 3
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -105,12 +105,19 @@ void io_TXIC_MARKLIN_server()
 			}
 			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && char_ch == 0 && STATE == 2){
 				STATE = 3;
+				#if DISPLAY % 3== 0
+					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+				#endif
 			}
 		}
 		if(type == TXIC){
 			// add interrupt to the interrupt list
 			if(call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 0){
 				STATE = 2;
+				#if DISPLAY % 3== 0
+					uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+				#endif
+				
 			}
 		} 
 		
@@ -127,6 +134,9 @@ void io_TXIC_MARKLIN_server()
 		if (call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 1)
 		{
 			STATE = 0;
+			#if DISPLAY % 3== 0
+				uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+			#endif
 			uart_putc(MARKLIN, call_list.call[call_list.begin].char_ch);
 		}
 		
@@ -145,6 +155,9 @@ void io_TXIC_MARKLIN_server()
 			interrupt_list.begin = (interrupt_list.begin + 1) % QUEUELENGTH;
 			interrupt_list.size--;
 			STATE = 1;
+			#if DISPLAY % 3== 0
+				uart_printf(CONSOLE, "	STATE = %d\r\n", STATE);
+			#endif
 		}
 	}
 	
@@ -287,7 +300,7 @@ void io_notifier()
 	while (1)
 	{
 		uint64_t event = AwaitEvent(uartINTER);
-		uart_printf(CONSOLE, "event = %d\r\n", event);
+		uart_printf(CONSOLE, "io_notifier: event = %d\r\n", event);
 		int ret;
 		// the 0 th byte is the interrupt id
 
@@ -301,17 +314,17 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
-				uart_printf(CONSOLE, "RXIC SYSINTERRUPT\r\n");
+				uart_printf(CONSOLE, "io_notifier: RXIC SYSINTERRUPT\r\n");
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
-				uart_printf(CONSOLE, "TXIC SYSINTERRUPT\r\n");
+				uart_printf(CONSOLE, "io_notifier: TXIC SYSINTERRUPT\r\n");
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
-				uart_printf(CONSOLE, "CTSMIM SYSINTERRUPT\r\n");
+				uart_printf(CONSOLE, "io_notifier: CTSMIM SYSINTERRUPT\r\n");
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
