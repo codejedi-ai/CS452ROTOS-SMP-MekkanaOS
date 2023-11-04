@@ -76,7 +76,7 @@ void sensor_server_monitor(){
   while(1){
     // clear the screen
     // set cursor to 0,0
-    uart_printf(CONSOLE, "\033[H");
+    //uart_printf(CONSOLE, "\033[H");
     char reta[s88_no];
     char retb[s88_no];
     uart_printf(CONSOLE, "RUNNING POLLING LOOP\r\n");

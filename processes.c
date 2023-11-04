@@ -167,9 +167,9 @@ void FirstUserTask() // First task as dictated in the reqs
 	// print in white
 	// uart_printf(CONSOLE, "\033[37m");
 	// tid = Create(-2, sensor_server_notifier);
-	int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
-	Putc(RXIC_server, MARKLIN, 100 );
-	//tid = Create(-2, sensor_server_monitor);
+	//int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
+	//Putc(RXIC_server, MARKLIN, 100 );
+	tid = Create(-2, sensor_server_monitor);
 	uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
 	Exit();
 }
