@@ -175,5 +175,7 @@ void FirstUserTask() // First task as dictated in the reqs
 	uart_printf(CONSOLE, "Byte 1: %x\r\n", 	Getc(RXIC_server, MARKLIN));
 	uart_printf(CONSOLE, "Byte 2: %x\r\n", Getc(RXIC_server, MARKLIN));
 	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
+	tid = Create(-2, sensor_server_monitor);
+	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
 	Exit();
 }
