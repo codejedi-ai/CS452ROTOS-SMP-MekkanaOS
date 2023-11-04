@@ -2,19 +2,11 @@
 #include "util.h"
 #include "ioserver.h"
 #include "custstr.h"
-#include <stdio.h>
-#include "custstr.h"
 
 // Serial line 1 on the RPi hat is used for the console
 #define SWITCH_COUNT 18
 
-/*
-read_one_s88(char s88_id) would return one byte of data from the s88
-each bit in the byte would reflect the state of the sensor
 
-*/
-uint16_t read_one_s88(char s88_id);
-uint16_t read_many_s88(char s88_no, uint8_t* ret);
 void command_wrapper(unsigned char byte_1, unsigned char byte_2 );
 void print_error(char *error);
 void execute_train_command(unsigned char speed, // Binary: 00001010 

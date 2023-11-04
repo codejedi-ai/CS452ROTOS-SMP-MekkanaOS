@@ -1,7 +1,6 @@
 #ifndef _syscall_h_
 #define _syscall_h_ 1
 #include "asm.h"
-#include <stdint.h>
 #define QUEUESIZE 255
 #define NUMPROCS 20
 #define MAXINT 2147483647
@@ -73,12 +72,10 @@ struct process {
 	uint32_t totaltime;
 	uint32_t waketime;
 };
-
-
 struct state {
 	int pid;
 	uint64_t priority;
-	int ready;
+    uint64_t time;
 };
 struct interrupt {
 	struct state pid_ls[NUMPROCS]; // this is the list that is to be unblocked when interrupt happened
@@ -86,10 +83,19 @@ struct interrupt {
 	int len;
 	int eventq_len, eventq_head, eventq_tail;
 };
+
+struct MinHeapState
+{
+	unsigned size;
+	unsigned capacity;
+	struct state *harr;
+};
 static struct process PROCS[NUMPROCS];
 static struct state READY_QUEUE[NUMPROCS];
+static struct state BLOCKED_LIST[NUMPROCS];
+static struct MinHeapState READY_HEAP;
 static struct interrupt AWAIT_INTERRUPT[MAXEVENT];
-void scrSchedule(int pid, uint64_t priority, int ready);
+void scrSchedule(int pid, uint64_t priority);
 int scrPick();
 void HandleASYNC(void* sp);
 void ExceptionASYNC(uint64_t esr_el1);
