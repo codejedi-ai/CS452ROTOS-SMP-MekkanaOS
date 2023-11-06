@@ -8,11 +8,16 @@
 #include "custstr.h"
 #define CLOCKINTID 99
 void clock_notifier(){
-    int clock_server_tid = Create(0, clock_server);
-    uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
     RegisterAs("clock_notifier");
-    
-    // uart_printf(CONSOLE, "clock_notifier:Registered\n");
+    int clock_server_tid = -1;
+    while (clock_server_tid == -1){
+        clock_server_tid = WhoIs("clock_server");
+    }
+    // spin until clock server is registered
+    //  print in green
+    uart_printf(CONSOLE, "\033[32m");
+    uart_printf(CONSOLE, "clock_notifier: Registered\n");
+    uart_printf(CONSOLE, "\033[37m");
     while (1)
     {
         uint64_t event = AwaitEvent(CLOCKINTID);

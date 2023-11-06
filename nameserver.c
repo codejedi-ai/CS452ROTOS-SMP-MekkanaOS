@@ -6,6 +6,23 @@
 #include "nameserver.h"
 #include "custstr.h"
 #define DEBUG 0
+void helper_parsestring( char *retarr, int size, char * str, int part) {
+  int i = 1, j = 0;
+  retarr[0] = 0;
+  while (*str) {
+    if (*str == ' ') {
+      i++;
+    }else if (part == i){
+      if (j >= size - 1) {
+        break;
+      }
+      retarr[j++] = *str;
+      retarr[j] = 0;
+    }
+    str++;
+  }
+  
+}
 /*
 These are the most essential terminal control sequences that you will need for your train program.
 
@@ -51,8 +68,8 @@ void nameserver(){
 		char name[50];
 
 
-		parsestring(command, 50, msg, 1);
-		parsestring(name, 50 , msg, 2);
+		helper_parsestring(command, 50, msg, 1);
+		helper_parsestring(name, 50 , msg, 2);
 
 
 		// now print the compair
@@ -72,8 +89,8 @@ void nameserver(){
 			# endif
 
 			// change font to white
-
-			int repret = Reply(tid, "PID Registered", 25);
+			int repret = 0;
+			int repret_2 = Reply(tid, &repret, 0);
 		}
 		command_cand = "WHOIS";
 		strcmp_inpace(&cmp, command, command_cand);
@@ -87,15 +104,15 @@ void nameserver(){
 
 				if (strcmp_ret(pid_names[ret], name))
 				{
+					int repret = Reply(tid, &ret, 4);
 					break;
 				}
 				ret++;
 			}
-			// unsigned int to ascii string
-			char bf[10] = "";
-			i2a(ret, bf);
-
-			int repret = Reply(tid, bf, 25);
+			if(ret >= NUMPROCS){
+				ret = -1;
+				int repret = Reply(tid, &ret, 4);
+			}
 		}
 		command_cand = "DEREGISTER";
 		strcmp_inpace(&cmp, command, command_cand);
@@ -108,7 +125,8 @@ void nameserver(){
 			uart_printf(CONSOLE, "\033[37m");
 			# endif
 			pid_names[tid][0] = 0;
-			int repret = Reply(tid, "PID Deregistered", 25);
+			int repret = 0;
+			int repret2 = Reply(tid, &repret, 0);
 		}
 		command_cand = "GETNAME";
 		# if DEBUG == 2
@@ -125,8 +143,9 @@ void nameserver(){
 	}
 	Exit();
 }
+// must return -1 if not found
 int RegisterAs(const char *name){
-	char rep[50];
+	int rep = 0;
 	char sendmsg[50] = "REGISTER ";
 	//// strflush(command_cand, 6);
 	int msgsz = 50;
@@ -134,8 +153,8 @@ int RegisterAs(const char *name){
 	//// strflush(sendmsg, msgsz);
 	msgsz = strcat_cust((char* )sendmsg, name);
 	//// strflush(sendmsg, msgsz);
-	Send(1, sendmsg, 50, rep, 50);
-	return 0;
+	Send(1, sendmsg, 50, &rep, 4);
+	return rep;
 }
 int Deregister(){
 	int tid = MyTid();
@@ -149,7 +168,7 @@ int Deregister(){
 	return Send(1, sendmsg, 50, rep, 50);
 }
 int WhoIs(const char *name){
-	char rep[50];
+	int rep = 0;
 	char sendmsg[50] = "WHOIS ";
 
 	//// strflush(command_cand, 6);
@@ -160,6 +179,6 @@ int WhoIs(const char *name){
 	// strflush(sendmsg, msgsz);
 	
 	//int ret_code = Send(tid, msg, msglen, msgreply, 25);
-	Send(1, sendmsg, 50, rep, 50);
-	return atoi_64(rep);
+	Send(1, sendmsg, 50, &rep, 4);
+	return rep;
 }

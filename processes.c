@@ -8,6 +8,7 @@
 #include "gameserver.h"
 #include "clockserver.h"
 #include "sensorserver.h"
+#include "switchworker.h"
 #include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
@@ -16,7 +17,7 @@
 #include "k4tests.h"
 #include "asm.h"
 #include "ioserver.h"
-#include "traincont.h"
+#include "train.h"
 
 #define DISPLAY 1
 /*
@@ -42,22 +43,9 @@ Code	Effect
 "\033[37m"	White text.
 
 */
-void print_error(char *error){
-    // print in red
-    uart_printf(CONSOLE, "\033[31m");
-    uart_printf(CONSOLE, "%s\r\n", error);
-    // print in white
-    uart_printf(CONSOLE, "\033[37m");
-}
 void idle(){
 	while(1){
-		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
-		uart_printf(CONSOLE, "idle: time = %u\r\n", get_timerLO());
 		asm("WFI");
-		//Yield();
-		uint32_t runtime = GetRuntime();
-		uint32_t kernelrt = GetKernelRuntime();
-		//uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
 	}
 	Exit();
 }
@@ -135,47 +123,6 @@ void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	RegisterAs("FirstUserTask");
 	int tid;
-	uart_printf(CONSOLE, "clock_notifier: tid = %d\r\n", tid);
-	uint32_t clock_server_tid = WhoIs("clock_server");
-	uart_printf(CONSOLE, "clock_server: clock_server_tid = %d\r\n", clock_server_tid);
-	// tid = Create(1, k2FirstUserTask);
-	int idle_tid = Create(-1, idle);
-    //uart_printf(CONSOLE, "\033[34midle: tid = %d\r\n", idle_tid);
-	//tid = Create(-3, k3FirstUserTask);
-	// Delay(clock_server_tid, 300);
-	// Commented out the old code
-	// uart_printf(CONSOLE, "read_s88_1 FIRST TASK INIT\r\n");
-	// run the read_s88_1 test, the result of the test should have the marklin read the first s88 sensor
-	// tid = Create(1, read_s88_test_many);
-	// uart_printf(CONSOLE, "read_s88_test_many: tid = %d\r\n", tid);
-	//tid = Create(7, k3FirstUserTask);
-	//uart_printf(CONSOLE, "k3_clock_proc: tid = %d\r\n", tid);
-	//execute_train_command(0, 54);
-	//execute_train_command(0, 54);
-	//execute_reverse_command(10, 54);
-	//execute_train_command(0, 54);
-	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000)); // this is the value I am curiose of
-	//execute_train_command(15, 54);
-	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
-	//execute_train_command(10, 54);
-	//uart_printf(CONSOLE, "DELAY: %d\r\n", Delay(clock_server_tid, 1000));
-	//execute_train_command(0, 54);
-	//uart_printf(CONSOLE, "main: tid = %d\r\n", tid);
-	// print in green process finnished
-	// uart_printf(CONSOLE, "\033[32m");
-	// uart_printf(CONSOLE, "FirstUserTask: FIRST TASK FINISHED\r\n");
-	// print in white
-	// uart_printf(CONSOLE, "\033[37m");
-	// tid = Create(-2, sensor_server_notifier);
-	int RXIC_server = WhoIs("io_RXIC_MARKLIN_server");
-	int TXIC_server = WhoIs("io_TXIC_MARKLIN_server");
-	uart_printf(CONSOLE, "RXIC_server: tid = %d\r\n", RXIC_server);
-	uart_printf(CONSOLE, "TXIC_server: tid = %d\r\n", TXIC_server);
-	Putc(TXIC_server, MARKLIN, 193 );
-	uart_printf(CONSOLE, "Byte 1: %x\r\n", 	Getc(RXIC_server, MARKLIN));
-	uart_printf(CONSOLE, "Byte 2: %x\r\n", Getc(RXIC_server, MARKLIN));
-	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
-	tid = Create(-2, sensor_server_monitor);
-	uart_printf(CONSOLE, "sensor_server_monitor: tid = %d\r\n", tid);
+	tid = Create(1, train_monitor);
 	Exit();
 }

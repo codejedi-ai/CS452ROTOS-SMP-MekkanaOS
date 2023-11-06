@@ -5,13 +5,14 @@
 #include "clockserver.h"
 #include "ioserver.h"
 #include "gameserver.h"
-#include "traincont.h"
+#include "sensorserver.h"
+#include "switchworker.h"
 #include "k2rps.h"
 #include "gic.h"
 #include "processes.h"
 void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
-#define CLOCKSERVERON 0
+#define CLOCKSERVERON 1
 #define UARTSERVERON 1
 int kmain(void *reg) {  
 
@@ -28,21 +29,37 @@ int kmain(void *reg) {
   route_interrupt(CLOCKINTID, 0);
   enable_interrupt(CLOCKINTID);
   tid = KernelCreate(0, clock_notifier, 0);
+  tid = KernelCreate(0, clock_server, 0);
   #endif
   #if UARTSERVERON == 1
   // enable and route the interupt
   route_interrupt(UARTINTER, 0);
   enable_interrupt(UARTINTER);
   enable_RX_and_TX();
-  // INIT THE SERVERS AND NOTIFIERS
-  
+
+
+  // INIT THE IO-SERVERS AND NOTIFIERS
   tid = KernelCreate(0, io_notifier, 0);
+  uart_printf(CONSOLE, "io_notifier tid: %d\r\n", tid);
+  tid = KernelCreate(0, io_TXIC_MARKLIN_server, 0);
+  uart_printf(CONSOLE, "io_TXIC_MARKLIN_server tid: %d\r\n", tid);
+  tid = KernelCreate(0, io_RXIC_MARKLIN_server, 0);
+  uart_printf(CONSOLE, "io_RXIC_MARKLIN_server tid: %d\r\n", tid);
+  tid = KernelCreate(0, io_CTS_MARKLIN_server, 0);
+  uart_printf(CONSOLE, "io_CTS_MARKLIN_server tid: %d\r\n", tid);
   #endif
 
-  
+  // sensor servers
+  //tid = KernelCreate(0, sensor_server_monitor, 0);
+  //tid = KernelCreate(0, sensor_server, 0);
+  // tid = KernelCreate(0, switch_worker, 0);
+
   //uart_printf(CONSOLE, "FirstUserTask\r\n", tid);
-  KernelCreate(10, FirstUserTask, 0); 
-  
+  tid = KernelCreate(-1, idle, 0); 
+  //KernelCreate(-1, FirstUserTask, 0);
+  uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
+  // create first user task
+  //tid = KernelCreate(0, FirstUserTask, 0);
   
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging
