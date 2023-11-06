@@ -11,7 +11,6 @@
 #include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
-#include "tc1test.h"
 
 #include "k3tests.h"
 #include "k4tests.h"

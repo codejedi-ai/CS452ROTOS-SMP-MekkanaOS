@@ -70,7 +70,7 @@ void io_TXIC_MARKLIN_server()
 	struct fi_list call_list;
 	struct fi_list interrupt_list;
 	RegisterAs("io_TXIC_MARKLIN_server");
-	int8_t io_notifier_tid = WhoIs("io_notifier");
+	
 	// set the size of the lists to 0
 	// define STATE car
 	// STATE: 0 not STATE: 1 STATE
@@ -81,6 +81,7 @@ void io_TXIC_MARKLIN_server()
 	uint8_t STATE = 1;
 	while (1)
 	{
+		int8_t io_notifier_tid = WhoIs("io_notifier");
 		int tid;
 		char recieve[8];
 		Receive(&tid, recieve, 8);
@@ -179,7 +180,7 @@ void io_RXIC_MARKLIN_server()
 	// It is automatically assumed the channel is 2
 	int tid;
 	RegisterAs("io_RXIC_MARKLIN_server");
-	int8_t io_notifier_tid = WhoIs("io_notifier");
+	
 	// for the recieve interrupts I need to handle cases in which the interrupt happened before a task picked it up
 	// this doubles of as a queue for the interrupts
 	struct fi_list interrupt_list;
@@ -194,7 +195,7 @@ void io_RXIC_MARKLIN_server()
 	while (1)
 	{
 		// change font to orange
-		// 
+		int8_t io_notifier_tid = WhoIs("io_notifier"); 
 		char recieve[8];
 		Receive(&tid, recieve, 8);
 		uint8_t type = recieve[0];
@@ -263,10 +264,11 @@ void io_CTS_MARKLIN_server()
 	uint32_t awaitcts_size[2]; 
 	// register the server
 	RegisterAs("io_CTS_MARKLIN_server");
-	int8_t io_notifier_tid = WhoIs("io_notifier");
+	
 	uint8_t STATE = 0;
 	while (1)
 	{
+		int8_t io_notifier_tid = WhoIs("io_notifier");
 		int tid;
 		char recieve[8];
 		Receive(&tid, recieve, 8);
@@ -314,28 +316,16 @@ void io_notifier()
 	uart_printf(CONSOLE, "io_notifier registered\r\n");
 	#endif
 	int io_TXIC_MARKLIN_server_tid = -1;
-	while (io_TXIC_MARKLIN_server_tid == -1)
-	{
-		io_TXIC_MARKLIN_server_tid = WhoIs("io_TXIC_MARKLIN_server");
-	}
 	int io_RXIC_MARKLIN_server_tid = -1;
-	while (io_RXIC_MARKLIN_server_tid == -1)
-	{
-		io_RXIC_MARKLIN_server_tid = WhoIs("io_RXIC_MARKLIN_server");
-	}
 	int io_CTS_MARKLIN_server_tid = -1;
-	while (io_CTS_MARKLIN_server_tid == -1)
-	{
-		io_CTS_MARKLIN_server_tid = WhoIs("io_CTS_MARKLIN_server");
-	}
 	// print in green IO notifier is running
 	uart_printf(CONSOLE, "\033[32m");
-	uart_printf(CONSOLE, "io_notifier: io_TXIC_MARKLIN_server_tid = %d\r\n", io_TXIC_MARKLIN_server_tid);
-	uart_printf(CONSOLE, "io_notifier: io_RXIC_MARKLIN_server_tid = %d\r\n", io_RXIC_MARKLIN_server_tid);
-	uart_printf(CONSOLE, "io_notifier: io_CTS_MARKLIN_server_tid = %d\r\n", io_CTS_MARKLIN_server_tid);
-	uart_printf(CONSOLE, "\033[37m");
+	uart_printf(CONSOLE, "io_notifier: Started\r\n\033[37m");
 	while (1)
 	{
+		io_TXIC_MARKLIN_server_tid = WhoIs("io_TXIC_MARKLIN_server");
+		io_RXIC_MARKLIN_server_tid = WhoIs("io_RXIC_MARKLIN_server");
+		io_CTS_MARKLIN_server_tid = WhoIs("io_CTS_MARKLIN_server");
 		uint64_t event = AwaitEvent(uartINTER);
 		# if DISPLAY % 3== 0
 		uart_printf(CONSOLE, "io_notifier: event = %d\r\n", event);
