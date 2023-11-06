@@ -57,7 +57,7 @@ int kmain(void *reg) {
   // KernelCreate(-3, FirstUserTask, 0);
   uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
   // create first user task
-  //tid = KernelCreate(0, FirstUserTask, 0);
+  tid = KernelCreate(1, FirstUserTask, 0);
     // sensor servers
   tid = KernelCreate(0, sensor_server_monitor, 0);
   //uart_printf(CONSOLE, "sensor_server_monitor tid: %d\r\n", tid);

@@ -123,6 +123,6 @@ void FirstUserTask() // First task as dictated in the reqs
 	RegisterAs("FirstUserTask");
 	int tid;
 	int txic_tid = WhoIs("io_TXIC_MARKLIN_server");
-	Putc(txic_tid, MARKLIN, 0x80);
+	int main_pid = Create(-2, main);
 	Exit();
 }
