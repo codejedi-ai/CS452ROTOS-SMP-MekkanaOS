@@ -7,6 +7,11 @@
         "track_node.h": "c",
         "track_data_new.h": "c",
         "cstdlib": "c",
-        "printmethod.h": "c"
+        "printmethod.h": "c",
+        "clockserver.h": "c",
+        "ioserver.h": "c",
+        "rpi.h": "c",
+        "custstr.h": "c",
+        "mcc.h": "c"
     }
 }

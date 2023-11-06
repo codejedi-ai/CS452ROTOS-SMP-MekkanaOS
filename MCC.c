@@ -207,7 +207,15 @@ void MCW()
     char type = msg[0];
     char id = msg[1];
     char state = msg[2];
-    
+    if(type == 3){
+      // this is a function call
+      // add the tid to the circular list
+      // set the train speed
+      execute_train_command(io_TXIC_MARKLIN_server_pid, id, 0);
+      execute_train_command(io_TXIC_MARKLIN_server_pid, id, 15);
+      execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
+      Reply(tid, msg, 4);
+    }
     if(type == 2){
       // this is a function call
       // add the tid to the circular list
@@ -281,6 +289,8 @@ int triggerReadMCW(int MCW_tid){
 // getNextSensor would return the next sensor that is triggered
 // 0th byte is the s88_id
 // 1st byte is the sensor_no
+
+
 void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
   char send_msg[4];
   send_msg[0] = 2;
@@ -293,6 +303,14 @@ void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
 void set_train_speed(int MCW_tid, uint8_t train_id, char speed){
   char send_msg[4];
   send_msg[0] = 1;
+  send_msg[1] = train_id;
+  send_msg[2] = speed;
+  send_msg[3] = -1; // this is function call
+  Send(MCW_tid, send_msg, 4, send_msg, 4);
+}
+void set_reverse(int MCW_tid, uint8_t train_id, char speed){
+  char send_msg[4];
+  send_msg[0] = 3;
   send_msg[1] = train_id;
   send_msg[2] = speed;
   send_msg[3] = -1; // this is function call

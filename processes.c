@@ -9,7 +9,7 @@
 #include "clockserver.h"
 
 #include "systimer.h"
-
+#include "tests/tc1tests.h"
 #include "asm.h"
 #include "ioserver.h"
 
@@ -74,12 +74,12 @@ void main(){
 			for (int i = 0; i < command_part_count; i++){
 				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
 			}
-			/*
-			if (k3ExecuteCommands(command, num, command_part_count) != -1);
+			
+			if (tc1ExecuteCommands(command, num, command_part_count) != 2);
 			else {
 				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
 			}
-			*/
+			
 			// tc1(command);
 			// K3 commands
 			// The operating system is doomed to go to sleep or die after running the command

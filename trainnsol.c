@@ -7,7 +7,9 @@
 struct track_node* next_sensor_node(char* get_switch, struct track_node *current_node, int* dist)
 {
   *dist = 0;
-	while(current_node->type != NODE_SENSOR && current_node->type != NODE_EXIT){
+  // the current node is a sensor node then the for loop would not run
+  struct track_node *start_node = current_node;
+	while((start_node == current_node) || (current_node->type != NODE_SENSOR && current_node->type != NODE_EXIT)){
 		// if the current position is a switch then we need to consult the switch table. Which is managed by the switch worker
 		if(current_node->type == NODE_BRANCH){
 			char sw_state = get_switch[current_node->num];
@@ -40,7 +42,8 @@ struct track_node* next_branch_node(int sw_server_tid, struct track_node *curren
   */
   // write it iteratively
   *dist = 0;
-  while(current_node->type != NODE_BRANCH && current_node->type != NODE_EXIT){
+  struct track_node *start_node = current_node;
+	while((start_node == current_node) || (current_node->type != NODE_BRANCH && current_node->type != NODE_EXIT)){
     *dist += current_node->edge[0].dist;
     current_node = current_node->edge[0].dest;
   }
@@ -159,6 +162,7 @@ void switchSensorTrain_Server(){
       if(prev_changed_s88 == -1 && prev_changed_sensor == -1 && prev_changed_switch == -1){
         cur_train.sensor_time = get_timerLO();
         cur_train.position = get_track_node(trackmap, s88_id, sensor_no);
+        uart_printf(CONSOLE, "TRAIN DETECTED: %s\r\n", cur_train.position->name);
       }else{
         // get elapsed time
         int current_time = get_timerLO();
