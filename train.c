@@ -45,14 +45,26 @@ void train_monitor(){
 	int sw_server_tid = WhoIs("switch_worker");
 	int sensor_server_tid = WhoIs("sensor_server");
 	struct train *train_list[TRAIN_MAX];
+	int prev_time = get_timerLO();
+	int prev_sensor = 0;
 	while(1){
 		int get_sensor = getNextSensor(sensor_server_tid);
 		char *sensor_arr = &get_sensor;
+		char *prev_sensor_arr = &prev_sensor;
 		char s88_name = sensor_arr[0];
 		int sensor_num = sensor_arr[1];
+
+		uart_putc(CONSOLE, prev_sensor_arr[0]);
+		uart_printf(CONSOLE, "%d --->", prev_sensor_arr[1]);
+		// printed the sensor that is triggered
 		uart_putc(CONSOLE, s88_name);
-		uart_printf(CONSOLE, "%d\r\n", sensor_num);
 		
+		int current_time = get_timerLO();
+		int time_diff = current_time - prev_time;
+		uart_printf(CONSOLE, "%d Time: %d\r\n", sensor_num, time_diff);
+		prev_time = current_time;
+		prev_sensor = get_sensor;
+		// update the train list
 	}
 	Exit();
 }
