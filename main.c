@@ -8,7 +8,6 @@
 #include "MCC.h"
 #include "gic.h"
 #include "processes.h"
-#include "trainnsol.h"
 void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
 #define CLOCKSERVERON 1
