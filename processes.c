@@ -8,7 +8,7 @@
 #include "gameserver.h"
 #include "clockserver.h"
 #include "sensorserver.h"
-#include "switchworker.h"
+
 #include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
@@ -17,7 +17,6 @@
 #include "k4tests.h"
 #include "asm.h"
 #include "ioserver.h"
-#include "train.h"
 
 #define DISPLAY 1
 /*
@@ -123,6 +122,7 @@ void FirstUserTask() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	RegisterAs("FirstUserTask");
 	int tid;
-	tid = Create(1, train_monitor);
+	int txic_tid = WhoIs("io_TXIC_MARKLIN_server");
+	Putc(txic_tid, MARKLIN, 0x80);
 	Exit();
 }

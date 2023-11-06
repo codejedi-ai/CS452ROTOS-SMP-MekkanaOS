@@ -6,7 +6,6 @@
 #include "ioserver.h"
 #include "gameserver.h"
 #include "sensorserver.h"
-#include "switchworker.h"
 #include "k2rps.h"
 #include "gic.h"
 #include "processes.h"
@@ -24,6 +23,7 @@ int kmain(void *reg) {
   uart_config_and_enable_marklin();
   
   int tid = KernelCreate(0, nameserver, 0);
+  tid = KernelCreate(-1, idle, 0); 
   #if CLOCKSERVERON == 1
   set_timerC3(get_timerLO() + 10000);
   route_interrupt(CLOCKINTID, 0);
@@ -49,18 +49,19 @@ int kmain(void *reg) {
   uart_printf(CONSOLE, "io_CTS_MARKLIN_server tid: %d\r\n", tid);
   #endif
 
-  // sensor servers
-  //tid = KernelCreate(0, sensor_server_monitor, 0);
-  //tid = KernelCreate(0, sensor_server, 0);
+
   // tid = KernelCreate(0, switch_worker, 0);
 
   //uart_printf(CONSOLE, "FirstUserTask\r\n", tid);
-  tid = KernelCreate(-1, idle, 0); 
-  //KernelCreate(-1, FirstUserTask, 0);
+  
+  // KernelCreate(-3, FirstUserTask, 0);
   uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
   // create first user task
   //tid = KernelCreate(0, FirstUserTask, 0);
-  
+    // sensor servers
+  tid = KernelCreate(0, sensor_server_monitor, 0);
+  //uart_printf(CONSOLE, "sensor_server_monitor tid: %d\r\n", tid);
+  tid = KernelCreate(0, sensor_server, 0);
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging
 
