@@ -3,6 +3,10 @@
     "files.associations": {
         "k2rps.h": "c",
         "systimer.h": "c",
-        "nameserver.h": "c"
+        "nameserver.h": "c",
+        "track_node.h": "c",
+        "track_data_new.h": "c",
+        "cstdlib": "c",
+        "printmethod.h": "c"
     }
 }

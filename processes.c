@@ -11,6 +11,7 @@
 #include "k2tests.h"
 #include "systimer.h"
 #include "k2rps.h"
+#include "tc1test.h"
 
 #include "k3tests.h"
 #include "k4tests.h"
@@ -78,10 +79,13 @@ void main(){
 			for (int i = 0; i < command_part_count; i++){
 				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
 			}
+			/*
 			if (k3ExecuteCommands(command, num, command_part_count) != -1);
 			else {
 				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
 			}
+			*/
+			// tc1(command);
 			// K3 commands
 			// The operating system is doomed to go to sleep or die after running the command
 
