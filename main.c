@@ -6,7 +6,6 @@
 #include "ioserver.h"
 #include "gameserver.h"
 #include "MCC.h"
-#include "k2rps.h"
 #include "gic.h"
 #include "processes.h"
 #include "trainnsol.h"

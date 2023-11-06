@@ -8,12 +8,8 @@
 #include "gameserver.h"
 #include "clockserver.h"
 
-#include "k2tests.h"
 #include "systimer.h"
-#include "k2rps.h"
 
-#include "k3tests.h"
-#include "k4tests.h"
 #include "asm.h"
 #include "ioserver.h"
 
