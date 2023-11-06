@@ -6,7 +6,6 @@
 #include "ioserver.h"
 #include "gameserver.h"
 #include "sensorserver.h"
-#include "switchworker.h"
 #include "k2rps.h"
 #include "gic.h"
 #include "processes.h"
@@ -64,7 +63,6 @@ int kmain(void *reg) {
   //uart_printf(CONSOLE, "sensor_server_monitor tid: %d\r\n", tid);
   tid = KernelCreate(0, sensor_server, 0);
   // switch worker
-  tid = KernelCreate(0, switch_worker, 0);
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging
 
