@@ -106,23 +106,7 @@ int parse_char_arr(char *arr, char **num, int num_size){
 // this fiunction would
 // return strings in place
 // dest string, dest str size str and the part in which you want
-void parsestring( char *retarr, int size, char * str, int part) {
-  int i = 1, j = 0;
-  retarr[0] = 0;
-  while (*str) {
-    if (*str == ' ') {
-      i++;
-    }else if (part == i){
-      if (j >= size - 1) {
-        break;
-      }
-      retarr[j++] = *str;
-      retarr[j] = 0;
-    }
-    str++;
-  }
-  
-}
+
 
 int strcpy(char *dest, int lenDes, char *src, int lenSrc){
 	int i = 0;

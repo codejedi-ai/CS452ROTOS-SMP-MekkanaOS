@@ -1,5 +1,7 @@
 #include "rpi.h"
 void io_TXIC_MARKLIN_server();
+void io_RXIC_MARKLIN_server();
+void io_CTS_MARKLIN_server();
 void io_notifier();
 
 /*

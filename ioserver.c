@@ -12,7 +12,7 @@
 
 #include "asm.h"
 #include "ioserver.h"
-#define DISPLAY 3
+#define DISPLAY 1
 #define GETC 32
 #define PUTC 33
 #define CTS 34
@@ -199,6 +199,9 @@ void io_RXIC_MARKLIN_server()
 		}
 		if (type == RXIC)
 		{
+			#if DISPLAY % 3== 0
+				uart_printf(CONSOLE, "	RXIC FUNCTION tid = %u, char_ch = %u\r\n", tid, char_ch);
+			#endif
 			interrupt_list.call[interrupt_list.end].tid = tid;
 			interrupt_list.call[interrupt_list.end].type = type;
 			interrupt_list.call[interrupt_list.end].channel = channel;
@@ -208,6 +211,9 @@ void io_RXIC_MARKLIN_server()
 		}
 		else if (type == GETC)
 		{
+			#if DISPLAY % 3== 0
+				uart_printf(CONSOLE, "	GETC FUNCTION tid = %u, char_ch = %u\r\n", tid, char_ch);
+			#endif
 			// check is the channel is empty
 			// # if DISPLAY == 4 uart_printf(CONSOLE, "GETC FUNCTION char_ch = 0x%x, tid = %u\r\n", char_ch, tid);
 			call_list.call[call_list.end].tid = tid;
@@ -296,14 +302,36 @@ void io_notifier()
 	// However in between different interrupts of the same ID, it is handeled in here
 	
 	RegisterAs("io_notifier");
+	# if DISPLAY % 3== 0
 	uart_printf(CONSOLE, "io_notifier registered\r\n");
-	int io_TXIC_MARKLIN_server_tid = Create(0, io_TXIC_MARKLIN_server);
-	int io_RXIC_MARKLIN_server_tid = Create(0, io_RXIC_MARKLIN_server);
-	int io_CTS_MARKLIN_server_tid = Create(0, io_CTS_MARKLIN_server);
+	#endif
+	int io_TXIC_MARKLIN_server_tid = -1;
+	while (io_TXIC_MARKLIN_server_tid == -1)
+	{
+		io_TXIC_MARKLIN_server_tid = WhoIs("io_TXIC_MARKLIN_server");
+	}
+	int io_RXIC_MARKLIN_server_tid = -1;
+	while (io_RXIC_MARKLIN_server_tid == -1)
+	{
+		io_RXIC_MARKLIN_server_tid = WhoIs("io_RXIC_MARKLIN_server");
+	}
+	int io_CTS_MARKLIN_server_tid = -1;
+	while (io_CTS_MARKLIN_server_tid == -1)
+	{
+		io_CTS_MARKLIN_server_tid = WhoIs("io_CTS_MARKLIN_server");
+	}
+	// print in green IO notifier is running
+	uart_printf(CONSOLE, "\033[32m");
+	uart_printf(CONSOLE, "io_notifier: io_TXIC_MARKLIN_server_tid = %d\r\n", io_TXIC_MARKLIN_server_tid);
+	uart_printf(CONSOLE, "io_notifier: io_RXIC_MARKLIN_server_tid = %d\r\n", io_RXIC_MARKLIN_server_tid);
+	uart_printf(CONSOLE, "io_notifier: io_CTS_MARKLIN_server_tid = %d\r\n", io_CTS_MARKLIN_server_tid);
+	uart_printf(CONSOLE, "\033[37m");
 	while (1)
 	{
 		uint64_t event = AwaitEvent(uartINTER);
+		# if DISPLAY % 3== 0
 		uart_printf(CONSOLE, "io_notifier: event = %d\r\n", event);
+		#endif
 		int ret;
 		// the 0 th byte is the interrupt id
 
@@ -317,17 +345,23 @@ void io_notifier()
 		{
 			if (type == RXIC)
 			{
+				# if DISPLAY % 3== 0
 				uart_printf(CONSOLE, "io_notifier: RXIC SYSINTERRUPT\r\n");
+				#endif
 				Send(io_RXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == TXIC)
 			{
+				# if DISPLAY % 3== 0
 				uart_printf(CONSOLE, "io_notifier: TXIC SYSINTERRUPT\r\n");
+				#endif
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
 			else if(type == CTSMIM)
 			{
+				# if DISPLAY % 3== 0
 				uart_printf(CONSOLE, "io_notifier: CTSMIM SYSINTERRUPT\r\n");
+				#endif
 				Send(io_CTS_MARKLIN_server_tid, &event, 8, &ret, 0);
 				Send(io_TXIC_MARKLIN_server_tid, &event, 8, &ret, 0);
 			}
@@ -404,7 +438,7 @@ int Putc(int tid, int channel, unsigned char ch)
 	channel64[2] = ch;
 	channel64[3] = -1;
 	uint64_t sendret = Send(tid, &channel64, 8, &channel64, 8);
-	#if DISPLAY == 1
+	#if DISPLAY == 3
 	 uart_printf(CONSOLE, "Putc: sendret = %d\r\n", sendret);
 	#endif
 	return channel64[2];

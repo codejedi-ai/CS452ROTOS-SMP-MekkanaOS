@@ -12,8 +12,7 @@ void strcmp_inpace(int* ret, char* s1, char* s2);
 int strcmp_ret(char* s1, char* s2);
 // this fiunction would
 int parse_char_arr(char *arr, char **num, int num_size);
-// return strings in place
-void parsestring(char * str, int part, char *retarr, int size);
+
 
 int strcpy(char *dest, int lenDes, char *src, int lenSrc);
 

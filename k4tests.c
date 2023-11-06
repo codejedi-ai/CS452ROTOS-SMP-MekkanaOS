@@ -12,7 +12,6 @@
 #include "k3tests.h"
 #include "asm.h"
 #include "ioserver.h"
-#include "traincont.h"
 #define delay 0
 /*
 
