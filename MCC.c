@@ -214,16 +214,13 @@ void MCW()
       // set the train speed
       solonoid_command(io_TXIC_MARKLIN_server_pid, id, state);
       Reply(tid, msg, 4);
-    }
-    if(type == 1){
+    }else if(type == 1){
       // this is a function call
       // add the tid to the circular list
       // set the train speed
       execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
       Reply(tid, msg, 4);
-    }
-    
-    if(type == 0){
+    }else if(type == 0){
       // uart_printf(CONSOLE, "MCW: read_many_s88\r\n");
       // READ THE MARKLIN initiate a read
       char reta[s88_no];
@@ -280,6 +277,28 @@ int triggerReadMCW(int MCW_tid){
   Send(MCW_tid, send_msg, 4, send_msg, 4);
   return *send_msg;
 }
+// outfacing methods
+// getNextSensor would return the next sensor that is triggered
+// 0th byte is the s88_id
+// 1st byte is the sensor_no
+void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
+  char send_msg[4];
+  send_msg[0] = 2;
+  send_msg[1] = sol_id;
+  send_msg[2] = state;
+  send_msg[3] = -1; // this is function call
+  Send(MCW_tid, send_msg, 4, send_msg, 4);
+}
+
+void set_train_speed(int MCW_tid, uint8_t train_id, char speed){
+  char send_msg[4];
+  send_msg[0] = 1;
+  send_msg[1] = train_id;
+  send_msg[2] = speed;
+  send_msg[3] = -1; // this is function call
+  Send(MCW_tid, send_msg, 4, send_msg, 4);
+}
+  
 void MCW_read_notifier(){
     RegisterAs("MCW_read_notifier");
     //int tid;
