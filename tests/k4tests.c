@@ -7,9 +7,7 @@
 #include "custstr.h"
 #include "gameserver.h"
 #include "systimer.h"
-#include "k2rps.h"
 #include "clockserver.h"
-#include "k3tests.h"
 #include "asm.h"
 #include "ioserver.h"
 #define delay 0

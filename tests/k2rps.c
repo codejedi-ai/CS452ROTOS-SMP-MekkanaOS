@@ -6,7 +6,6 @@
 #include "custstr.h"
 #include "systimer.h"
 #include "int64voodoo.h"
-#include "k2rps.h"
 #define DEBUG 1
 /*
 These are the most essential terminal control sequences that you will need for your train program.
