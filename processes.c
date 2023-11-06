@@ -7,7 +7,6 @@
 #include "nameserver.h"
 #include "gameserver.h"
 #include "clockserver.h"
-#include "sensorserver.h"
 
 #include "k2tests.h"
 #include "systimer.h"

@@ -5,7 +5,7 @@
 #include "clockserver.h"
 #include "ioserver.h"
 #include "gameserver.h"
-#include "sensorserver.h"
+#include "MCC.h"
 #include "k2rps.h"
 #include "gic.h"
 #include "processes.h"
@@ -59,9 +59,14 @@ int kmain(void *reg) {
   // create first user task
   tid = KernelCreate(1, FirstUserTask, 0);
     // sensor servers
-  tid = KernelCreate(0, sensor_server_monitor, 0);
-  //uart_printf(CONSOLE, "sensor_server_monitor tid: %d\r\n", tid);
-  tid = KernelCreate(0, sensor_server, 0);
+  tid = KernelCreate(0, switchSensorTrain_Server, 0);
+  uart_printf(CONSOLE, "switchSensorTrain_Server tid: %d\r\n", tid);
+  tid = KernelCreate(0, MCW_read_notifier, 0);
+  uart_printf(CONSOLE, "MCW_read_notifier tid: %d\r\n", tid);
+  tid = KernelCreate(0, MCW, 0);
+  uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
+  //uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
+
   // switch worker
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging

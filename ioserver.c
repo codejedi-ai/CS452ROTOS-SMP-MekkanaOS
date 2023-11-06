@@ -132,6 +132,14 @@ void io_TXIC_MARKLIN_server()
 			call_list.call[call_list.end].char_ch2 = char_ch2;
 			call_list.end = (call_list.end + 1) % QUEUELENGTH;
 			call_list.size++;
+			if(0){
+				call_list.call[call_list.end].tid = tid;
+				call_list.call[call_list.end].type = type;
+				call_list.call[call_list.end].channel = channel;
+				call_list.call[call_list.end].char_ch = char_ch2;
+				call_list.call[call_list.end].char_ch2 = char_ch2;
+				call_list.end = (call_list.end + 1) % QUEUELENGTH;
+			}
 		}
 		// if there exist an interrupt to match up with a request
 		if (call_list.call[call_list.begin].tid != 0 && call_list.size > 0 && STATE == 1)
