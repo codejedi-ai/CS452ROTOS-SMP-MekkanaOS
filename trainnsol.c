@@ -1,5 +1,4 @@
 #include "rpi.h"
-#include "printmethod.h"
 #include "nameserver.h"
 #include "ioserver.h"
 #include "trainnsol.h"
@@ -162,7 +161,7 @@ void switchSensorTrain_Server(){
       if(prev_changed_s88 == -1 && prev_changed_sensor == -1 && prev_changed_switch == -1){
         cur_train.sensor_time = get_timerLO();
         cur_train.position = get_track_node(trackmap, s88_id, sensor_no);
-        uart_printf(CONSOLE, "TRAIN DETECTED: %s\r\n", cur_train.position->name);
+        // uart_printf(CONSOLE, "TRAIN DETECTED: %s\r\n", cur_train.position->name);
       }else{
         // get elapsed time
         int current_time = get_timerLO();
@@ -174,7 +173,7 @@ void switchSensorTrain_Server(){
         struct track_node *next_node = next_sensor_node(sw_states, cur_train.position, &dist);
         time_diff = time_diff / 10000;
         // print in the format of prev node, cur node, dist, time, speed
-        uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
+        // uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
         // update the current train position
         cur_train.position = current_node;
         cur_train.sensor_time = current_time;

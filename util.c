@@ -189,3 +189,72 @@ void print_switch(int s, char c, size_t line) {
 
 
 
+void print_error(char *error_msg, int r, int c){
+  uart_printf(CONSOLE,"\033[%u;%uH", r, c);
+  // uart_printf(CONSOLE,"\033[K");  
+  uart_printf(CONSOLE,"\033[31m"); // "\033[31m" Set the shit to white
+  // print error_msg
+  uart_puts(CONSOLE, error_msg);
+  
+  uart_puts(CONSOLE, "\r\n"); 
+  uart_printf(CONSOLE,"\033[37m"); // "\033[37m"
+}
+void print_in_coulor(int color, char *msg){
+
+
+}
+void print_green(char *msg){
+      //  print in green
+    uart_printf(CONSOLE, "\033[32m");
+    uart_printf(CONSOLE, msg);
+    uart_printf(CONSOLE, "\033[37m");
+}
+/*
+
+Code	Effect
+"\033[2J"	Clear the screen.
+"\033[H"	Move the cursor to the upper-left corner of the screen.
+"\033[r;cH"	Move the cursor to row r, column c. Note that both the rows and columns are indexed starting at 1.
+"\033[?25l"	Hide the cursor.
+"\033[K"	Delete everything from the cursor to the end of the line.
+These control sequences can help make your program's display more lively.
+
+Code	Effect
+"\033[0m"	Reset special formatting (such as colour).
+"\033[30m"	Black text.
+"\033[31m"	Red text.
+"\033[32m"	Green text.
+"\033[33m"	Yellow text.
+"\033[34m"	Blue text.
+"\033[35m"	Magenta text.
+"\033[36m"	Cyan text.
+"\033[37m"	White text.
+
+
+*/
+void print_box(int r1,int c1, int r2, int c2){
+  // move cursor to r1,c1
+  uart_printf(CONSOLE,"\033[%u;%uH", r1, c1);
+  // print the top line of the box on r1 and r2 from c1 to c2
+  uart_printf(CONSOLE,"\033[K");
+  for (int i = c1; i < c2; i++){
+    uart_printf(CONSOLE,"\033[%u;%uH", r1, i);
+    uart_putc(CONSOLE, '-');
+    uart_printf(CONSOLE,"\033[%u;%uH", r2, i);
+    uart_putc(CONSOLE, '-');
+  }
+  // print the left and right line of the box on c1 and c2 from r1 to r2
+  for (int i = r1; i < r2; i++){
+    uart_printf(CONSOLE,"\033[%u;%uH", i, c1);
+    uart_putc(CONSOLE, '|');
+    uart_printf(CONSOLE,"\033[%u;%uH", i, c2);
+    uart_putc(CONSOLE, '|');
+  }
+}
+void print_logo(uint32_t r, uint32_t c){
+  // move cursor to r1,c1
+  uart_printf(CONSOLE,"\033[%u;%uH", r, c);
+  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
+  uart_printf(CONSOLE, "%s\r\n", logo);
+  uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
+}

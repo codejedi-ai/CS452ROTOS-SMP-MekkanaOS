@@ -36,27 +36,29 @@ static const size_t COMMANDMAX_LEN = 64;
 char sw_states[255];
 uint8_t trains_speed[81]; // this is the speed of the train
 uint32_t sol_on_time= 0;
+/*
 
-void print_error(char *error_msg){
-  uart_printf(CONSOLE,"\033[%u;%uH",TOP_ROW + ERROR_ROW,LEFT_COL + 1);
-  // uart_printf(CONSOLE,"\033[K");  
-  uart_printf(CONSOLE,"\033[31m"); // "\033[31m" Set the shit to white
-  // print error_msg
-  uart_puts(CONSOLE, error_msg);
-  
-  uart_puts(CONSOLE, "\r\n"); 
-  uart_printf(CONSOLE,"\033[37m"); // "\033[37m"
-}
-void print_in_coulor(int color, char *msg){
+Code	Effect
+"\033[2J"	Clear the screen.
+"\033[H"	Move the cursor to the upper-left corner of the screen.
+"\033[r;cH"	Move the cursor to row r, column c. Note that both the rows and columns are indexed starting at 1.
+"\033[?25l"	Hide the cursor.
+"\033[K"	Delete everything from the cursor to the end of the line.
+These control sequences can help make your program's display more lively.
+
+Code	Effect
+"\033[0m"	Reset special formatting (such as colour).
+"\033[30m"	Black text.
+"\033[31m"	Red text.
+"\033[32m"	Green text.
+"\033[33m"	Yellow text.
+"\033[34m"	Blue text.
+"\033[35m"	Magenta text.
+"\033[36m"	Cyan text.
+"\033[37m"	White text.
 
 
-}
-void print_green(char *msg){
-      //  print in green
-    uart_printf(CONSOLE, "\033[32m");
-    uart_printf(CONSOLE, msg);
-    uart_printf(CONSOLE, "\033[37m");
-}
+*/
   /*
 uint32_t io_TXIC_MARKLIN_server_pid;
 uint32_t io_RXIC_MARKLIN_server_pid;

@@ -8,7 +8,7 @@
 #include "clockserver.h"
 
 #include "ioserver.h"
-#define DISPLAY 1
+#define DISPLAY 3
 #define GETC 32
 #define PUTC 33
 #define CTS 34
