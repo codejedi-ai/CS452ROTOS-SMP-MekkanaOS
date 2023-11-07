@@ -144,15 +144,6 @@ void helper_send_message_to_server(int my_tid, int switchSensorTrain_Server_tid,
 }
 
 
-void init_solonoids(){
-  for (size_t i = 1; i <= 18; i++)
-  {
-    /* code */
-    int MCW_tid = WhoIs("MCW");
-    set_solonoid(MCW_tid, i, 'C');
-  }
-  Exit();
-}
 
 // this is the MCW worker task,
 /*

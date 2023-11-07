@@ -251,10 +251,3 @@ void print_box(int r1,int c1, int r2, int c2){
     uart_putc(CONSOLE, '|');
   }
 }
-void print_logo(uint32_t r, uint32_t c){
-  // move cursor to r1,c1
-  uart_printf(CONSOLE,"\033[%u;%uH", r, c);
-  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
-  uart_printf(CONSOLE, "%s\r\n", logo);
-  uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
-}

@@ -12,6 +12,20 @@ void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
 #define CLOCKSERVERON 1
 #define UARTSERVERON 1
+void idle(){
+	while(1){
+    		// uart_printf(CONSOLE, "idle: WFI <Print time here>\r\n");
+		// uart_printf(CONSOLE, "idle: time = %u\r\n", time);
+		uint32_t runtime = GetRuntime();
+		uint32_t kernelrt = GetKernelRuntime();
+    // print the column and row onto 2 and 1
+    uart_printf(CONSOLE, "\033[2;1H");
+		uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
+		asm("WFI");
+	}
+	Exit();
+}
+
 int kmain(void *reg) {  
 
   STACK_EL0_START = reg; // Immediately calls this to store stack_end point as x0
@@ -51,12 +65,12 @@ int kmain(void *reg) {
 
   // tid = KernelCreate(0, switch_worker, 0);
 
-  //uart_printf(CONSOLE, "FirstUserTask\r\n", tid);
+  //uart_printf(CONSOLE, "init_solonoids\r\n", tid);
   
-  // KernelCreate(-3, FirstUserTask, 0);
+  // KernelCreate(-3, init_solonoids, 0);
   uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
   // create first user task
-  tid = KernelCreate(1, FirstUserTask, 0);
+  tid = KernelCreate(2, init_solonoids, 0);
     // sensor servers
   tid = KernelCreate(1, switchSensorTrain_Server, 0);
   uart_printf(CONSOLE, "switchSensorTrain_Server tid: %d\r\n", tid);

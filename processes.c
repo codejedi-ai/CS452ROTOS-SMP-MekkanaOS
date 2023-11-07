@@ -10,7 +10,7 @@
 
 #include "systimer.h"
 #include "tests/tc1tests.h"
-#include "asm.h"
+#include "marklin_worker.h"
 #include "ioserver.h"
 
 #define DISPLAY 1
@@ -37,74 +37,6 @@ Code	Effect
 "\033[37m"	White text.
 
 */
-void idle(){
-	while(1){
-		asm("WFI");
-	}
-	Exit();
-}
-void main(){
-	// print in white font
-	uart_printf(CONSOLE, "\033[37m");
-	// register the k2
-	RegisterAs("main");
-	unsigned int counter=1;
-	char command[50];
-	int command_length = 0;
-	command[0] = '\0';
-	uart_printf(CONSOLE, "\r\nDARCY[%u]> ", counter++);
-	char c = ' ';
-	while (!(strcmp_ret(command, "quit"))) {
-		while (!uart_getc_queue(CONSOLE)) {
-			Yield();
-		}
-		c = uart_getc_modified(CONSOLE);
-		if (c == '\r') {
-			uart_printf(CONSOLE, "\r\n");
-			// K2 commands
-			// the parse char array changes the command 
-      		
-			char *num[100]; // array to store the numbers
-			// int parse_char_arr(char *arr, char **num, int num_size)
-			int command_part_count = parse_char_arr(command, num, 100);
-			uart_printf(CONSOLE, "command = %s\r\n", command);
-			for (int i = 0; i < command_part_count; i++){
-				uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
-			}
-			
-			if (tc1ExecuteCommands(command, num, command_part_count) != 2);
-			else {
-				uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
-			}
-			
-			// tc1(command);
-			// K3 commands
-			// The operating system is doomed to go to sleep or die after running the command
-
-			command_length = 0;
-			command[0] = '\0';
-			Yield();
-			uart_printf(CONSOLE, "\r\nDARCY[%u]> ", counter++);
-			Yield();
-		}else if (c == '\b'){
-			if (command_length > 0){
-				command_length--;
-				command[command_length] = '\0';
-				uart_printf(CONSOLE, "\b \b");
-			}
-		}else {
-			command[command_length] = c;
-			command_length++;
-			command[command_length] = '\0';
-			uart_putc(CONSOLE, c);
-		}
-	}
-	uart_printf(CONSOLE, "\r\n");
-	
-	// print white font
-	uart_printf(CONSOLE, "\033[37m");
-	Exit();
-}
 
 void busyloop(){
 	while(1) uart_printf(CONSOLE, "busyloop\r\n");
@@ -112,12 +44,36 @@ void busyloop(){
 	Exit();
 }
 #define UARTINTER 153
+void init_trains(){
+  Exit();
+}
+
 // new paradymn, run tests for each k# assignment (other than 3) before running the shell
-void FirstUserTask() // First task as dictated in the reqs
+void init_solonoids() // First task as dictated in the reqs
 {	// need to set the timer interrupt
-	RegisterAs("FirstUserTask");
+	RegisterAs("init_solonoids");
+	#define SWITCH_COUNT 18
 	int tid;
-	int txic_tid = WhoIs("io_TXIC_MARKLIN_server");
-	int main_pid = Create(-2, main);
+	//void set_solonoid(int MCW_tid, uint8_t sol_id, char state);
+	int MCW_tid = WhoIs("MCW");
+  // set all the turnabouts to straight
+	for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
+		set_solonoid(MCW_tid, i, 'S');
+		// this command only enqueues the switches
+	}
+	// uart_printf(CONSOLE,"\033[%u;%uHSWITCHES ALL STRAIGHT:",TOP_ROW + COMMAND_ROW, LEFT_COL + 1);
+	// set all the turnabouts to curved
+	for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
+		set_solonoid(MCW_tid, i, 'C');
+	}
+	set_solonoid(MCW_tid, 0x99, 'S');
+	set_solonoid(MCW_tid, 0x9a, 'C');
+	set_solonoid(MCW_tid, 0x9b, 'S');
+	set_solonoid(MCW_tid, 0x9c, 'C');
+
+	set_solonoid(MCW_tid, 0x99, 'C');
+	set_solonoid(MCW_tid, 0x9a, 'S');
+	set_solonoid(MCW_tid, 0x9b, 'C');
+	set_solonoid(MCW_tid, 0x9c, 'S');
 	Exit();
 }
