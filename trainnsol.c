@@ -141,12 +141,14 @@ void switchSensorTrain_Server(){
 |  |  |  |  |
 |  |  |  |  |
 */
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 2,TABLECOL);
   uart_printf(CONSOLE,"| Previous  Sensor | current sensor | Distance traveled | Time Elapsed (Ticks) |\r\n");
-  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
-  offset += 1;
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 1 ,TABLECOL);
   uart_printf(CONSOLE,"| --- | --- | --- | --- |\r\n");
-  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
-  offset += 1;
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW,1);
+  for (int i = 0; i < 200; i++){
+    uart_putc(CONSOLE, '-');
+  }
   while (1)
   {
     
