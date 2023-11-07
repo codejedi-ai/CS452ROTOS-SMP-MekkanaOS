@@ -3,6 +3,7 @@
 #include "nameserver.h"
 #include "ioserver.h"
 #include "trainnsol.h"
+#include "custstr.h"
 
 struct track_node* next_sensor_node(char* get_switch, struct track_node *current_node, int* dist)
 {
@@ -112,32 +113,7 @@ void new_table_row(char prev_changed_s88, char prev_changed_sensor,
   uart_puts(CONSOLE, "\r\n");
   *offset += 1;
 }
-
-// this would wake up every time a sensor is triggered or a sensor is released or a switch is changed
-void switchSensorTrain_Server(){
-  RegisterAs("switchSensorTrain_Server");
-
-  int tid_buf = 0, buf = 0;
-  Receive(&tid_buf, &buf, 0);
-  Reply(tid_buf, &buf, 0);
-
-  struct train train_list[TRAIN_MAX];
-  int train_speed[TRAIN_MAX];
-  int sensor_pushed[TRAIN_MAX];
-  struct track_node *track;
-  init_tracka(track);
-  struct track_node *trackmap[20][20];
-  get_track_node_map(track, trackmap);
-
-  char sw_states[SWITCH_COUNT];
-  // define the previouse changed sensor, switch, state
-  char prev_changed_s88 = -1;
-  char prev_changed_sensor = -1;
-  char prev_changed_switch = -1;
-  struct train cur_train;
-  int offset = 0;
-  // set the pointer to the correct location for table qith TABLEROW and TABLECOL
-  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
+void print_table_headers(){
   /*
   
   | Previous  Sensor | current sensor | Distance traveled | Time Elapsed (Ticks) |
@@ -165,6 +141,32 @@ void switchSensorTrain_Server(){
   for (int i = 0; i < 200; i++){
     uart_putc(CONSOLE, '-');
   }
+}
+// this would wake up every time a sensor is triggered or a sensor is released or a switch is changed
+void switchSensorTrain_Server(){
+  RegisterAs("switchSensorTrain_Server");
+
+  int tid_buf = 0, buf = 0;
+  Receive(&tid_buf, &buf, 0);
+  Reply(tid_buf, &buf, 0);
+
+  struct train train_list[TRAIN_MAX];
+  int train_speed[TRAIN_MAX];
+  int sensor_pushed[TRAIN_MAX];
+  struct track_node *track;
+  init_tracka(track);
+  struct track_node *trackmap[20][20];
+  get_track_node_map(track, trackmap);
+
+  char sw_states[SWITCH_COUNT];
+  // define the previouse changed sensor, switch, state
+  char prev_changed_s88 = -1;
+  char prev_changed_sensor = -1;
+  char prev_changed_switch = -1;
+  struct train cur_train;
+  int offset = 0;
+  // set the pointer to the correct location for table qith TABLEROW and TABLECOL
+
   while (1)
   {
     int clock_server_tid = WhoIs("clock_server");
@@ -231,13 +233,24 @@ void switchSensorTrain_Server(){
         struct track_node *current_node = get_track_node(trackmap, s88_id, sensor_no);
         // get the distance between the current node and the previous node
         int dist = 0;
-        struct track_node *next_node = next_sensor_node(sw_states, cur_train.position, &dist);
+        struct track_node *cur_pred = next_sensor_node(sw_states, cur_train.position, &dist);
         // print in the format of prev node, cur node, dist, time, speed
         // uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
         // update the current train position
         cur_train.position = current_node;
         cur_train.sensor_time = current_time;
-        new_table_row(prev_changed_s88, prev_changed_sensor, s88_id, sensor_no, dist, time_diff, &offset);
+        if (strcmp_ret(cur_train.position->name, current_node->name)){
+          new_table_row(prev_changed_s88, prev_changed_sensor, s88_id, sensor_no, dist, time_diff, &offset);
+        }else {
+          // print in red
+          uart_printf(CONSOLE, "\033[31m");
+          uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
+          // this means there is a node broken, print the names of the nodes
+          uart_printf(CONSOLE, "SENSOR ERROR prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
+          // print in white
+          uart_printf(CONSOLE, "\033[37m");
+          offset++;
+        }
       }        
       prev_changed_s88 = s88_id;
       prev_changed_sensor = sensor_no;
@@ -252,6 +265,13 @@ void switchSensorTrain_Server(){
     if(type == 2){
       char train_no = msg[0];
       char speed = msg[1];
+      // print in green
+      uart_printf(CONSOLE, "\033[32m");
+      uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
+      uart_printf(CONSOLE, "train_no: %d, speed: %d\r\n", train_no, speed);
+      // print in white
+      uart_printf(CONSOLE, "\033[37m");
+      offset++;
     }
     Reply(tid, msg, 0);
   }

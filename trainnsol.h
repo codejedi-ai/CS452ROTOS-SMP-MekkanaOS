@@ -29,3 +29,4 @@ struct track_node* get_track_node(struct track_node *trackmap[20][20], int s88_i
 #define TABLECOL 50
 #define SENSORROW 50
 #define SENSORCOL 0
+void print_table_headers();
