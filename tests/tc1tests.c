@@ -39,7 +39,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       return 1;
     }
     // set the speed of the train
-    set_train_speed(MCC_tid, trainid, speed);
+    set_train_state(MCC_tid, trainid, speed);
     return 0;
   }
   // if the command is in the form of sw switchid direction

@@ -305,7 +305,7 @@ void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
   Send(MCW_tid, send_msg, 4, send_msg, 4);
 }
 
-void set_train_speed(int MCW_tid, uint8_t train_id, char speed){
+void set_train_state(int MCW_tid, uint8_t train_id, char speed){
   char send_msg[4];
   send_msg[0] = 1;
   send_msg[1] = train_id;
