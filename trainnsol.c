@@ -151,7 +151,7 @@ void switchSensorTrain_Server(){
   }
   while (1)
   {
-    
+    int clock_server_tid = WhoIs("clock_server");
     int prev_sensor = 0;
     // receive the message from the MCW
     uint32_t tid;
@@ -199,7 +199,8 @@ void switchSensorTrain_Server(){
       int sensor_no = msg[1];
       int is_released = msg[2];
       if(prev_changed_s88 == -1 && prev_changed_sensor == -1 && prev_changed_switch == -1){
-        cur_train.sensor_time = get_timerLO();
+        
+        cur_train.sensor_time = Time(clock_server_tid);
         cur_train.position = get_track_node(trackmap, s88_id, sensor_no);
         // uart_printf(CONSOLE, "TRAIN DETECTED: %s\r\n", cur_train.position->name);
       }else if(cur_train.position != get_track_node(trackmap, s88_id, sensor_no)){
@@ -208,14 +209,13 @@ void switchSensorTrain_Server(){
         //void print_sensors(int arr[], size_t alen, unsigned int column, unsigned int row, size_t line) 
         print_sensors(sensor_pushed, TRAIN_MAX, SENSORCOL, SENSORROW, CONSOLE);
         // get elapsed time
-        int current_time = get_timerLO();
+        int current_time = Time(clock_server_tid);
         int time_diff = current_time - cur_train.sensor_time;
         // get current track node
         struct track_node *current_node = get_track_node(trackmap, s88_id, sensor_no);
         // get the distance between the current node and the previous node
         int dist = 0;
         struct track_node *next_node = next_sensor_node(sw_states, cur_train.position, &dist);
-        time_diff = time_diff / 10000;
         // print in the format of prev node, cur node, dist, time, speed
         // uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
         // update the current train position
@@ -231,6 +231,7 @@ void switchSensorTrain_Server(){
       char switch_no = msg[0];
       char switch_state = msg[1];
       sw_states[switch_no] = switch_state;
+      print_switch(switch_no, sw_states, CONSOLE);
     }
     if(type == 2){
       char train_no = msg[0];
