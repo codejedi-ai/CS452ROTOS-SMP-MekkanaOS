@@ -24,3 +24,8 @@ struct track_node* next_sensor_node( char* get_switch, struct track_node *curren
 struct track_node* next_branch_node(int sw_server_tid, struct track_node *current_node, int* dist);
 void  get_track_node_map(struct track_node *track, struct track_node *trackmap[20][20]);
 struct track_node* get_track_node(struct track_node *trackmap[20][20], int s88_id, int sensor_no);
+
+#define TABLEROW 50
+#define TABLECOL 50
+#define SENSORROW 50
+#define SENSORCOL 0
