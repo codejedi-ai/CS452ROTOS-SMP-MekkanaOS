@@ -141,10 +141,7 @@ void switchSensorTrain_Server(){
 |  |  |  |  |
 |  |  |  |  |
 */
-  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 3,TABLECOL);
-  for (int i = 0; i < 200; i++){
-    uart_putc(CONSOLE, '-');
-  }
+
 
   uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 2,TABLECOL);
   uart_printf(CONSOLE,"| Previous  Sensor | current sensor | Distance traveled | Time Elapsed (Ticks) |\r\n");
@@ -159,6 +156,10 @@ void switchSensorTrain_Server(){
   uart_printf(CONSOLE,"Sensor Table\r\n");
   uart_printf(CONSOLE,"\033[%u;%uH",SENSORROW - 1,SENSORCOL);
   uart_printf(CONSOLE,"Recent Triggers\r\n");
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 3,TABLECOL);
+  for (int i = 0; i < 200; i++){
+    uart_putc(CONSOLE, '-');
+  }
   while (1)
   {
     int clock_server_tid = WhoIs("clock_server");
