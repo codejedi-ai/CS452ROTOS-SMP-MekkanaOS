@@ -116,6 +116,11 @@ void new_table_row(char prev_changed_s88, char prev_changed_sensor,
 // this would wake up every time a sensor is triggered or a sensor is released or a switch is changed
 void switchSensorTrain_Server(){
   RegisterAs("switchSensorTrain_Server");
+
+  int tid_buf = 0, buf = 0;
+  Receive(&tid_buf, &buf, 0);
+  Reply(tid_buf, &buf, 0);
+
   struct train train_list[TRAIN_MAX];
   int train_speed[TRAIN_MAX];
   int sensor_pushed[TRAIN_MAX];

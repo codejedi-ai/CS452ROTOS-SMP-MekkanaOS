@@ -125,8 +125,10 @@ void command_shell(){
 	uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
 	char c = ' ';
   int time_display_tid = Create(MyPriority(), print_time_to_display);
+  // get who is switchSensorTrain_Server
+  int switchSensorTrain_Server_tid = WhoIs("switchSensorTrain_Server");
   int msg;
-  //Send(time_display_tid, &msg, 0, &msg, 0);
+  Send(switchSensorTrain_Server_tid, &msg, 0, &msg, 0);
 	while (!(strcmp_ret(command, "quit"))) {
 		while (!uart_getc_queue(CONSOLE)) {
 			Yield();
