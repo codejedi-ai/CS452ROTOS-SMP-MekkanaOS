@@ -31,7 +31,7 @@ code functions on
 int tc1ExecuteCommands(char *command, char **num, int command_part_count){
   // if command is in the form of tc trainid speed
   int MCC_tid = WhoIs("MCW");
-  if (strcmp_ret(command, "tc")){
+  if (strcmp_ret(command, "tr")){
     int trainid = atoi_64(num[1]);
     int speed = atoi_64(num[2]);
     if (trainid < 1 || trainid > 80 || speed < 0 || speed > 14){
