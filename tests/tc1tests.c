@@ -28,6 +28,10 @@ code functions on
 78 #4,#3,#2
 79 #4,#3,#2,#1
 */
+void testStopDist(){
+  // need to be alerted when the train has hit a sensor
+  Exit();
+}
 int tc1ExecuteCommands(char *command, char **num, int command_part_count){
   // if command is in the form of tc trainid speed
   int MCC_tid = WhoIs("MCW");
@@ -56,6 +60,17 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
   }
   // if the command is in the form of rv trainid
   if (strcmp_ret(command, "rv")){
+    int trainid = atoi_64(num[1]);
+    int speed = atoi_64(num[2]);
+    if (trainid < 1 || trainid > 80){
+      uart_printf(CONSOLE, "Invalid trainid\r\n");
+      return 1;
+    }
+    set_reverse(MCC_tid, trainid, speed);
+    return 0;
+  }
+  // testing stopping distance. If this is executed the marklin would make a task that would execute the stop commmand when the train has hit a sensor node
+  if (strcmp_ret(command, "tcstd")){
     int trainid = atoi_64(num[1]);
     int speed = atoi_64(num[2]);
     if (trainid < 1 || trainid > 80){

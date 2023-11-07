@@ -1048,7 +1048,7 @@ int Reply( int tid, void *reply, int replylen ){
 	asm("svc 7");
 	return;
 }
-int MyPriority(int tid){
+int MyPriority(){
 	asm("svc 8");
 	return;
 }

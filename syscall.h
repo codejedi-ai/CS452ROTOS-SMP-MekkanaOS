@@ -33,6 +33,8 @@ int CreateArgs(uint64_t priority, void (*function)(), uint64_t argsno, uint64_t 
 void Schedule();
 
 int MyTid();
+int MyPriority();
+
 int MyParentTid();
 
 void Yield();

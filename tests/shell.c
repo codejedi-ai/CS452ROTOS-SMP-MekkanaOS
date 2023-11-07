@@ -2,6 +2,7 @@
 #include "../util.h"
 #include "../ioserver.h"
 #include "../clockserver.h"
+#include "../syscall.h"
 #include "../custstr.h"
 #include "shell.h"
 
@@ -56,13 +57,28 @@ Code	Effect
 
 */
 void print_time_to_display(){
+  int tid;
+  int msg = 0;
+  // Receive(&tid, &msg, sizeof(msg));
+  // Reply(tid, &msg, 0);
   while (1)
   {
     int clock_server_tid = WhoIs("clock_server");
     Delay(clock_server_tid, 1);
     int cur_time = Time(clock_server_tid);
     // print the time on the top left corner
-    print_time(cur_time * 10000, 1, 1, CONSOLE);
+    uart_printf(CONSOLE,"\033[%u;%uH", 1, 1);
+    uart_printf(CONSOLE, "\033[K");
+    uart_printf(CONSOLE, "\033[?25l");
+    uart_printf(CONSOLE, "Ticks: %d", cur_time);
+    // Hide the cursor
+    
+    // clear row "\033[K"
+    
+    // print the time in ticks
+    
+    // show cursor
+    uart_printf(CONSOLE, "\033[?25h");
   }
 }
 /*
@@ -75,7 +91,7 @@ void print_server(){
 }
 void print_logo(uint32_t r, uint32_t c){
   // move cursor to r1,c1
-  uart_printf(CONSOLE,"\033[%u;%uH", r, c);
+  uart_printf(CONSOLE,"\033[%u;%uH", SHELLROW, SHELLCOL);
   char *logo = "\r\n            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   uart_printf(CONSOLE, "%s\r\n", logo);
   uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
@@ -92,6 +108,7 @@ int calculate_digits(int num) {
 }
 
 void command_shell(){
+  
   Delay(WhoIs("clock_server"), 100);
   print_logo(SHELLROW, SHELLCOL);
 	// print in white font
@@ -103,10 +120,13 @@ void command_shell(){
 	int command_length = 0;
 	command[0] = '\0';
   // set cursor at SHELLROW and SHELLCOL
-  int logo_offset = 10, nameoffset = 11;
-  uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset, SHELLCOL);
+  
+  uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET, SHELLCOL);
 	uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
 	char c = ' ';
+  int time_display_tid = Create(MyPriority(), print_time_to_display);
+  int msg;
+  //Send(time_display_tid, &msg, 0, &msg, 0);
 	while (!(strcmp_ret(command, "quit"))) {
 		while (!uart_getc_queue(CONSOLE)) {
 			Yield();
@@ -120,20 +140,20 @@ void command_shell(){
 			char *num[100]; // array to store the numbers
 			// int parse_char_arr(char *arr, char **num, int num_size)
 			int command_part_count = parse_char_arr(command, num, 100);
-      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset, SHELLCOL);
+      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET, SHELLCOL);
 			uart_printf(CONSOLE, "command = %s\r\n", command);
       int valid_command = 0;
 			if (tc1ExecuteCommands(command, num, command_part_count) != 2){
-        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset + 1, SHELLCOL);
+        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET + 1, SHELLCOL);
         uart_printf(CONSOLE, "\033[K");
         valid_command = 1;
       }
 			else {
-        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset + 1, SHELLCOL);
+        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET + 1, SHELLCOL);
         uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
 			}
       for (int i = 0; valid_command && i < command_part_count; i++){
-        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + i + logo_offset + 1, SHELLCOL);
+        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + i + LOGOOFFSET + 1, SHELLCOL);
         uart_printf(CONSOLE, "\033[K");
         uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
       }
@@ -141,14 +161,14 @@ void command_shell(){
 			// tc1(command);
 			// K3 commands
 			// The operating system is doomed to go to sleep or die after running the command
-      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset,  SHELLCOL);
+      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET,  SHELLCOL);
       // slear row
       
 			command_length = 0;
 			command[0] = '\0';
 			Yield();
       char* darcy = "DARCY[%u]> ";
-      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset, SHELLCOL);
+      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET, SHELLCOL);
       uart_printf(CONSOLE, "\033[K");
 			uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
 			Yield();
@@ -156,12 +176,12 @@ void command_shell(){
 			if (command_length > 0){
 				command_length--;
 				command[command_length] = '\0';
-        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset, nameoffset + calculate_digits(counter) + SHELLCOL + command_length);
+        uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET, NAMEOFFSET + calculate_digits(counter) + SHELLCOL + command_length);
 				uart_printf(CONSOLE, "\b \b");
 			}
 		}else {
 			command[command_length] = c;
-      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + logo_offset, nameoffset + calculate_digits(counter) + SHELLCOL + command_length - 1);
+      uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW + LOGOOFFSET, NAMEOFFSET + calculate_digits(counter) + SHELLCOL + command_length - 1);
 			command_length++;
 			command[command_length] = '\0';
 			uart_putc(CONSOLE, c);

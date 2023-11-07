@@ -156,7 +156,7 @@ void switchSensorTrain_Server(){
   uart_printf(CONSOLE,"Sensor Table\r\n");
   uart_printf(CONSOLE,"\033[%u;%uH",SENSORROW - 1,SENSORCOL);
   uart_printf(CONSOLE,"Recent Triggers\r\n");
-  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 3,TABLECOL);
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 3,1);
   for (int i = 0; i < 200; i++){
     uart_putc(CONSOLE, '-');
   }
