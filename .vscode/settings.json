@@ -12,6 +12,7 @@
         "ioserver.h": "c",
         "rpi.h": "c",
         "custstr.h": "c",
-        "mcc.h": "c"
+        "mcc.h": "c",
+        "gic.h": "c"
     }
 }

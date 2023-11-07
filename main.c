@@ -5,7 +5,7 @@
 #include "clockserver.h"
 #include "ioserver.h"
 #include "gameserver.h"
-#include "MCC.h"
+#include "marklin_worker.h"
 #include "gic.h"
 #include "trainnsol.h"
 void* STACK_EL0_START; // Maybe delete this later
