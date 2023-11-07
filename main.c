@@ -8,6 +8,7 @@
 #include "marklin_worker.h"
 #include "gic.h"
 #include "trainnsol.h"
+#include "tests/shell.h"
 void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
 #define CLOCKSERVERON 1
@@ -67,7 +68,7 @@ int kmain(void *reg) {
 
   //uart_printf(CONSOLE, "init_solonoids\r\n", tid);
   
-  // KernelCreate(-3, init_solonoids, 0);
+  
   uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
   // create first user task
   tid = KernelCreate(2, init_solonoids, 0);
@@ -80,6 +81,8 @@ int kmain(void *reg) {
   uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
   //uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
   // clear the screen
+
+  KernelCreate(-2, command_shell, 0);
   uart_printf(CONSOLE, "\033[2J");
   // switch worker
   Schedule();
