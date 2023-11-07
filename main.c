@@ -65,7 +65,8 @@ int kmain(void *reg) {
   tid = KernelCreate(1, MCW, 0);
   uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
   //uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
-
+  // clear the screen
+  uart_printf(CONSOLE, "\033[2J");
   // switch worker
   Schedule();
   // U-Boot displays the return value from main - might be handy for debugging

@@ -1,4 +1,5 @@
 #include "rpi.h"
+#include "util.h"
 #include "nameserver.h"
 #include "ioserver.h"
 #include "trainnsol.h"
