@@ -10,8 +10,8 @@ struct free_task_list{
     uint32_t size;
 };
 
-void MCW();
-void MCW_read_notifier();
-void set_solonoid(int MCW_tid, uint8_t sol_id, char state);
-void set_train_state(int MCW_tid, uint8_t train_ind, char speed);
+void marklin_worker();
+void marklin_worker_read_notifier();
+void set_solonoid(int marklin_worker_tid, uint8_t sol_id, char state);
+void set_train_state(int marklin_worker_tid, uint8_t train_ind, char speed);
 #endif

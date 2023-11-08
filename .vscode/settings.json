@@ -21,6 +21,7 @@
         "asm.h": "c",
         "trainnsol.h": "c",
         "shell.h": "c",
-        "marklin_worker.h": "c"
+        "marklin_worker.h": "c",
+        "train.h": "c"
     }
 }

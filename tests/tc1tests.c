@@ -6,6 +6,8 @@
 #include "../systimer.h"
 #include "../clockserver.h"
 #include "../tc1/marklin_worker.h"
+#include "../tc1/train_control.h"
+
 #include "../ioserver.h"
 #define delay 0
 /*
@@ -34,7 +36,7 @@ void testStopDist(){
 }
 int tc1ExecuteCommands(char *command, char **num, int command_part_count){
   // if command is in the form of tc trainid speed
-  int MCC_tid = WhoIs("MCW");
+  int marklin_worker_tid = WhoIs("marklin_worker");
   if (strcmp_ret(command, "tr")){
     int trainid = atoi_64(num[1]);
     int speed = atoi_64(num[2]);
@@ -43,7 +45,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       return 1;
     }
     // set the speed of the train
-    set_train_state(MCC_tid, trainid, speed);
+    set_train_state(marklin_worker_tid, trainid, speed);
     return 0;
   }
   // if the command is in the form of sw switchid direction
@@ -55,7 +57,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       return 1;
     }
     // set the direction of the switch
-    set_solonoid(MCC_tid, switchid, direction);
+    set_solonoid(marklin_worker_tid, switchid, direction);
     return 0;
   }
   // if the command is in the form of rv trainid
@@ -66,7 +68,9 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       uart_printf(CONSOLE, "Invalid trainid\r\n");
       return 1;
     }
-    uart_printf(CONSOLE, "Reversing train (NOT ACTUALLY)%d\r\n", trainid);
+    uart_printf(CONSOLE, "Reversing train ....%d\r\n", trainid);
+    reverse(trainid, speed);
+    
     return 0;
   }
   // testing stopping distance. If this is executed the marklin would make a task that would execute the stop commmand when the train has hit a sensor node

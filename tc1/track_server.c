@@ -4,12 +4,11 @@
 #include "../ioserver.h"
 #include "../custstr.h"
 #include "track_server.h"
-
 #define SENSOR 0
 #define TRAIN 1
 #define SWITCH 2
 #define GET_SENSOR_PUSHED 3 // this gets the sensor pushed array
-#define GET_SWITCH_STATES 4 // this gets the switch states array
+#define GET_TRACK_ID 4 // this gets the switch states array
 #define INIT_TRACK 5
 #define INIT_TRAIN 6
 #define AWAIT_SENSOR_PUSHED 7
@@ -63,33 +62,6 @@ struct track_node* next_type_node(char* sw_states,int type, struct track_node *s
 }
 
 
-void  get_track_node_map(struct track_node *track, struct track_node *trackmap[20][20]){
-	// iterate through all the SENSOR_NODEs and find the one that matches the s88_id and sensor_id
-	// the s88_id is the s88 that is triggered in alphabet A,B,C,D
-	// the sensor_id is the sensor that is triggered in the s88 from 1 - 16
-	// the naming convention is A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3, C4, D1, D2, D3, D4.....
-	for(int i = 0; i < TRACK_MAX; i++){
-		if(track[i].type == NODE_SENSOR){
-			// get name
-			char *name = track[i].name;
-			// get the s88_id the first character
-			char s88_id = name[0] - 'A';
-			// get the sensor_id the number that is after the first character
-			int64_t sensor_id = atoi_64(&name[1]) - 1;
-			//uart_printf(CONSOLE, "name:%s s88_id = %d, sensor_id = %d\r\n",name , s88_id, sensor_id);
-			trackmap[s88_id][sensor_id] = &track[i];
-		}
-	}
-}
-struct track_node* get_track_node(struct track_node *trackmap[20][20], int s88_id, int sensor_id){
-	// iterate through all the SENSOR_NODEs and find the one that matches the s88_id and sensor_id
-	// the s88_id is the s88 that is triggered in alphabet A,B,C,D
-	// the sensor_id is the sensor that is triggered in the s88 from 1 - 16
-	// the naming convention is A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3, C4, D1, D2, D3, D4.....
-	sensor_id--;
-	//uart_printf(CONSOLE, "name:%s s88_id = %d, sensor_id = %d\r\n",trackmap[s88_id][sensor_id]->name, s88_id, sensor_id);
-	return trackmap[s88_id][sensor_id];
-}
 int dist_to_node(char* sw_states, struct track_node *start_node, struct track_node *end_node){
   int dist = 0;
   // the current node is a sensor node then the for loop would not run
@@ -137,6 +109,7 @@ struct list{
 };
 // this would wake up every time a sensor is triggered or a sensor is released or a switch is changed
 void track_server(){
+  char track_ind = 0;
   RegisterAs("track_server");
 
   int tid_buf = 0, buf = 0;
@@ -163,12 +136,17 @@ void track_server(){
   int first_time = 1;
   struct list await_list;
   await_list.await_count = 0;
+  // print in green
+  uart_printf(CONSOLE, "\033[32m");
+  uart_printf(CONSOLE, "Track Server Initiated\r\n");
+  uart_printf(CONSOLE, "\033[37m");
   while (1)
   {
+    // uart_printf(CONSOLE, "Track Server: Waiting for message\r\n");
     int clock_server_tid = WhoIs("clock_server");
     int marklin_worker_tid = WhoIs("marklin_worker");
     int prev_sensor = 0;
-    // receive the message from the MCW
+    // receive the message from the marklin_worker
     uint32_t tid;
     char msg[4];
     Receive(&tid, msg, 4);
@@ -210,14 +188,23 @@ void track_server(){
    
     char type = msg[3];
     if(type == SENSOR){
-      if(tid != marklin_worker_tid){
-        int buf = -1;
-        Reply(tid, &buf, 4);
-      }
+      // uart_printf(CONSOLE, "SENSOR\r\n");
+      
       // unfortunatelly the server does not provide the identity of the train. It would only awake all tasks that are waiting on the sensor_pushed
+      
+      //input:
+      //    send_msg[0] = s88_id; // the s88 that is triggered
+      //    send_msg[1] = sensor_no; // the sensor that is triggered
+      //    send_msg[2] = is_released; // is the type of update
+    
       char s88_id = msg[0];
       char sensor_id = msg[1];
+      char is_released = msg[2];
       uint32_t time = Time(clock_server_tid);
+      if(!is_released){
+        // uart_printf(CONSOLE, "\033[37mSENSOR RELEASED!!\r\n");
+        sensor_push(s88_id * 17 + sensor_id, sensor_pushed, TRAIN_MAX);
+      }
       // uart_printf(CONSOLE, "\033[37mSWITCH PRESSED!!");
       // reply to all tasks that is waiting on the sensor_pushed
       // tasks would just be waiting on sensor_pushed 
@@ -230,67 +217,85 @@ void track_server(){
       // time_diff
       // repmsg
       // FREE ALL THE SENSORS
-      uint64_t repmsg = time;
-      char *is_released = (char*)&repmsg;
-      is_released[7] = s88_id;
-      is_released[6] = sensor_id;
-      for(int i = 0; i < await_list.await_count; i++){
-        Reply(await_list.await_tids[i], &repmsg, 8);
-      }
-      sensor_push(s88_id * 17 + sensor_id, sensor_pushed, TRAIN_MAX);
+        if(await_list.await_count){
+          uint64_t repmsg = time;
+          char *repmsg_char = (char*)&repmsg;
+          repmsg_char[7] = s88_id;
+          repmsg_char[6] = sensor_id;
+          repmsg_char[5] = is_released;
+          for(int i = 0; i < await_list.await_count; i++){
+            Reply(await_list.await_tids[i], &repmsg, 8);
+          }
+        
+        }
       // update the sensor_pushed array
       await_list.await_count = 0;
+      
+     Reply(tid, &buf, 4);
+     // uart_printf(CONSOLE, "SENSOR REPLIED\r\n");
     }  
     if(type == SWITCH){
-        if(tid != marklin_worker_tid){
-        int buf = -1;
-        Reply(tid, &buf, 4);
-      }
+      // uart_printf(CONSOLE, "SWITCH\r\n");
       // This is called by the worker task
       char switch_no = msg[0];
       char switch_state = msg[1];
       sw_states[switch_no] = switch_state;
-      
+      // THIS IS THE ONLY EXCEPTION OF SERVER PRINT
+      print_switch(switch_no, (char)switch_state, CONSOLE);
       Reply(tid, msg, 0);
+      // uart_printf(CONSOLE, "SWITCH REPLIED\r\n");
     }
     if(type == TRAIN){
-      if(tid != marklin_worker_tid){
-        int buf = -1;
-        Reply(tid, &buf, 4);
-      }
+      // uart_printf(CONSOLE, "TRAIN\r\n");
       // This is called by the worker task
       char train_no = msg[0];
       char speed = msg[1];
 
       offset++;
       Reply(tid, msg, 0);
+      // uart_printf(CONSOLE, "TRAIN REPLIED\r\n");
     }
     if(type == GET_SENSOR_PUSHED){
+      // uart_printf(CONSOLE, "GET_SENSOR_PUSHED\r\n");
       Reply(tid, sensor_pushed, TRAIN_MAX * sizeof(int));
+      // uart_printf(CONSOLE, "GET_SENSOR_PUSHED REPLIED\r\n");
     }
-    if(type == GET_SWITCH_STATES){
-      Reply(tid, sw_states, SWITCH_COUNT);
+    if(type == GET_TRACK_ID){
+      // set cursor to tow 20 of col 200
+
+      // struct track_node track[TRACK_MAX];
+      Reply(tid, track_ind, 1);
+      uart_printf(CONSOLE, "\033[%d;%dH", 21, 200);
+      uart_printf(CONSOLE, "GET_TRACK_ID REPLIED\r\n");
     }
     if(type == INIT_TRACK){
+      // uart_printf(CONSOLE, "INIT_TRACK\r\n");
       int buf = 1;
       char track_id = msg[0];
       if(track_id == 'a'){
+        track_ind = 'a';
         init_tracka(track);
       }
       if(track_id == 'b'){
+        track_ind = 'b';
         init_trackb(track);
       }
       Reply(tid, &buf, 4);
+      // uart_printf(CONSOLE, "INIT_TRACK REPLIED\r\n");
     }
     if(type == INIT_TRAIN){
+      // uart_printf(CONSOLE, "INIT_TRAIN\r\n");
       int buf = 1;
       int train_no = msg[0];
       int s88_id = msg[1];
       int sensor_id = msg[2];
       // init_traina(track, train_no, s88_id, sensor_id);
       Reply(tid, &buf, 4);
+      // uart_printf(CONSOLE, "INIT_TRAIN REPLIED\r\n");
     }
     if(type == AWAIT_SENSOR_PUSHED){
+      uart_printf(CONSOLE, "\033[%d;%dH", 22, 200);
+      uart_printf(CONSOLE, "AWAIT_SENSOR_PUSHED\r\n");
       // add the tid to the list
       // if the list is empty then we need to awit for the sensor to be pushed
       await_list.await_tids[await_list.await_count] = tid;
@@ -300,7 +305,7 @@ void track_server(){
   Exit();
 }
 
-void get_sensor_pushed(int track_server_tid, int sensor_pushed[], int train_max){
+void get_sensor_pushed(int track_server_tid, struct track_node track[TRACK_MAX], int tracks_max){
   // this is primarily for the purpose of
   // print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
   char buf[4];
@@ -308,15 +313,19 @@ void get_sensor_pushed(int track_server_tid, int sensor_pushed[], int train_max)
   buf[1] = -1;
   buf[2] = -1;
   buf[3] = GET_SENSOR_PUSHED;
-  Send(track_server_tid, &buf, 4, sensor_pushed, sizeof(int) * train_max);
+  Send(track_server_tid, &buf, 4, track, sizeof(int) * tracks_max);
 }
-void get_switch_states(int track_server_tid, char sw_states[], int switch_count){
+char get_track_id(int track_server_tid){
   char buf[4];
   buf[0] = -1;
   buf[1] = -1;
   buf[2] = -1;
-  buf[3] = GET_SWITCH_STATES;
-  Send(track_server_tid, &buf, 4, sw_states, switch_count);
+  buf[3] = GET_TRACK_ID;
+  char ret = 0;
+  // uart_printf(CONSOLE, "\033[%d;%dH", 20, 200);
+  // uart_printf(CONSOLE, "GET_TRACK_ID\r\n");
+  Send(track_server_tid, &buf, 4, &ret, 1);
+  return ret;
 }
 void init_track(int track_server_tid, char track_id){
   char buf[4];
@@ -342,7 +351,7 @@ void deregister_train(int track_server_tid, char train_no){
   // the sensor node must be at a START NODE is to be called when a train task is created
   // to be completed
 }
-uint64_t awit_sensor(int track_server_tid){
+uint64_t await_sensor(int track_server_tid){
   //  char s88_id, char sensor_id, char is_released
   char buf[4];
   buf[0] = -1;
@@ -352,9 +361,4 @@ uint64_t awit_sensor(int track_server_tid){
   uint64_t repmsg = 0;
   Send(track_server_tid, buf, 4, &repmsg, 8);
   return repmsg;
-}
-void train(){
-  // init the train using receive
-
-  Exit();
 }

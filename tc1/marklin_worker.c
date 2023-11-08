@@ -149,13 +149,13 @@ void helper_send_message_to_server(int my_tid, int track_server_tid, uint8_t s88
 
 
 
-// this is the MCW worker task,
+// this is the marklin_worker worker task,
 /*
 It keeps track of the trains and the sensors
 It would notify the track_server when there is a change in the sensors
 It would keep track of the positions of the trains
 */
-void MCW()
+void marklin_worker()
 {
   // create track_server
   uint32_t io_TXIC_MARKLIN_server_pid;
@@ -165,7 +165,7 @@ void MCW()
   // io_CTS_MARKLIN_server_pid = WhoIs("io_CTS_MARKLIN_server");
   // print sensor server monitor is active
 
-  RegisterAs("MCW");
+  RegisterAs("marklin_worker");
   int my_tid = MyTid();
   // notify the track_server the most recent changes with the track sensors
   // if two sensors changed within the same reading, then return them in the order of the s88 lables
@@ -179,7 +179,10 @@ void MCW()
     prev_reta[i] = 0;
     prev_retb[i] = 0;
   }
-  
+    // print in green
+  uart_printf(CONSOLE, "\033[32m");
+  uart_printf(CONSOLE, "Marklin Worker Initiated\r\n");
+  uart_printf(CONSOLE, "\033[37m");
   // set cursor location to i, j
   while (1)
   {
@@ -283,13 +286,13 @@ void MCW()
 // getNextSensor would return the next sensor that is triggered
 // 0th byte is the s88_id
 // 1st byte is the sensor_no
-int triggerReadMCW(int MCW_tid){
+int triggerReadmarklin_worker(int marklin_worker_tid){
   char send_msg[4];
   send_msg[0] = SENSOR;
   send_msg[1] = -1;
   send_msg[2] = -1;
   send_msg[3] = -1; // this is function call
-  Send(MCW_tid, send_msg, 4, send_msg, 4);
+  Send(marklin_worker_tid, send_msg, 4, send_msg, 4);
   return *send_msg;
 }
 // outfacing methods
@@ -298,31 +301,31 @@ int triggerReadMCW(int MCW_tid){
 // 1st byte is the sensor_no
 
 
-void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
+void set_solonoid(int marklin_worker_tid, uint8_t sol_id, char state){
   char send_msg[4];
   send_msg[0] = SWITCH;
   send_msg[1] = sol_id;
   send_msg[2] = state;
   send_msg[3] = -1; // this is function call
-  Send(MCW_tid, send_msg, 4, send_msg, 4);
+  Send(marklin_worker_tid, send_msg, 4, send_msg, 4);
 }
 
-void set_train_state(int MCW_tid, uint8_t train_id, char speed){
+void set_train_state(int marklin_worker_tid, uint8_t train_id, char speed){
   char send_msg[4];
   send_msg[0] = TRAIN;
   send_msg[1] = train_id;
   send_msg[2] = speed;
   send_msg[3] = -1; // this is function call
-  Send(MCW_tid, send_msg, 4, send_msg, 4);
+  Send(marklin_worker_tid, send_msg, 4, send_msg, 4);
 }
   
-void MCW_read_notifier(){
-    RegisterAs("MCW_read_notifier");
+void marklin_worker_read_notifier(){
+    RegisterAs("marklin_worker_read_notifier");
     
     while (1)
     {
-      int MCC_tid = WhoIs("MCW");
-      triggerReadMCW(MCC_tid);
+      int MCC_tid = WhoIs("marklin_worker");
+      triggerReadmarklin_worker(MCC_tid);
     }
     Exit();
 }
@@ -341,20 +344,20 @@ int awaitTrigger(int track_server_tid, int s88_id, int sensor_no, int state){
   return *send_msg;
 }
 
-void set_switch(int MCW_tid, uint8_t sw_ind, char state){
+void set_switch(int marklin_worker_tid, uint8_t sw_ind, char state){
     int ret;
     // send the message to the switch server
     char send_msg[4];
     send_msg[0] = sw_ind;
     send_msg[1] = state;
-    Send(MCW_tid, send_msg, 4, &ret, 4);
+    Send(marklin_worker_tid, send_msg, 4, &ret, 4);
 }
-char get_switch(int MCW_tid, uint8_t sw_ind){
+char get_switch(int marklin_worker_tid, uint8_t sw_ind){
     int ret;
     // send the message to the switch server
     char send_msg[4];
     send_msg[0] = sw_ind;
     send_msg[1] = 0; // this is function call it 
-    Send(MCW_tid, send_msg, 4, send_msg, 4);
+    Send(marklin_worker_tid, send_msg, 4, send_msg, 4);
     return send_msg[1];
 }

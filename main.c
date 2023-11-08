@@ -22,8 +22,8 @@ void idle(){
 		uint32_t runtime = GetRuntime();
 		uint32_t kernelrt = GetKernelRuntime();
     // print the column and row onto 2 and 1
-    uart_printf(CONSOLE, "\033[2;1H");
-		uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
+    // uart_printf(CONSOLE, "\033[2;1H");
+		// uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
 		asm("WFI");
 	}
 	Exit();
@@ -75,15 +75,18 @@ int kmain(void *reg) {
   // create first user task
   tid = KernelCreate(2, init_solonoids, 0);
     // sensor servers
+
+
+  tid = KernelCreate(1, marklin_worker_read_notifier, 0);
+  uart_printf(CONSOLE, "marklin_worker_read_notifier tid: %d\r\n", tid);
+  tid = KernelCreate(1, marklin_worker, 0);
+  uart_printf(CONSOLE, "marklin_worker tid: %d\r\n", tid);
+  //uart_printf(CONSOLE, "marklin_worker tid: %d\r\n", tid);
+  // clear the screen
+  
   tid = KernelCreate(1, track_server, 0);
   uart_printf(CONSOLE, "track_server tid: %d\r\n", tid);
-  tid = KernelCreate(1, MCW_read_notifier, 0);
-  uart_printf(CONSOLE, "MCW_read_notifier tid: %d\r\n", tid);
-  tid = KernelCreate(1, MCW, 0);
-  uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
-  //uart_printf(CONSOLE, "MCW tid: %d\r\n", tid);
-  // clear the screen
-
+  
   KernelCreate(-2, command_shell, 0);
   uart_printf(CONSOLE, "\033[2J");
   // switch worker
