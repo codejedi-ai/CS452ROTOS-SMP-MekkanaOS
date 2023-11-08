@@ -68,7 +68,7 @@ void print_time_to_display(){
     Delay(clock_server_tid, 1);
     int cur_time = Time(clock_server_tid);
     // print the time on the top left corner
-    uart_printf(CONSOLE,"\033[%u;%uH", 1, 1);
+    uart_printf(CONSOLE,"\033[%u;%uH", 1, TICKSCOL);
     uart_printf(CONSOLE, "\033[K");
     uart_printf(CONSOLE, "\033[?25l");
     uart_printf(CONSOLE, "Ticks: %d", cur_time);
@@ -95,7 +95,7 @@ void print_logo(uint32_t r, uint32_t c){
   uart_printf(CONSOLE,"\033[%u;%uH", r, c);
   char *logo = "\r\n            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   uart_printf(CONSOLE, "%s\r\n", logo);
-  uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
+  uart_printf(CONSOLE, "Fixed the loop? \r\n");
   print_table_headers();
 }
 #include <stdio.h>
@@ -126,7 +126,7 @@ void command_shell(){
   uart_printf(CONSOLE, "\033[%d;%dH", SHELLROW, LOGO_WIDTH + SHELLCOL);
 	uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
 	char c = ' ';
-  int time_display_tid = Create(MyPriority(), print_time_to_display);
+  // int time_display_tid = Create(MyPriority(), print_time_to_display);
   // get who is switchSensorTrain_Server
   int switchSensorTrain_Server_tid = WhoIs("switchSensorTrain_Server");
   int msg;

@@ -19,7 +19,7 @@ struct train
     uint8_t light;
     
 };
-
+#define PREDICTNODECOL 130
 #define TABLEROW 50
 #define TABLECOL 50
 #define SENSORROW 50
