@@ -4,52 +4,86 @@
 #include "ioserver.h"
 #include "trainnsol.h"
 #include "custstr.h"
+#define SENSOR 0
+#define TRAIN 1
+#define SWITCH 2
 
-struct track_node* next_sensor_node(char* get_switch, struct track_node *current_node, int* dist)
+struct track_node* next_type_node(char* sw_states,int type, struct track_node *current_node, int* dist, int *isexit)
 {
-  *dist = 0;
   // the current node is a sensor node then the for loop would not run
   struct track_node *start_node = current_node;
-	while((start_node == current_node) || (current_node->type != NODE_SENSOR && current_node->type != NODE_EXIT)){
+	while((start_node == current_node) || (current_node->type != type && current_node->type != NODE_EXIT)){
 		// if the current position is a switch then we need to consult the switch table. Which is managed by the switch worker
+    // uart_printf(CONSOLE, "current_node: %s\r\n", current_node->name);
 		if(current_node->type == NODE_BRANCH){
-			char sw_state = get_switch[current_node->num];
+			char sw_state = sw_states[current_node->num];
 			// this is a switch
 			// check the switch table
 			// if the switch is set to straight then we need to return the straight node
 			if(sw_state == 'S'){
-				current_node = current_node->edge[0].dest;
+				
         *dist += current_node->edge[0].dist;
+        current_node = current_node->edge[0].dest;
+        // print the distance current_node->edge[0].dist
+        
+        
       }
 			// if the switch is set to curved then we need to return the curved node
 			if(sw_state == 'C'){
-				current_node = current_node->edge[1].dest;
+				
         *dist += current_node->edge[1].dist;
+        current_node = current_node->edge[1].dest;
+        
+        
 			}
-		}
-		current_node = current_node->edge[0].dest;
-    *dist += current_node->edge[0].dist;
+		}else{
+      
+      *dist += current_node->edge[0].dist;
+      current_node = current_node->edge[0].dest;
+      // print the distance current_node->edge[0].dist
+      
+      
+    }
   }
+  if(current_node->type == NODE_EXIT){
+    *isexit = 1;
+  }
+  // this node can be exit node or not
 	return current_node;
 }
-// next branch node
-struct track_node* next_branch_node(int sw_server_tid, struct track_node *current_node, int* dist){
-  /*
-	if(current_node->type == NODE_BRANCH)
-		return current_node;
-	if(current_node->type == NODE_EXIT)
-		return current_node;
-	return next_branch_node(sw_server_tid, current_node->edge[0].dest);
-  */
-  // write it iteratively
-  *dist = 0;
-  struct track_node *start_node = current_node;
-	while((start_node == current_node) || (current_node->type != NODE_BRANCH && current_node->type != NODE_EXIT)){
-    *dist += current_node->edge[0].dist;
-    current_node = current_node->edge[0].dest;
+int dist_to_node(char* sw_states, struct track_node *start_node, struct track_node *end_node){
+  int dist = 0;
+  // the current node is a sensor node then the for loop would not run
+  struct track_node *current_node = start_node;
+	while(current_node != end_node){
+		// if the current position is a switch then we need to consult the switch table. Which is managed by the switch worker
+    
+		if(current_node->type == NODE_BRANCH){
+			char sw_state = sw_states[current_node->num];
+			// this is a switch
+			// check the switch table
+			// if the switch is set to straight then we need to return the straight node
+			if(sw_state == 'S'){
+        dist += current_node->edge[0].dist;
+        current_node = current_node->edge[0].dest;
+        // print the distance current_node->edge[0].dist
+      }
+			// if the switch is set to curved then we need to return the curved node
+			if(sw_state == 'C'){
+        dist += current_node->edge[1].dist;
+        current_node = current_node->edge[1].dest;
+			}
+		}else{
+      dist += current_node->edge[0].dist;
+      current_node = current_node->edge[0].dest;
+      // print the distance current_node->edge[0].dist
+    }
   }
-  return current_node;
+  return dist;
 }
+
+
+
 void  get_track_node_map(struct track_node *track, struct track_node *trackmap[20][20]){
 	// iterate through all the SENSOR_NODEs and find the one that matches the s88_id and sensor_no
 	// the s88_id is the s88 that is triggered in alphabet A,B,C,D
@@ -77,6 +111,7 @@ struct track_node* get_track_node(struct track_node *trackmap[20][20], int s88_i
 	//uart_printf(CONSOLE, "name:%s s88_id = %d, sensor_no = %d\r\n",trackmap[s88_id][sensor_no]->name, s88_id, sensor_no);
 	return trackmap[s88_id][sensor_no];
 }
+// PRINT FUNCTIONS BEGIN
 void print_sw_states(char *sw_states, uint32_t r, uint32_t c, uint8_t sw_ind){
   uart_printf(CONSOLE,"\033[%u;%uH",r,c);
   uart_puts(CONSOLE, "SW");
@@ -147,13 +182,11 @@ void switchSensorTrain_Server(){
   RegisterAs("switchSensorTrain_Server");
 
   int tid_buf = 0, buf = 0;
-  Receive(&tid_buf, &buf, 0);
-  Reply(tid_buf, &buf, 0);
 
   struct train train_list[TRAIN_MAX];
   int train_speed[TRAIN_MAX];
   int sensor_pushed[TRAIN_MAX];
-  struct track_node *track;
+  struct track_node track[TRACK_MAX];
   init_tracka(track);
   struct track_node *trackmap[20][20];
   get_track_node_map(track, trackmap);
@@ -163,6 +196,7 @@ void switchSensorTrain_Server(){
   char prev_changed_s88 = -1;
   char prev_changed_sensor = -1;
   char prev_changed_switch = -1;
+  uint32_t prev_time = Time(WhoIs("clock_server"));
   struct train cur_train;
   int offset = 0;
   // set the pointer to the correct location for table qith TABLEROW and TABLECOL
@@ -207,12 +241,15 @@ void switchSensorTrain_Server(){
     send_msg[0] = trainNO; // the s88 that is triggered
     send_msg[1] = speed; // the sensor that is triggered
     send_msg[2] = -1; // is the type of update
-    send_msg[3] = 2; // 2 means switch update
+    send_msg[3] = SWITCH; // 2 means switch update
     */
    
    
     char type = msg[3];
-    if(type == 0){
+    if(type == SENSOR){
+      Reply(tid, msg, 0);
+      // uart_printf(CONSOLE, "\033[37mSWITCH PRESSED!!");
+      
       char s88_id = msg[0];
       int sensor_no = msg[1];
       int is_released = msg[2];
@@ -221,48 +258,56 @@ void switchSensorTrain_Server(){
         cur_train.sensor_time = Time(clock_server_tid);
         cur_train.position = get_track_node(trackmap, s88_id, sensor_no);
         // uart_printf(CONSOLE, "TRAIN DETECTED: %s\r\n", cur_train.position->name);
-      }else if(cur_train.position != get_track_node(trackmap, s88_id, sensor_no)){
+      }
+      else if(cur_train.position != get_track_node(trackmap, s88_id, sensor_no)){
+        int current_time = Time(clock_server_tid);
+        uint32_t time_diff = current_time - prev_time, dist = 0, isexit = 0;
+        prev_time = current_time;
+      /*
         // void sensor_push(int sen, int arr[], size_t alen)
         sensor_push(s88_id * 17 + sensor_no, sensor_pushed, TRAIN_MAX);
         //void print_sensors(int arr[], size_t alen, unsigned int column, unsigned int row, size_t line) 
         print_sensors(sensor_pushed, TRAIN_MAX, SENSORCOL, SENSORROW, CONSOLE);
         // get elapsed time
-        int current_time = Time(clock_server_tid);
-        int time_diff = current_time - cur_train.sensor_time;
+        
+        
         // get current track node
         struct track_node *current_node = get_track_node(trackmap, s88_id, sensor_no);
+        struct track_node *previouse_node = get_track_node(trackmap, prev_changed_s88, prev_changed_sensor);
         // get the distance between the current node and the previous node
-        int dist = 0;
-        struct track_node *cur_pred = next_sensor_node(sw_states, cur_train.position, &dist);
+        
+        uart_printf(CONSOLE,"\033[%u;%uHDEAD on %s",TABLEROW + offset,TABLECOL, cur_train.position->name);
+        // print the current train position name
+        // struct track_node *cur_pred = next_type_node(sw_states, NODE_SENSOR, cur_train.position, &dist, &isexit);
         // print in the format of prev node, cur node, dist, time, speed
-        // uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
+        uart_printf(CONSOLE,"\033[%u;%uHPHEW STILL ALIVE",TABLEROW + offset,TABLECOL);
+        //
         // update the current train position
+        // if the name of the pred is not equal the ame of the current
+             
+        // uart_printf(CONSOLE, "prev_node: %s, cur_node: %s, previouse_node: %s, cur_pred: %s\r\n", cur_train.position->name, current_node->name, previouse_node->name, cur_pred->name);
+        // print in white
+        uart_printf(CONSOLE, "\033[37m");
+        // train position is the last known train position
+
         cur_train.position = current_node;
         cur_train.sensor_time = current_time;
-        if (strcmp_ret(cur_train.position->name, current_node->name)){
-          new_table_row(prev_changed_s88, prev_changed_sensor, s88_id, sensor_no, dist, time_diff, &offset);
-        }else {
-          // print in red
-          uart_printf(CONSOLE, "\033[31m");
-          uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + offset,TABLECOL);
-          // this means there is a node broken, print the names of the nodes
-          uart_printf(CONSOLE, "SENSOR ERROR prev_node: %s, cur_node: %s, dist: %d, time: %d, speed: %d\r\n", cur_train.position->name, current_node->name, dist, time_diff, dist/time_diff);
-          // print in white
-          uart_printf(CONSOLE, "\033[37m");
-          offset++;
-        }
+        */
+        new_table_row(prev_changed_s88, prev_changed_sensor, s88_id, sensor_no, dist, time_diff, &offset);
       }        
       prev_changed_s88 = s88_id;
       prev_changed_sensor = sensor_no;
       prev_changed_switch = is_released;
+      
     }  
-    if(type == 1){
+    if(type == SWITCH){
       char switch_no = msg[0];
       char switch_state = msg[1];
       sw_states[switch_no] = switch_state;
-      print_switch(switch_no, sw_states, CONSOLE);
+      print_switch(switch_no, (char)switch_state, CONSOLE);
+      Reply(tid, msg, 0);
     }
-    if(type == 2){
+    if(type == TRAIN){
       char train_no = msg[0];
       char speed = msg[1];
       // print in green
@@ -272,8 +317,9 @@ void switchSensorTrain_Server(){
       // print in white
       uart_printf(CONSOLE, "\033[37m");
       offset++;
+      Reply(tid, msg, 0);
     }
-    Reply(tid, msg, 0);
+    
   }
   
   Exit();

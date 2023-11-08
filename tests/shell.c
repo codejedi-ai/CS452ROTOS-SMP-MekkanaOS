@@ -92,7 +92,7 @@ void print_server(){
 }
 void print_logo(uint32_t r, uint32_t c){
   // move cursor to r1,c1
-  uart_printf(CONSOLE,"\033[%u;%uH", SHELLROW, SHELLCOL);
+  uart_printf(CONSOLE,"\033[%u;%uH", r, c);
   char *logo = "\r\n            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   uart_printf(CONSOLE, "%s\r\n", logo);
   uart_printf(CONSOLE, "Modified main to busywait \r\nHello World I am d273liu\r\n");
@@ -112,7 +112,7 @@ int calculate_digits(int num) {
 void command_shell(){
   
   Delay(WhoIs("clock_server"), 100);
-  print_logo(SHELLROW, SHELLCOL);
+  print_logo(SHELLROW - 2, SHELLCOL);
 	// print in white font
 	uart_printf(CONSOLE, "\033[37m");
 	// register the k2

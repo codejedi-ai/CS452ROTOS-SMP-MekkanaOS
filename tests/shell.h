@@ -1,4 +1,4 @@
-#define SHELLROW 5
+#define SHELLROW 20
 #define SHELLCOL 1
 #define LOGOOFFSET 10
 #define LOGO_WIDTH 70

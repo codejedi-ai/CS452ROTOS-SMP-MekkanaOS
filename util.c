@@ -172,13 +172,13 @@ void print_switch(int s, char c, size_t line) {
   
   if (s > 100) {
     s = s - 153;
-    uart_printf(line, "\033[%u;%uH",row2 + (s / 2), col2 + step2 * (s % 2));
+    uart_printf(line, "\033[%u;%uH SW %d:",row2 + (s / 2), col2 + step2 * (s % 2), s + 153);
     uart_putc(line, c);
   
   }
   else {
     s = s - 1;
-    uart_printf(line, "\033[%u;%uH",row + (s / 4), col + step * (s % 4));
+    uart_printf(line, "\033[%u;%uH SW %d:",row + (s / 4), col + step * (s % 4), s + 1);
     uart_putc(line, c);
   
   }

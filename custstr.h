@@ -14,6 +14,6 @@ int strcmp_ret(char* s1, char* s2);
 int parse_char_arr(char *arr, char **num, int num_size);
 
 
-int strcpy(char *dest, int lenDes, char *src, int lenSrc);
+int cust_strcpy(char *dest, int lenDes, char *src, int lenSrc);
 
 void strflush(char* msg, uint8_t msglen);

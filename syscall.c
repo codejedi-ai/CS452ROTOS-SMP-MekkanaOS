@@ -608,7 +608,7 @@ void recieve_helper(int PID){
 		// strflush(curread_msg, curread_message_length); 
 	# endif
 	// msg is the destination curread_msg is the source
-	// msglen = strcpy(msg, msglen - 1, curread_msg, curread_message_length - 1) + 1;
+	// msglen = cust_strcpy(msg, msglen - 1, curread_msg, curread_message_length - 1) + 1;
 	msglen = min(msglen, curread_message_length);
 	memcpy(msg, curread_msg, msglen);
 	
@@ -666,7 +666,7 @@ void reply_helper(){
 	// // uart_printf(CONSOLE, "*reply is %c\r\n", *reply);
 	replylen = min(reply_buffer_len, replylen);
 	memcpy(reply_buffer, reply, replylen);
-	// replylen = strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
+	// replylen = cust_strcpy(reply_buffer, reply_buffer_len - 1, reply, replylen - 1) + 1;
 
 	
 	# if DEBUG == 2

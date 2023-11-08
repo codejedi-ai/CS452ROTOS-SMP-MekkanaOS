@@ -57,12 +57,12 @@ int set_play(char* move, uint32_t tid, struct game *games){
 	{
 		if (games[i].tid1 == tid){
 			games[i].tid1_move[0] = 0;
-			strcpy(games[i].tid1_move, 10, move, 10);
+			cust_strcpy(games[i].tid1_move, 10, move, 10);
 			return i;
 		}
 		if (games[i].tid2 == tid){
 			games[i].tid2_move[0] = 0;
-			strcpy(games[i].tid2_move, 10, move, 10);
+			cust_strcpy(games[i].tid2_move, 10, move, 10);
 			return i;
 		}
 	}

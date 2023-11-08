@@ -66,7 +66,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       uart_printf(CONSOLE, "Invalid trainid\r\n");
       return 1;
     }
-    set_reverse(MCC_tid, trainid, speed);
+    uart_printf(CONSOLE, "Reversing train (NOT ACTUALLY)%d\r\n", trainid);
     return 0;
   }
   // testing stopping distance. If this is executed the marklin would make a task that would execute the stop commmand when the train has hit a sensor node
@@ -77,7 +77,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
       uart_printf(CONSOLE, "Invalid trainid\r\n");
       return 1;
     }
-    set_reverse(MCC_tid, trainid, speed);
+    uart_printf(CONSOLE, "NOT IMPLEMENTED: Testing stopping distance for train %d\r\n", trainid);
     return 0;
   }
   return 2;

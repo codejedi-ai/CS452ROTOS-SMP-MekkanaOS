@@ -366,22 +366,22 @@ Disassembly of section .text:
    80c88:	9100c3ff 	add	sp, sp, #0x30
    80c8c:	d65f03c0 	ret
 
-0000000000080c90 <strcpy>:
+0000000000080c90 <cust_strcpy>:
    80c90:	d100c3ff 	sub	sp, sp, #0x30
    80c94:	f9000fe0 	str	x0, [sp, #24]
    80c98:	b90017e1 	str	w1, [sp, #20]
    80c9c:	f90007e2 	str	x2, [sp, #8]
    80ca0:	b90013e3 	str	w3, [sp, #16]
    80ca4:	b9002fff 	str	wzr, [sp, #44]
-   80ca8:	14000016 	b	80d00 <strcpy+0x70>
+   80ca8:	14000016 	b	80d00 <cust_strcpy+0x70>
    80cac:	b9402fe1 	ldr	w1, [sp, #44]
    80cb0:	b94013e0 	ldr	w0, [sp, #16]
    80cb4:	6b00003f 	cmp	w1, w0
-   80cb8:	540002ea 	b.ge	80d14 <strcpy+0x84>  // b.tcont
+   80cb8:	540002ea 	b.ge	80d14 <cust_strcpy+0x84>  // b.tcont
    80cbc:	b9402fe1 	ldr	w1, [sp, #44]
    80cc0:	b94017e0 	ldr	w0, [sp, #20]
    80cc4:	6b00003f 	cmp	w1, w0
-   80cc8:	540002aa 	b.ge	80d1c <strcpy+0x8c>  // b.tcont
+   80cc8:	540002aa 	b.ge	80d1c <cust_strcpy+0x8c>  // b.tcont
    80ccc:	f94007e0 	ldr	x0, [sp, #8]
    80cd0:	39400001 	ldrb	w1, [x0]
    80cd4:	f9400fe0 	ldr	x0, [sp, #24]
@@ -398,10 +398,10 @@ Disassembly of section .text:
    80d00:	f94007e0 	ldr	x0, [sp, #8]
    80d04:	39400000 	ldrb	w0, [x0]
    80d08:	7100001f 	cmp	w0, #0x0
-   80d0c:	54fffd01 	b.ne	80cac <strcpy+0x1c>  // b.any
-   80d10:	14000004 	b	80d20 <strcpy+0x90>
+   80d0c:	54fffd01 	b.ne	80cac <cust_strcpy+0x1c>  // b.any
+   80d10:	14000004 	b	80d20 <cust_strcpy+0x90>
    80d14:	d503201f 	nop
-   80d18:	14000002 	b	80d20 <strcpy+0x90>
+   80d18:	14000002 	b	80d20 <cust_strcpy+0x90>
    80d1c:	d503201f 	nop
    80d20:	f9400fe0 	ldr	x0, [sp, #24]
    80d24:	3900001f 	strb	wzr, [x0]
@@ -537,7 +537,7 @@ Disassembly of section .text:
    80f0c:	52800143 	mov	w3, #0xa                   	// #10
    80f10:	f94017e2 	ldr	x2, [sp, #40]
    80f14:	52800141 	mov	w1, #0xa                   	// #10
-   80f18:	97ffff5e 	bl	80c90 <strcpy>
+   80f18:	97ffff5e 	bl	80c90 <cust_strcpy>
    80f1c:	b9403fe0 	ldr	w0, [sp, #60]
    80f20:	1400002b 	b	80fcc <set_play+0x158>
    80f24:	b9803fe1 	ldrsw	x1, [sp, #60]
@@ -573,7 +573,7 @@ Disassembly of section .text:
    80f9c:	52800143 	mov	w3, #0xa                   	// #10
    80fa0:	f94017e2 	ldr	x2, [sp, #40]
    80fa4:	52800141 	mov	w1, #0xa                   	// #10
-   80fa8:	97ffff3a 	bl	80c90 <strcpy>
+   80fa8:	97ffff3a 	bl	80c90 <cust_strcpy>
    80fac:	b9403fe0 	ldr	w0, [sp, #60]
    80fb0:	14000007 	b	80fcc <set_play+0x158>
    80fb4:	b9403fe0 	ldr	w0, [sp, #60]
@@ -1846,7 +1846,7 @@ Disassembly of section .text:
    822f8:	910c8002 	add	x2, x0, #0x320
    822fc:	52800641 	mov	w1, #0x32                  	// #50
    82300:	aa0403e0 	mov	x0, x4
-   82304:	97fffa63 	bl	80c90 <strcpy>
+   82304:	97fffa63 	bl	80c90 <cust_strcpy>
    82308:	910263e1 	add	x1, sp, #0x98
    8230c:	910333e0 	add	x0, sp, #0xcc
    82310:	b96033e2 	ldr	w2, [sp, #8240]
@@ -1888,7 +1888,7 @@ Disassembly of section .text:
    823a0:	52800643 	mov	w3, #0x32                  	// #50
    823a4:	aa0103e2 	mov	x2, x1
    823a8:	52800641 	mov	w1, #0x32                  	// #50
-   823ac:	97fffa39 	bl	80c90 <strcpy>
+   823ac:	97fffa39 	bl	80c90 <cust_strcpy>
    823b0:	b940cfe3 	ldr	w3, [sp, #204]
    823b4:	52800322 	mov	w2, #0x19                  	// #25
    823b8:	b0000020 	adrp	x0, 87000 <el1_a32_serror+0x80>
@@ -3845,7 +3845,7 @@ Disassembly of section .text:
    84134:	2a0003e3 	mov	w3, w0
    84138:	f9401be2 	ldr	x2, [sp, #48]
    8413c:	f94027e0 	ldr	x0, [sp, #72]
-   84140:	97fff2d4 	bl	80c90 <strcpy>
+   84140:	97fff2d4 	bl	80c90 <cust_strcpy>
    84144:	11000400 	add	w0, w0, #0x1
    84148:	b90047e0 	str	w0, [sp, #68]
    8414c:	f0000000 	adrp	x0, 87000 <el1_a32_serror+0x80>
@@ -3975,7 +3975,7 @@ Disassembly of section .text:
    84334:	2a0003e3 	mov	w3, w0
    84338:	f9401be2 	ldr	x2, [sp, #48]
    8433c:	f94013e0 	ldr	x0, [sp, #32]
-   84340:	97fff254 	bl	80c90 <strcpy>
+   84340:	97fff254 	bl	80c90 <cust_strcpy>
    84344:	11000400 	add	w0, w0, #0x1
    84348:	b9002fe0 	str	w0, [sp, #44]
    8434c:	b9403be0 	ldr	w0, [sp, #56]

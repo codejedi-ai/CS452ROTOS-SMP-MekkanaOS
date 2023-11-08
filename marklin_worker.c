@@ -11,6 +11,9 @@
 #include "trainnsol.h"
 #include "marklin_worker.h"
 #define s88_no 5
+#define SENSOR 0
+#define TRAIN 1
+#define SWITCH 2
 struct circular_list
 {
   uint32_t data[s88_no];
@@ -136,7 +139,7 @@ void helper_send_message_to_server(int my_tid, int switchSensorTrain_Server_tid,
     send_msg[0] = s88_id; // the s88 that is triggered
     send_msg[1] = sensor_no; // the sensor that is triggered
     send_msg[2] = is_released; // is the type of update
-    send_msg[3] = 0; // 0 means sensor update
+    send_msg[3] = SENSOR; // 0 means sensor update
     Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
     /* code */
     changed = changed - last_set_bit;
@@ -200,22 +203,21 @@ void MCW()
     char type = msg[0];
     char id = msg[1];
     char state = msg[2];
-    if(type == 3){
-      // this is a function call
-      // add the tid to the circular list
-      // set the train speed
-      execute_train_command(io_TXIC_MARKLIN_server_pid, id, 0);
-      execute_train_command(io_TXIC_MARKLIN_server_pid, id, 15);
-      execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
-      Reply(tid, msg, 4);
-    }
-    if(type == 2){
+    if(type == SWITCH){
       // this is a function call
       // add the tid to the circular list
       // set the train speed
       solonoid_command(io_TXIC_MARKLIN_server_pid, id, state);
+      char send_msg[4];
+      char switch_id = id;
+      char switch_state = state;
+      send_msg[0] = switch_id; // the s88 that is triggered
+      send_msg[1] = switch_state; // the sensor that is triggered
+      send_msg[2] = -1; // is the type of update
+      send_msg[3] = SWITCH; // 2 means switch update
+      Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
       Reply(tid, msg, 4);
-    }else if(type == 1){
+    }else if(type == TRAIN){
       // this is a function call
       // add the tid to the circular list
       // set the train speed
@@ -224,8 +226,16 @@ void MCW()
       uart_printf(CONSOLE, "Train %d speed changed to %d\r\n", id, state);
       uart_printf(CONSOLE, "\033[37m");
       execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
+      char send_msg[4];
+      char train_id = id;
+      char train_speed = state;
+      send_msg[0] = train_id; // the s88 that is triggered
+      send_msg[1] = train_speed; // the sensor that is triggered
+      send_msg[2] = -1; // is the type of update
+      send_msg[3] = TRAIN; // 2 means train update
+      Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
       Reply(tid, msg, 4);
-    }else if(type == 0){
+    }else if(type == SENSOR){
       // READ THE MARKLIN initiate a read
       char reta[s88_no];
       char retb[s88_no];
@@ -274,7 +284,7 @@ void MCW()
 // 1st byte is the sensor_no
 int triggerReadMCW(int MCW_tid){
   char send_msg[4];
-  send_msg[0] = 0;
+  send_msg[0] = SENSOR;
   send_msg[1] = -1;
   send_msg[2] = -1;
   send_msg[3] = -1; // this is function call
@@ -289,7 +299,7 @@ int triggerReadMCW(int MCW_tid){
 
 void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
   char send_msg[4];
-  send_msg[0] = 2;
+  send_msg[0] = SWITCH;
   send_msg[1] = sol_id;
   send_msg[2] = state;
   send_msg[3] = -1; // this is function call
@@ -298,15 +308,7 @@ void set_solonoid(int MCW_tid, uint8_t sol_id, char state){
 
 void set_train_state(int MCW_tid, uint8_t train_id, char speed){
   char send_msg[4];
-  send_msg[0] = 1;
-  send_msg[1] = train_id;
-  send_msg[2] = speed;
-  send_msg[3] = -1; // this is function call
-  Send(MCW_tid, send_msg, 4, send_msg, 4);
-}
-void set_reverse(int MCW_tid, uint8_t train_id, char speed){
-  char send_msg[4];
-  send_msg[0] = 3;
+  send_msg[0] = TRAIN;
   send_msg[1] = train_id;
   send_msg[2] = speed;
   send_msg[3] = -1; // this is function call

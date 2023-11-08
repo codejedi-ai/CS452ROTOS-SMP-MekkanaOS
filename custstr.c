@@ -1,7 +1,7 @@
 #include "custstr.h"
 #include "rpi.h"
 #include "util.h"
-
+#include <string.h>
 int8_t is_empty(char *str){
   return (*str == '\0');
 }
@@ -108,7 +108,7 @@ int parse_char_arr(char *arr, char **num, int num_size){
 // dest string, dest str size str and the part in which you want
 
 
-int strcpy(char *dest, int lenDes, char *src, int lenSrc){
+int cust_strcpy(char *dest, int lenDes, char *src, int lenSrc){
 	int i = 0;
 	while (*src) {
 		if (i >= lenSrc) {break;}

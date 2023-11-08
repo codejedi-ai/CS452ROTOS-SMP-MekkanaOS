@@ -56,8 +56,8 @@ void nameserver(){
 	{
 		pid_names[i][0] = 0;
 	}
-	strcpy(pid_names[1], 50, "nameserver", 50);
-	strcpy(pid_names[0], 50, "kernel", 50);
+	cust_strcpy(pid_names[1], 50, "nameserver", 50);
+	cust_strcpy(pid_names[0], 50, "kernel", 50);
 	while (1)
 	{
 
@@ -79,7 +79,7 @@ void nameserver(){
 		cmp = strcmp_ret(command, command_cand);
 
 		if (cmp){
-			strcpy(pid_names[tid], 50, name, 50);
+			cust_strcpy(pid_names[tid], 50, name, 50);
 			// this registers a PID with a name
 			// change font to blue
 			# if DEBUG == 2
