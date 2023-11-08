@@ -1,0 +1,7 @@
+#define PREDICTNODECOL 130
+#define TABLEROW 50
+#define TABLECOL 50
+#define SENSORROW 50
+#define SENSORCOL 0
+#define SWITCH_COUNT 18
+void speed_gather();
