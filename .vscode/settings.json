@@ -15,6 +15,12 @@
         "mcc.h": "c",
         "gic.h": "c",
         "util.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "processes.h": "c",
+        "syscall.h": "c",
+        "asm.h": "c",
+        "trainnsol.h": "c",
+        "shell.h": "c",
+        "marklin_worker.h": "c"
     }
 }

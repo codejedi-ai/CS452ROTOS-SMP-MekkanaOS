@@ -1,13 +1,14 @@
-#include "processes.h"
-#include "rpi.h"
-#include "asm.h"
-#include "syscall.h"
-#include "nameserver.h"
-#include "custstr.h"
-#include "gameserver.h"
-#include "systimer.h"
-#include "clockserver.h"
-#include "util.h"
+#include "../processes.h"
+#include "../rpi.h"
+#include "../asm.h"
+#include "../syscall.h"
+#include "../nameserver.h"
+#include "../custstr.h"
+#include "../gameserver.h"
+#include "../systimer.h"
+#include "../clockserver.h"
+#include "../util.h"
+
 #include "trainnsol.h"
 #include "marklin_worker.h"
 #define s88_no 5
@@ -127,7 +128,7 @@ void execute_train_command(int io_TXIC_MARKLIN_server_pid, unsigned char id, // 
 
 
 
-void helper_send_message_to_server(int my_tid, int switchSensorTrain_Server_tid, uint8_t s88_no_i, uint8_t changed, uint8_t is_b, uint8_t is_released)
+void helper_send_message_to_server(int my_tid, int track_server_tid, uint8_t s88_no_i, uint8_t changed, uint8_t is_b, uint8_t is_released)
 {
   while (changed != 0)
   {
@@ -140,7 +141,7 @@ void helper_send_message_to_server(int my_tid, int switchSensorTrain_Server_tid,
     send_msg[1] = sensor_no; // the sensor that is triggered
     send_msg[2] = is_released; // is the type of update
     send_msg[3] = SENSOR; // 0 means sensor update
-    Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
+    Send(track_server_tid, send_msg, 4, send_msg, 0);
     /* code */
     changed = changed - last_set_bit;
   }
@@ -151,12 +152,12 @@ void helper_send_message_to_server(int my_tid, int switchSensorTrain_Server_tid,
 // this is the MCW worker task,
 /*
 It keeps track of the trains and the sensors
-It would notify the switchSensorTrain_Server when there is a change in the sensors
+It would notify the track_server when there is a change in the sensors
 It would keep track of the positions of the trains
 */
 void MCW()
 {
-  // create switchSensorTrain_Server
+  // create track_server
   uint32_t io_TXIC_MARKLIN_server_pid;
   uint32_t io_RXIC_MARKLIN_server_pid;
   // uint32_t io_CTS_MARKLIN_server_pid;
@@ -166,7 +167,7 @@ void MCW()
 
   RegisterAs("MCW");
   int my_tid = MyTid();
-  // notify the switchSensorTrain_Server the most recent changes with the track sensors
+  // notify the track_server the most recent changes with the track sensors
   // if two sensors changed within the same reading, then return them in the order of the s88 lables
   // this also calls the display task
 
@@ -182,7 +183,7 @@ void MCW()
   // set cursor location to i, j
   while (1)
   {
-    int switchSensorTrain_Server_tid = WhoIs("switchSensorTrain_Server");
+    int track_server_tid = WhoIs("track_server");
     io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
     io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
       // send command format 4 bytes
@@ -215,7 +216,7 @@ void MCW()
       send_msg[1] = switch_state; // the sensor that is triggered
       send_msg[2] = -1; // is the type of update
       send_msg[3] = SWITCH; // 2 means switch update
-      Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
+      Send(track_server_tid, send_msg, 4, send_msg, 0);
       Reply(tid, msg, 4);
     }else if(type == TRAIN){
       // this is a function call
@@ -233,7 +234,7 @@ void MCW()
       send_msg[1] = train_speed; // the sensor that is triggered
       send_msg[2] = -1; // is the type of update
       send_msg[3] = TRAIN; // 2 means train update
-      Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 0);
+      Send(track_server_tid, send_msg, 4, send_msg, 0);
       Reply(tid, msg, 4);
     }else if(type == SENSOR){
       // READ THE MARKLIN initiate a read
@@ -260,10 +261,10 @@ void MCW()
         uint8_t triggered_b = b & (~prev_b);
         uint8_t relased_b = prev_b & (~b);
         
-        helper_send_message_to_server(my_tid, switchSensorTrain_Server_tid, i, triggered_a, 0, 0);
-        helper_send_message_to_server(my_tid, switchSensorTrain_Server_tid, i, triggered_b, 1, 0);
-        helper_send_message_to_server(my_tid, switchSensorTrain_Server_tid, i, relased_a, 0, 1);
-        helper_send_message_to_server(my_tid, switchSensorTrain_Server_tid, i, relased_b, 1, 1);
+        helper_send_message_to_server(my_tid, track_server_tid, i, triggered_a, 0, 0);
+        helper_send_message_to_server(my_tid, track_server_tid, i, triggered_b, 1, 0);
+        helper_send_message_to_server(my_tid, track_server_tid, i, relased_a, 0, 1);
+        helper_send_message_to_server(my_tid, track_server_tid, i, relased_b, 1, 1);
 
         prev_reta[i] = a;
         prev_retb[i] = b;
@@ -330,13 +331,13 @@ void MCW_read_notifier(){
 // state is 0 for triggered, 1 for released
 // for s88_id can use A, B, C, D, E or 0 to 4
 // for sensor_no can use 1 to 16
-int awaitTrigger(int switchSensorTrain_Server_tid, int s88_id, int sensor_no, int state){
+int awaitTrigger(int track_server_tid, int s88_id, int sensor_no, int state){
   char send_msg[4];
   send_msg[0] = s88_id;
   send_msg[1] = sensor_no;
   send_msg[2] = state;
   send_msg[3] = 2; // this is function call
-  Send(switchSensorTrain_Server_tid, send_msg, 4, send_msg, 4);
+  Send(track_server_tid, send_msg, 4, send_msg, 4);
   return *send_msg;
 }
 

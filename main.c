@@ -5,9 +5,11 @@
 #include "clockserver.h"
 #include "ioserver.h"
 #include "gameserver.h"
-#include "marklin_worker.h"
+
 #include "gic.h"
-#include "trainnsol.h"
+
+#include "tc1/marklin_worker.h"
+#include "tc1/trainnsol.h"
 #include "tests/shell.h"
 void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
@@ -73,8 +75,8 @@ int kmain(void *reg) {
   // create first user task
   tid = KernelCreate(2, init_solonoids, 0);
     // sensor servers
-  tid = KernelCreate(1, switchSensorTrain_Server, 0);
-  uart_printf(CONSOLE, "switchSensorTrain_Server tid: %d\r\n", tid);
+  tid = KernelCreate(1, track_server, 0);
+  uart_printf(CONSOLE, "track_server tid: %d\r\n", tid);
   tid = KernelCreate(1, MCW_read_notifier, 0);
   uart_printf(CONSOLE, "MCW_read_notifier tid: %d\r\n", tid);
   tid = KernelCreate(1, MCW, 0);

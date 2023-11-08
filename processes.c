@@ -10,7 +10,7 @@
 
 #include "systimer.h"
 #include "tests/tc1tests.h"
-#include "marklin_worker.h"
+#include "tc1/marklin_worker.h"
 #include "ioserver.h"
 
 #define DISPLAY 1

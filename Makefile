@@ -20,7 +20,7 @@ LDFLAGS:=-Wl,-nmagic -Wl,-Tlinker.ld
 
 # Source files and include dirs
 
-SOURCES := $(wildcard tests/*.c) $(wildcard *.c) $(wildcard *.S) 
+SOURCES := $(wildcard tc1/*.c) $(wildcard tests/*.c) $(wildcard *.c) $(wildcard *.S) 
 # Create .o and .d files for every .cc and .S (hand-written assembly) file
 OBJECTS := $(patsubst %.c, %.o, $(patsubst %.S, %.o, $(SOURCES)))
 DEPENDS := $(patsubst %.c, %.d, $(patsubst %.S, %.d, $(SOURCES)))

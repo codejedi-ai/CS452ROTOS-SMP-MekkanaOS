@@ -4,7 +4,7 @@
 #include "../clockserver.h"
 #include "../syscall.h"
 #include "../custstr.h"
-#include "../trainnsol.h"
+#include "../tc1/trainnsol.h"
 #include "shell.h"
 
 static const size_t COMMANDMAX_LEN = 64;
@@ -108,7 +108,17 @@ int calculate_digits(int num) {
     }
     return count;
 }
-
+void test_new_server_functions(){
+  /*
+  void get_sensor_pushed(int track_server_tid, int sensor_pushed[], int train_max);
+  void get_switch_states(int track_server_tid, char sw_states[], int switch_count);
+  void init_track(int track_server_tid, char track_id);
+  void init_train(int track_server_tid, char train_no, char s88_id, char sensor_id);
+  void deregister_train(int track_server_tid, char train_no);
+  uint64_t awit_sensor(int track_server_tid);
+  */
+  Exit();
+}
 void command_shell(){
   
   Delay(WhoIs("clock_server"), 100);
@@ -127,13 +137,16 @@ void command_shell(){
 	uart_printf(CONSOLE, "DARCY[%u]> ", counter++);
 	char c = ' ';
   // int time_display_tid = Create(MyPriority(), print_time_to_display);
-  // get who is switchSensorTrain_Server
-  int switchSensorTrain_Server_tid = WhoIs("switchSensorTrain_Server");
+  // get who is track_server
+  int track_server_tid = WhoIs("track_server");
   int msg;
-  Send(switchSensorTrain_Server_tid, &msg, 0, &msg, 0);
+  Send(track_server_tid, &msg, 0, &msg, 0);
 	while (!(strcmp_ret(command, "quit"))) {
+    int track_server_tid = WhoIs("track_server");
 		while (!uart_getc_queue(CONSOLE)) {
-			Yield();
+      int sensor_pushed[10];
+      get_sensor_pushed(track_server_tid, sensor_pushed, 10);
+      print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
 		}
 		c = uart_getc_modified(CONSOLE);
 		if (c == '\r') {
