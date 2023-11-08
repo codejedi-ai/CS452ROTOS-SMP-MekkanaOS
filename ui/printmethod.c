@@ -1,8 +1,8 @@
-#include "rpi.h"
-#include "util.h"
-#include "ioserver.h"
-#include "clockserver.h"
-#include "custstr.h"
+#include "../rpi.h"
+#include "../util.h"
+#include "../ioserver.h"
+#include "../clockserver.h"
+#include "../custstr.h"
 
 
 static const size_t COMMANDMAX_LEN = 64;

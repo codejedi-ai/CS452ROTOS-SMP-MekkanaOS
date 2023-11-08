@@ -9,8 +9,8 @@
 #include "gic.h"
 
 #include "tc1/marklin_worker.h"
-#include "tc1/trainnsol.h"
-#include "tests/shell.h"
+#include "tc1/track_server.h"
+#include "ui/shell.h"
 void* STACK_EL0_START; // Maybe delete this later
 #define CLOCKINTID 99
 #define CLOCKSERVERON 1

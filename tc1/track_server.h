@@ -27,7 +27,6 @@ struct train
 #define TABLECOL 50
 #define SENSORROW 50
 #define SENSORCOL 0
-void print_table_headers();
 void get_sensor_pushed(int track_server_tid, int sensor_pushed[], int train_max);
 void get_switch_states(int track_server_tid, char sw_states[], int switch_count);
 void init_track(int track_server_tid, char track_id);

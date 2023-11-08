@@ -1,0 +1,6 @@
+      // print in green
+      uart_printf(CONSOLE, "\033[32m");
+      uart_printf(CONSOLE,"\033[%u;%uH", TABLEROW + offset, TABLECOL);
+      uart_printf(CONSOLE, "train_no: %d, speed: %d\r\n", train_no, speed);
+      // print in white
+      uart_printf(CONSOLE, "\033[37m");

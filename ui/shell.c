@@ -4,7 +4,7 @@
 #include "../clockserver.h"
 #include "../syscall.h"
 #include "../custstr.h"
-#include "../tc1/trainnsol.h"
+#include "../tc1/track_server.h"
 #include "shell.h"
 
 static const size_t COMMANDMAX_LEN = 64;
@@ -90,6 +90,36 @@ void print_server(){
 
 
 }
+
+void print_table_headers(){
+  /*
+  
+  | Previous  Sensor | current sensor | Distance traveled | Time Elapsed (Ticks) |
+| --- | --- | --- | --- |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+*/
+
+
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 2,TABLECOL);
+  uart_printf(CONSOLE,"| Previous  Sensor | current sensor | Distance traveled | Time Elapsed (Ticks) |\r\n");
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 1 ,TABLECOL);
+  uart_printf(CONSOLE,"| --- | --- | --- | --- |\r\n");
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW,1);
+  /*
+  #define SENSORROW 50
+#define SENSORCOL 0
+  */
+  uart_printf(CONSOLE,"\033[%u;%uH",SENSORROW - 2,SENSORCOL);
+  uart_printf(CONSOLE,"Sensor Table\r\n");
+  uart_printf(CONSOLE,"\033[%u;%uH",SENSORROW - 1,SENSORCOL);
+  uart_printf(CONSOLE,"Recent Triggers\r\n");
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW - 3,1);
+  for (int i = 0; i < 200; i++){
+    uart_putc(CONSOLE, '-');
+  }
+}
 void print_logo(uint32_t r, uint32_t c){
   // move cursor to r1,c1
   uart_printf(CONSOLE,"\033[%u;%uH", r, c);
@@ -119,6 +149,48 @@ void test_new_server_functions(){
   */
   Exit();
 }
+
+// PRINT FUNCTIONS BEGIN
+void print_sw_states(char *sw_states, uint32_t r, uint32_t c, uint8_t sw_ind){
+  uart_printf(CONSOLE,"\033[%u;%uH",r,c);
+  uart_puts(CONSOLE, "SW");
+  uint8_t middle_Sw[] ={0x99,0x9a,0x9b,0x9c};
+  for (uint32_t i = 0; i < 4; i ++){
+    if (sw_ind == middle_Sw[i]){
+      uart_printf(CONSOLE,"\033[%u;%uH",r + i + SWITCH_COUNT + 1, c);
+      uart_printf(CONSOLE,"T%x: ",  middle_Sw[i]);
+      uart_putc(CONSOLE, sw_states[middle_Sw[i]]);
+      uart_puts(CONSOLE, "\r\n");
+      return; 
+    } 
+  }
+  uart_printf(CONSOLE,"\033[%u;%uH",r + sw_ind, c);
+  uart_printf(CONSOLE,"T%u: ", sw_ind);
+  uart_putc(CONSOLE, sw_states[sw_ind]);
+  uart_puts(CONSOLE, "\r\n");
+}
+void new_table_row(char prev_changed_s88, char prev_changed_sensor,
+                  char s88_id, char sensor_id, 
+                  int dist, int time_diff, int *offset){
+  uart_printf(CONSOLE,"\033[%u;%uH",TABLEROW + *offset,TABLECOL);
+  uart_putc(CONSOLE, '|');
+  uart_putc(CONSOLE, prev_changed_s88 + 'A');
+  uart_printf(CONSOLE, "%d", prev_changed_sensor);
+  uart_putc(CONSOLE, '|');
+  uart_putc(CONSOLE, s88_id + 'A');
+  uart_printf(CONSOLE, "%d", sensor_id);
+  uart_putc(CONSOLE, '|');
+  uart_printf(CONSOLE, "%d", dist);
+  uart_putc(CONSOLE, '|');
+  uart_printf(CONSOLE, "%d", time_diff);
+  uart_putc(CONSOLE, '|');
+  uart_puts(CONSOLE, "\r\n");
+  *offset += 1;
+}
+
+
+
+
 void command_shell(){
   
   Delay(WhoIs("clock_server"), 100);
@@ -147,6 +219,7 @@ void command_shell(){
       int sensor_pushed[10];
       get_sensor_pushed(track_server_tid, sensor_pushed, 10);
       print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
+      // print_switch(switch_no, (char)switch_state, CONSOLE);
 		}
 		c = uart_getc_modified(CONSOLE);
 		if (c == '\r') {

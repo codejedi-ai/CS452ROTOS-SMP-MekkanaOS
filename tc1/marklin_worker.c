@@ -9,7 +9,7 @@
 #include "../clockserver.h"
 #include "../util.h"
 
-#include "trainnsol.h"
+#include "track_server.h"
 #include "marklin_worker.h"
 #define s88_no 5
 #define SENSOR 0
