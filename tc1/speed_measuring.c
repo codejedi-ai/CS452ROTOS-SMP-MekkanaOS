@@ -86,15 +86,14 @@ void get_track_node_map(struct track_node *track, struct track_node *trackmap[20
     }
   }
 }
-struct track_node *get_track_node(struct track_node *trackmap[20][20], int s88_id, int sensor_no)
-{
-  // iterate through all the SENSOR_NODEs and find the one that matches the s88_id and sensor_no
-  // the s88_id is the s88 that is triggered in alphabet A,B,C,D
-  // the sensor_no is the sensor that is triggered in the s88 from 1 - 16
-  // the naming convention is A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3, C4, D1, D2, D3, D4.....
-  sensor_no--;
-  // uart_printf(CONSOLE, "name:%s s88_id = %d, sensor_no = %d\r\n",trackmap[s88_id][sensor_no]->name, s88_id, sensor_no);
-  return trackmap[s88_id][sensor_no];
+// string -> node reverse name search
+struct track_node* get_track_node_by_name(struct track_node *track, char* name){
+  for(int i = 0; i < TRACK_MAX; i++){
+    if(strcmp_ret(track[i].name, name)){
+      return &track[i];
+    }
+  }
+  return 0;
 }
 int dist_to_node(char *sw_states, struct track_node *start_node, struct track_node *end_node)
 {
@@ -210,9 +209,6 @@ void speed_gather()
 
   char sw_states[SWITCH_COUNT];
   // define the previouse changed sensor, switch, state
-  char prev_changed_s88 = -1;
-  char prev_changed_sensor = -1;
-  char prev_changed_switch = -1;
   uint32_t prev_time = Time(WhoIs("clock_server"));
   struct train cur_train;
   int offset = 0;
@@ -221,21 +217,35 @@ void speed_gather()
   uart_printf(CONSOLE, "\033[%u;%uH", TABLEROW + offset, TABLECOL);
   uart_printf(CONSOLE, "measure_Server activa\r\n");
   print_table_headers();
+  struct track_node *pred;
   while (1)
   {
     // this is the task that is going to wake one the node that is about to stop. 
     // it requires an wait for sensor, await for the sensor until the one waiting is reached
-    
+
     char ret[4];
     // there is a sensor that is recentlly triggered
     // await for the interrupt from the task server
     uint32_t time = await_sensor(WhoIs("track_server"), ret);
+
     char s88_id = ret[0];
     char sensor_no = ret[1];
     char is_released = ret[2];
     // set the cursor location
+        // to be fired when await sensor is triggered
+
+    if(is_released){
+      continue;
+      // set the cursor location
+    }
+    
     uart_printf(CONSOLE, "\033[%u;%uH", TABLEROW + offset, TABLECOL);
-    uart_printf(CONSOLE, "cur_node: %d, %d\r\n", s88_id, sensor_no);
+    // trackmap[s88_id][sensor_no-1] is how you denote s88_id and sensor_no -> track_node
+    uart_printf(CONSOLE, "cur_node: %d, %d, cur_node: %s|", s88_id, sensor_no, trackmap[s88_id][sensor_no-1]->name);
+    int dist = 0, is_exit = 0;
+    // generate the next pred node
+    pred = next_type_node(sw_states, NODE_SENSOR, trackmap[s88_id][sensor_no-1], &dist, &is_exit);
+    uart_printf(CONSOLE, "pred_node: %s, dist: %d, is_exit: %d\r\n", pred->name, dist, is_exit);
     offset++;
   }
 

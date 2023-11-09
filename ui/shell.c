@@ -146,7 +146,7 @@ void command_shell(){
 
   int msg;
   init_track(track_server_tid, 'a');
-  int speed_measuring_tid = Create(3, speed_gather);
+  // int speed_measuring_tid = Create(3, speed_gather);
 	while (!(strcmp_ret(command, "quit"))) {
     int track_server_tid = WhoIs("track_server");
 		while (!uart_getc_queue(CONSOLE)) {

@@ -178,7 +178,7 @@ int test_pathfinder(struct track_node *track,
 
 }
 
-struct track_node* get_track_node_by_name(struct track_node *track, char* name){
+struct track_node* get_track_node_by_nametc1(struct track_node *track, char* name){
   for(int i = 0; i < TRACK_MAX; i++){
     if(strcmp_ret(track[i].name, name)){
       return &track[i];
@@ -256,8 +256,8 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
     // find the start node pointer address
     struct track_node tracka[TRACK_MAX];
     init_tracka(tracka);
-    struct track_node *start_node = get_track_node_by_name(tracka, start_node_name);
-    struct track_node *end_node = get_track_node_by_name(tracka, end_node_name);
+    struct track_node *start_node = get_track_node_by_nametc1(tracka, start_node_name);
+    struct track_node *end_node = get_track_node_by_nametc1(tracka, end_node_name);
     if(start_node == 0 || end_node == 0){
       uart_printf(CONSOLE, "\033[%d;%dH", DJIKSTRAS_ROW, DJIKSTRAS_COL);
       uart_printf(CONSOLE, "Invalid start %s or end node %s\r\n", start_node_name, end_node_name);
