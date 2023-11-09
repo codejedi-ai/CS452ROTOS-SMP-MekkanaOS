@@ -143,7 +143,7 @@ void gameserver(){
 			}
 		}
 		int recret = Receive(&tid, msg, msglen);
-		// uart_printf(CONSOLE, "gameserver: Message recieved: [%s], recret = %d\r\n", msg, recret);
+		// // uart_printf(CONSOLE, "gameserver: Message recieved: [%s], recret = %d\r\n", msg, recret);
 		// the message would be signup, quit, rock paper or scissors
 		// if msg is signup
 		if (strcmp_ret(msg, "shutdown")){
@@ -163,7 +163,7 @@ void gameserver(){
 		else if (strcmp_ret(msg, "signup")){
 			// find a game that is not full
 			// print welcome message
-			uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player-%u\r\n", tid);
+			// uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player-%u\r\n", tid);
 
 			for (int i = 0; i < 10; i++)
 			{
@@ -180,7 +180,7 @@ void gameserver(){
 					}
 					if (full_game(&games[i])){
 						// print the plays
-						uart_printf(CONSOLE, "Game %u: Player 1: %u, Player 2: %u\r\n", i, games[i].tid1, games[i].tid2);
+						// uart_printf(CONSOLE, "Game %u: Player 1: %u, Player 2: %u\r\n", i, games[i].tid1, games[i].tid2);
 					}
 					break;
 				}
@@ -191,7 +191,7 @@ void gameserver(){
 			// find a game that is not full
 			if (!ingame(tid, games)){
 				// print error message
-				//uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
+				//// uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
 				int repret = Reply(tid, "E", 2);
 				continue;
 			}
@@ -207,7 +207,7 @@ void gameserver(){
 				}
 				// if one of them is the main then we also need to reply hte main with the letter Q
 				if (mainpid == games[i].tid2 || mainpid == games[i].tid1){
-					uart_printf(CONSOLE, "Your friend has quit the game\r\n");
+					// uart_printf(CONSOLE, "Your friend has quit the game\r\n");
 					int repret = Reply(mainpid, "Q", 2);
 				}
 			}
@@ -218,7 +218,7 @@ void gameserver(){
 			// check is the player is in a game
 			if (!ingame(tid, games)){
 				// print error message
-				//uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
+				//// uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
 				int repret = Reply(tid, "E", 2);
 				continue;
 			}

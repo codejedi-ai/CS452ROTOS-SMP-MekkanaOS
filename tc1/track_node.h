@@ -6,7 +6,7 @@ typedef enum {
   NODE_ENTER,
   NODE_EXIT,
 } node_type;
-
+#define TYPECOUNT 6
 #define DIR_AHEAD 0
 #define DIR_STRAIGHT 0
 #define DIR_CURVED 1

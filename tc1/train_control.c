@@ -1,6 +1,6 @@
 #include "../rpi.h"
 #include "../clockserver.h"
-#include "track_path_finder.h"
+#include "track_data_new.h"
 #include "marklin_worker.h"
 #include "train_control.h"
 // Delay until interrupt for stop
@@ -49,7 +49,7 @@ void delay_until_stop_task(){
     char train_id = 0x01;
     Receive(&tid, &train_id, 1);
     Reply(tid, &train_id, 0);
-
+/*
     int clock_server_tid = WhoIs("clock_server");
     int track_server_tid = WhoIs("track_server");
     int marklin_worker_tid = WhoIs("marklin_worker");
@@ -60,10 +60,11 @@ void delay_until_stop_task(){
 
     DelayUntil(clock_server_tid, time_interrupt + delay_since_interrupt);
     set_train_state(marklin_worker_tid, train_id, 0);
+    */
 }
-void delay_until_stop(int delay_since_interrupt, char train_id){
+void delay_until_stop(int delaytime, char train_id){
     int tid = Create(1, &delay_until_stop_task);
-    Send(tid, &delay_since_interrupt, 4, NULL, 0);
+    Send(tid, &delaytime, 4, NULL, 0);
     Send(tid, &train_id, 1, NULL, 0);
 }
 

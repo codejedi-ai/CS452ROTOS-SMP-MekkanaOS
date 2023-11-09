@@ -95,7 +95,7 @@ void print_logo(uint32_t r, uint32_t c){
   uart_printf(CONSOLE,"\033[%u;%uH", r, c);
   char *logo = "\r\n            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
   uart_printf(CONSOLE, "%s\r\n", logo);
-  uart_printf(CONSOLE, "Fixed the loop? \r\n");
+  uart_printf(CONSOLE, "nodeeq \r\n");
 }
 #include <stdio.h>
 
@@ -152,9 +152,9 @@ void command_shell(){
 		while (!uart_getc_queue(CONSOLE)) {
       int sensor_pushed[10];
       char sw_states[SWITCH_COUNT];
-      get_sensor_pushed(track_server_tid, sensor_pushed, 10);
-      print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
-      print_time_to_display();
+      // get_sensor_pushed(track_server_tid, sensor_pushed, 10);
+      // print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
+     //print_time_to_display();
       // get_switch_states(track_server_tid, sw_states, SWITCH_COUNT);
       // print_sw_states(sw_states);
       Yield();

@@ -22,6 +22,10 @@
         "trainnsol.h": "c",
         "shell.h": "c",
         "marklin_worker.h": "c",
-        "train.h": "c"
+        "train.h": "c",
+        "speed_measuring.h": "c",
+        "track_path_finder.h": "c",
+        "train_control.h": "c",
+        "tc1tests.h": "c"
     }
 }

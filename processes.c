@@ -11,6 +11,7 @@
 #include "systimer.h"
 #include "tests/tc1tests.h"
 #include "tc1/marklin_worker.h"
+#include "tc1/speed_measuring.h"
 #include "ioserver.h"
 
 #define DISPLAY 1
@@ -71,5 +72,6 @@ void init_solonoids() // First task as dictated in the reqs
 	set_solonoid(marklin_worker_tid, 0x9a, 'S');
 	set_solonoid(marklin_worker_tid, 0x9b, 'C');
 	set_solonoid(marklin_worker_tid, 0x9c, 'S');
+	// int speed_measuring_tid = Create(3, speed_gather);
 	Exit();
 }

@@ -15,21 +15,21 @@ void clock_notifier(){
     }
     // spin until clock server is registered
     //  print in green
-    uart_printf(CONSOLE, "\033[32m");
-    uart_printf(CONSOLE, "clock_notifier: Registered\n");
-    uart_printf(CONSOLE, "\033[37m");
+    // uart_printf(CONSOLE, "\033[32m");
+    // uart_printf(CONSOLE, "clock_notifier: Registered\n");
+    // uart_printf(CONSOLE, "\033[37m");
     while (1)
     {
         uint64_t event = AwaitEvent(CLOCKINTID);
         int ret;
-        // uart_printf(CONSOLE, "clock_notifier: event = %d\r\n", event);
+        // // uart_printf(CONSOLE, "clock_notifier: event = %d\r\n", event);
         Send(clock_server_tid, "", 0, &ret, 0);
     }
     Exit();
 }
 void clock_server(){
     RegisterAs("clock_server");
-    uart_printf(CONSOLE, "clock_server: Registered\n");
+    // uart_printf(CONSOLE, "clock_server: Registered\n");
     int waketicks[NUMPROCS];
     memset(waketicks, -1, NUMPROCS * sizeof(int));
     int ticks = 0;
@@ -45,8 +45,8 @@ void clock_server(){
         /*
         
         else if (tid != not_tid){
-            uart_printf(CONSOLE, "\033[35m");
-            uart_printf(CONSOLE, "clock_server: tid = %d called with ticks = %d\r\n", tid, ticks);
+            // uart_printf(CONSOLE, "\033[35m");
+            // uart_printf(CONSOLE, "clock_server: tid = %d called with ticks = %d\r\n", tid, ticks);
         }
         */
         char *num[10]; // array to store the numbers
@@ -55,7 +55,7 @@ void clock_server(){
         for (int i = 0; i < NUMPROCS; i++)
         {
             if (waketicks[i] != -1 && waketicks[i] <= ticks){
-                //uart_printf(CONSOLE, "\033[35mWaking up %d\r\n", i);
+                //// uart_printf(CONSOLE, "\033[35mWaking up %d\r\n", i);
                 waketicks[i] = -1;
                 Reply(i, &ticks, 4);
             }
@@ -66,7 +66,7 @@ void clock_server(){
             ticks++;
             continue;
         } 
-        //uart_printf(CONSOLE, "%s called\r\n", command);
+        //// uart_printf(CONSOLE, "%s called\r\n", command);
         command_part_count = parse_char_arr(command, num, 10);
         if (strcmp_ret(num[0], "Time")){
             uint64_t delay = command[0];
@@ -75,9 +75,9 @@ void clock_server(){
             // need to reply to the task that called delay after the delay count
             // print called delay from a certain PID
             int delay_ticks = atoi_64(num[1]);
-            //uart_printf(CONSOLE, "Delay called from %d delay_ticks = %d\r\n", tid, delay_ticks);
+            //// uart_printf(CONSOLE, "Delay called from %d delay_ticks = %d\r\n", tid, delay_ticks);
             waketicks[tid] = ticks + delay_ticks;
-            //uart_printf(CONSOLE, "waketicks[%d] = %d\r\n", tid, waketicks[tid]);
+            //// uart_printf(CONSOLE, "waketicks[%d] = %d\r\n", tid, waketicks[tid]);
         } else if (strcmp_ret(num[0], "DelayUntil")){
             waketicks[tid] = atoi_64(num[1]);
         }
@@ -94,8 +94,8 @@ int Time(int tid){
 // must provide the PID of the clock server
 int Delay(int tid, int ticks){
     // print in megenta
-    // uart_printf(CONSOLE, "\033[35m");
-    // uart_printf(CONSOLE, "Delay called from %d ticks = %d\r\n", tid, ticks);
+    // // uart_printf(CONSOLE, "\033[35m");
+    // // uart_printf(CONSOLE, "Delay called from %d ticks = %d\r\n", tid, ticks);
     char sendmsg[50] = "Delay ";
     char str[5];
     i2a(ticks, str);

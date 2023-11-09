@@ -93,14 +93,14 @@ int parse_char_arr(char *arr, char **num, int num_size){
       *ptr = 0;
       
       num[i] = ptr + 1; // store the value in the array
-      // uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+      // // uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
       i++;
       if (i >= num_size) {return i;}
       // increment the index
     }
     ptr++; // move to the next character
   }
-  // uart_printf(CONSOLE, "i = %d\r\n", i);
+  // // uart_printf(CONSOLE, "i = %d\r\n", i);
   return i;
 }
 // this fiunction would
@@ -126,9 +126,9 @@ void strflush(char* msg, uint8_t msglen){
     for (int i = 0; i < msglen; i++){
     if (msg[i] != '\0'){
         // print mem address
-        uart_printf(CONSOLE, "strflush: msg[%x] = ", i, msg[i]);
+        // uart_printf(CONSOLE, "strflush: msg[%x] = ", i, msg[i]);
         uart_putc(CONSOLE, msg[i]);
-        uart_printf(CONSOLE, "\r\n");
+        // uart_printf(CONSOLE, "\r\n");
     }else
         break;
     }
