@@ -12,7 +12,7 @@
 #define GET_SENSOR_PUSHED 3 // this gets the sensor pushed array
 #define GET_TRACK_ID 4      // this gets the switch states array
 #define INIT_TRACK 5
-#define INIT_TRAIN 6
+#define SPEED_TRAIN 6
 #define AWAIT_SENSOR_PUSHED 7
 #define GET_SW_STATES 3 // this gets the sensor pushed array
 int node_eq(struct track_node *a, struct track_node *b)
@@ -178,7 +178,7 @@ void track_server()
       // This is called by the worker task
       char train_no = msg[0];
       char speed = msg[1];
-
+      train_speed[train_no] = speed;
       offset++;
       Reply(tid, msg, 0);
       // uart_printf(CONSOLE, "TRAIN REPLIED\r\n");
@@ -203,12 +203,12 @@ void track_server()
       // uart_printf(CONSOLE, "INIT_TRACK\r\n");
       int buf = 1;
       char track_id = msg[0];
-      if (track_id == 'a')
+      if (track_id == 'a' || track_id == 'A')
       {
         track_ind = 'a';
         init_tracka(track);
       }
-      if (track_id == 'b')
+      if (track_id == 'b' || track_id == 'B')
       {
         track_ind = 'b';
         init_trackb(track);
@@ -216,13 +216,13 @@ void track_server()
       Reply(tid, &buf, 4);
       // uart_printf(CONSOLE, "INIT_TRACK REPLIED\r\n");
     }
-    if (type == INIT_TRAIN)
+    if (type == SPEED_TRAIN)
     {
       // uart_printf(CONSOLE, "INIT_TRAIN\r\n");
-      int buf = 1;
+      
       int train_no = msg[0];
-      int s88_id = msg[1];
-      int sensor_id = msg[2];
+      // int tr_speed = msg[1];
+      int buf = train_speed[train_no];
       // init_traina(track, train_no, s88_id, sensor_id);
       Reply(tid, &buf, 4);
       // uart_printf(CONSOLE, "INIT_TRAIN REPLIED\r\n");
@@ -279,17 +279,18 @@ void init_track(int track_server_tid, char track_id)
   buf[3] = INIT_TRACK;
   Send(track_server_tid, buf, 4, buf, 4);
 }
-void init_train(int track_server_tid, char train_no, char s88_id, char sensor_id)
+int getspeed_train(int track_server_tid, char train_no)
 {
   // the sensor node must be at a START NODE is to be called when a train task is created
   char buf[4];
   buf[0] = train_no;
-  buf[1] = s88_id;
-  buf[2] = sensor_id;
-  buf[3] = INIT_TRAIN;
+  buf[2] = -1;
+  buf[3] = SPEED_TRAIN;
   // this would call the marklin worker to send the train speed to 0 in addition to setting up the train on the server
   // I have s88 and need to initialize the train on an entry node
-  Send(track_server_tid, buf, 4, buf, 4);
+  int ret =0;
+  Send(track_server_tid, buf, 4, &ret, 4);
+  return ret;
   // return -1 if the task is declined
 }
 void deregister_train(int track_server_tid, char train_no)

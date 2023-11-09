@@ -1,6 +1,10 @@
+#ifndef TRAIN_H
+#define TRAIN_H
 #include "../rpi.h"
 #include "../rpi.h"
 #include "track_data_new.h"
+#define TRAIN_MAX 80
+#define SPEED_MAX 16
 struct train
 {
     /* data */
@@ -15,3 +19,4 @@ struct train
     uint8_t light;
     
 };
+#endif

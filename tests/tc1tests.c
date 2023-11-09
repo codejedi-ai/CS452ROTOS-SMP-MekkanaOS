@@ -8,6 +8,7 @@
 #include "../tc1/marklin_worker.h"
 #include "../tc1/train_control.h"
 #include "../tc1/track_data_new.h"
+#include "../tc1/goto.h"
 #include "../ioserver.h"
 #define delay 0
 #define DJIKSTRAS_ROW 1
@@ -136,6 +137,13 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
     }
     uart_printf(CONSOLE, "Stopping train %d\r\n", trainid);
     sensor_delay_stop(trainid, delaytime);
+    return 0;
+  }
+  // void path_switch(char* start_str, char* end_str);
+  if (strcmp_ret(command, "ps")){
+    char* start_str = num[1];
+    char* end_str = num[2];
+    path_switch(start_str, end_str);
     return 0;
   }
   return 2;

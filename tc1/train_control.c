@@ -3,6 +3,7 @@
 #include "track_data_new.h"
 #include "marklin_worker.h"
 #include "train_control.h"
+#include "../velocity/train_velocity.h"
 // Delay until interrupt for stop
 void delay_until_stop_task(){
     int tid;
@@ -194,6 +195,8 @@ void sensor_delay_stop_task(){
   Exit();
 
 }
+
+
 // at this point we need to know the value of delay_since_interrupt
 void sensor_delay_stop(int trainid, int delay_since_interrupt){
   // initialize the task
@@ -201,4 +204,25 @@ void sensor_delay_stop(int trainid, int delay_since_interrupt){
   // send the trainid and speed to the task
   Send(tid, &trainid, 1, NULL, 0);
   Send(tid, &delay_since_interrupt, 4, NULL, 0);
+}
+void stop_at_task(){
+  // need to make sure that the distance to next node is smaller than stopping distance
+  char trainid;
+  char speed = getspeed_train(WhoIs("track_server"), trainid);
+  Receive(&trainid, &trainid, 1);
+  Reply(trainid, NULL, 0);
+  
+
+
+
+
+
+  Exit();
+}
+void stop_at(int trainid, int sensorid){
+  // initialize the task
+  int tid = Create(1, sensor_stop_task);
+  // send the trainid and speed to the task
+  Send(tid, &trainid, 1, NULL, 0);
+  Send(tid, &sensorid, 1, NULL, 0);
 }

@@ -26,6 +26,7 @@
         "speed_measuring.h": "c",
         "track_path_finder.h": "c",
         "train_control.h": "c",
-        "tc1tests.h": "c"
+        "tc1tests.h": "c",
+        "track_server.h": "c"
     }
 }
