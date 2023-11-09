@@ -30,6 +30,7 @@ struct list
   int await_count;
 };
 // this would wake up every time a sensor is triggered or a sensor is released or a switch is changed
+
 void track_server()
 {
   char track_ind = 'a';
@@ -46,8 +47,6 @@ void track_server()
 
   struct track_node track[TRACK_MAX];
   init_tracka(track);
-  struct track_node *trackmap[20][20];
-  get_track_node_map(track, trackmap);
 
   // define the previouse changed sensor, switch, state
   char prev_changed_s88 = -1;

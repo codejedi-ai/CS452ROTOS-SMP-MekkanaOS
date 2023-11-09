@@ -5,7 +5,6 @@
 #include "../syscall.h"
 #include "../custstr.h"
 #include "../tc1/track_server.h"
-#include "../tc1/speed_measuring.h"
 #include "shell.h"
 
 static const size_t COMMANDMAX_LEN = 64;

@@ -249,6 +249,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
     }
     uart_printf(CONSOLE, "Delaying train %d until it stops\r\n", trainid);
     delay_until_stop(delaytime, trainid);
+    return 0;
   }
   if(strcmp_ret(command, "pathfinder")){
     char *start_node_name = num[1];
@@ -294,6 +295,7 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
                         struct track_node **revlist,
                         int *revlist_len)
     */
+   return 0;
   }
   return 2;
 }

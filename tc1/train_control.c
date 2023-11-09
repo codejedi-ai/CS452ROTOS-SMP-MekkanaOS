@@ -49,18 +49,33 @@ void delay_until_stop_task(){
     char train_id = 0x01;
     Receive(&tid, &train_id, 1);
     Reply(tid, &train_id, 0);
-/*
+    char ret[4];
+    // there is a sensor that is recentlly triggered
+    // await for the interrupt from the task server
+    uint32_t time = await_sensor(WhoIs("track_server"), ret);
+
+    char s88_id = ret[0];
+    char sensor_no = ret[1];
+    char is_released = ret[2];
+    while (!is_released)
+    {
+      /* code */
+      time = await_sensor(WhoIs("track_server"), ret);
+      s88_id = ret[0];
+      sensor_no = ret[1];
+      is_released = ret[2];
+    }
+    
+
     int clock_server_tid = WhoIs("clock_server");
     int track_server_tid = WhoIs("track_server");
     int marklin_worker_tid = WhoIs("marklin_worker");
 
-    uint64_t delay_interrupt = await_sensor(track_server_tid);
-    uint32_t time_interrupt = delay_interrupt & 0xFFFFFFFF;
-    char *sw_states = &delay_interrupt;
 
-    DelayUntil(clock_server_tid, time_interrupt + delay_since_interrupt);
+
+    DelayUntil(clock_server_tid, time + delay_since_interrupt);
     set_train_state(marklin_worker_tid, train_id, 0);
-    */
+    
 }
 void delay_until_stop(int delaytime, char train_id){
     int tid = Create(1, &delay_until_stop_task);
