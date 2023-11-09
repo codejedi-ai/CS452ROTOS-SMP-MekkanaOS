@@ -1,10 +1,11 @@
+#include "../rpi.h"
 #include "track_server.h"
 #include "marklin_worker.h"
 #include "train_control.h"
 #include "track_data_new.h"
 #include "train_velocity.h"
 #include "speed_measuring.h"
-#include <stdint.h>
+#include "goto.h"
 /*
 Track node.c
 typedef enum {
@@ -272,16 +273,15 @@ void solonoid_switches_helper(char track_id, char* start_str, char* end_str)
   // printf("branches_len = %d\n", branches_len);
   // solonoid command time get from the marklin_worker
   // set the cursor to it's approperate location
-  // #define TC_ROW 9
-  // #define TC_COL 200
-  uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW, TC_COL);
+
+  uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW, GOTC_COL);
   // print the nodes in string format
   uart_printf(CONSOLE, "start_str = %s, end_str = %s\n", start_str, end_str);
   int marklin_worker_tid = WhoIs("marklin_worker");
   for (int i = 0; i < branches_len; i++)
   {
    // solonoid(banches[i]->num, mode[i]);
-   uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW + i + 1, TC_COL);
+   uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW + i + 1, GOTC_COL);
    // print name of the branch node
     uart_printf(CONSOLE, "%s", banches[i]->name);
     uart_printf(CONSOLE, "Switch %d \r\n", banches[i]->num);
@@ -343,7 +343,7 @@ void path_switch(char* start_str, char* end_str)
 
 
 void stop_at_task(){
-  uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW, TC_COL);
+  uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW, GOTC_COL);
   int offset = 0;
   // need to make sure that the distance to next node is smaller than stopping distance
   int tid;
@@ -393,14 +393,29 @@ void stop_at_task(){
   // this is where most errors may occure
 
 
-  char ret[4];
+  
   uint32_t time;
   // get the sensor id
   char s88_id = 0;
   char sensor_no = 0;
   char is_released = 0;
+
+  char ret[4];
+  time = await_sensor(track_server_tid, ret);
+  s88_id = ret[0];
+  sensor_no = ret[1];
+  is_released = ret[2];
+  /**/
+  uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW , GOTC_COL);
+  // clear the line
+  uart_printf(CONSOLE, "Sensor triggered: ");
+  uart_putc(CONSOLE, s88_id + 'A');
+  uart_printf(CONSOLE, "%d\r\n", sensor_no);
+ offset++;
   // must be a pressed sensor if it is released it does not count
     // struct track_node *next_type_node(char *sw_states, int type, struct track_node *start_node, int *dist, int *isexit)
+
+    // this cannot yeild a segmentation fault
   struct track_node *start_node = trackmap[s88_id][sensor_no]; 
   // det end node
   struct track_node *end_node = get_track_node_by_name(track, dest);
@@ -408,21 +423,21 @@ void stop_at_task(){
   // this is here to get the critical node
   struct track_node *curnode;
   // print the start and end node names
+  uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW + offset, GOTC_COL);
   uart_printf(CONSOLE, "start_node = %s, end_node = %s\n", start_node->name, end_node->name);
+   /*
   offset++;
   while (dist_to_next_node > stopping_dist[trainid][speed])
   {
-    /* code */
     time = await_sensor(track_server_tid, ret);
     s88_id = ret[0];
     sensor_no = ret[1];
     is_released = ret[2];
     if (is_released)
     {
-      /* code */
       continue;
     }
-    uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW + offset, TC_COL);
+    uart_printf(CONSOLE, "\033[%d;%dH", GOTC_ROW + offset, GOTC_COL);
 
 
     // get next node
@@ -449,6 +464,7 @@ void stop_at_task(){
   DelayUntil(time_to_stop + time);
   // set the train to stop
   set_train_state(marklin_worker_tid, train_id, 0);
+  */
   // delay until time +
   Exit();
 }

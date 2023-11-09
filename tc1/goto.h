@@ -2,7 +2,6 @@
 #include "marklin_worker.h"
 #include "train_control.h"
 #include "track_data_new.h"
-#include <stdint.h>
 /*
 Track node.c
 typedef enum {
@@ -15,3 +14,5 @@ typedef enum {
 } node_type;
 */
 void path_switch(char* start_str, char* end_str);
+#define GOTC_ROW 50
+#define GOTC_COL 150

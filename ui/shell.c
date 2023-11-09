@@ -162,8 +162,8 @@ void command_shell()
     {
       int sensor_pushed[10];
       char sw_states[SWITCH_COUNT];
-      // get_sensor_pushed(track_server_tid, sensor_pushed, 10);
-      // print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
+      get_sensor_pushed(track_server_tid, sensor_pushed, 10);
+      print_sensors(sensor_pushed, 10, SENSORCOL, SENSORROW, CONSOLE);
       // print_time_to_display();
       //  get_switch_states(track_server_tid, sw_states, SWITCH_COUNT);
       //  print_sw_states(sw_states);

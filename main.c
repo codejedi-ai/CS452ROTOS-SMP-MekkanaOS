@@ -22,8 +22,8 @@ void idle(){
 		uint32_t runtime = GetRuntime();
 		uint32_t kernelrt = GetKernelRuntime();
     // print the column and row onto 2 and 1
-    // uart_printf(CONSOLE, "\033[2;1H");
-		// uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
+    uart_printf(CONSOLE, "\033[2;1H");
+		uart_printf(CONSOLE, "idle: runprecentage = %u \% \r\n", (100 * runtime) / kernelrt);
 		asm("WFI");
 	}
 	Exit();
