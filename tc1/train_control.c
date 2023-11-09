@@ -4,43 +4,6 @@
 #include "marklin_worker.h"
 #include "train_control.h"
 // Delay until interrupt for stop
-void path_finder_user_task(){
-
-
-  // test_train_functions();
-  struct track_node tracka[TRACK_MAX];
-  struct track_node *revlist[TRACK_MAX];
-  int revlist_len;
-  init_tracka(tracka);
-  struct track_node *banches[TRACK_MAX];
-  int branches_len;
-  char mode[TRACK_MAX];
-  
-  int mode_len;
-  struct track_node *start = &tracka[9];
-  struct track_node *end = &tracka[5];
-  test_pathfinder(tracka, start, end, banches, &branches_len, mode, &mode_len, revlist, &revlist_len);
-  // void set_solonoid(int marklin_worker_tid, uint8_t sol_id, char state);
-  int marklin_worker_tid = WhoIs("marklin_worker");
-  // set the solonoids
-  for (int i = 0; i < branches_len; i++)
-  {
-    // printf("%s ", banches[i]->name);
-    // printf("%c ", mode[i]);
-    // printf("\n");
-    set_solonoid(marklin_worker_tid, banches[i]->num, mode[i]);
-  }
-  /*
-  printf("revlist_len = %d\n", revlist_len);
-  for (int i = 0; i < revlist_len; i++)
-  {
-    printf("%s ", revlist[i]->name);
-    printf("\n");
-  }
-*/
-
-    
-}
 void delay_until_stop_task(){
     int tid;
     int delay_since_interrupt = 0;
@@ -140,3 +103,54 @@ void reverse(char train_id, char speed){
 }
 
 // this is the polling loop for each individual train task
+void sensor_stop_task(){
+  // get the trainID and the speed to run at
+  int tid;
+  char train_id = 0x01;
+  char speed = 0x00;
+  Receive(&tid, &train_id, 1);
+  Reply(tid, NULL, 0);
+  Receive(&tid, &speed, 1);
+  Reply(tid, NULL, 0);
+  // get the track server tid
+  int track_server_tid = WhoIs("track_server");
+  // get the clock server tid
+  int clock_server_tid = WhoIs("clock_server");
+  // get the marklin worker tid
+  int marklin_worker_tid = WhoIs("marklin_worker");
+  // get the sensor server tid
+  int sensor_server_tid = WhoIs("sensor_server");
+  // wait for a sensor to be triggered
+  char ret[4];
+  uint32_t time = await_sensor(track_server_tid, ret);
+  // get the sensor id
+  char s88_id = ret[0];
+  char sensor_no = ret[1];
+  char is_released = ret[2];
+  // must be a pressed sensor if it is released it does not count
+  while (!is_released)
+  {
+    /* code */
+    time = await_sensor(track_server_tid, ret);
+    s88_id = ret[0];
+    sensor_no = ret[1];
+    is_released = ret[2];
+  }
+  // move to TC_ROW and TC_COL
+  uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW, TC_COL);
+  // clear the line
+  uart_printf(CONSOLE, "\033[K");
+  uart_printf(CONSOLE, "Sensor triggered: ");
+  uart_putc(CONSOLE, s88_id + 'A');
+  uart_printf(CONSOLE, "%d\r\n", sensor_no);
+  // now stop the train
+  set_train_state(marklin_worker_tid, train_id, 0);
+  Exit();
+}
+void sensor_stop(trainid, speed){
+  // initialize the task
+  int tid = Create(1, sensor_stop_task);
+  // send the trainid and speed to the task
+  Send(tid, &trainid, 1, NULL, 0);
+  Send(tid, &speed, 1, NULL, 0);
+}

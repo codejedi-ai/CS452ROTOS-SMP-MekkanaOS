@@ -157,6 +157,7 @@ It would keep track of the positions of the trains
 */
 void marklin_worker()
 {
+  int offset = 0;
   // create track_server
   uint32_t io_TXIC_MARKLIN_server_pid;
   uint32_t io_RXIC_MARKLIN_server_pid;
@@ -226,9 +227,12 @@ void marklin_worker()
       // add the tid to the circular list
       // set the train speed
       // print in green train speed changed
+      // PRINTSWITCHROW + offset, PRINTSWITCHCOL
+      uart_printf(CONSOLE, "\033[%d;%dH", PRINTSWITCHROW + offset, PRINTSWITCHCOL);
       uart_printf(CONSOLE, "\033[32m");
       uart_printf(CONSOLE, "Train %d speed changed to %d\r\n", id, state);
       uart_printf(CONSOLE, "\033[37m");
+      offset++;
       execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
       char send_msg[4];
       char train_id = id;

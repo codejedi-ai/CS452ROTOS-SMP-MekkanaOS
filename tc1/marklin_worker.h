@@ -4,6 +4,10 @@
 #define TRIGGERED 0
 #define RELEASED 1
 #define SWITCH_COUNT 18
+
+
+#define PRINTSWITCHCOL 50
+#define PRINTSWITCHROW 50
 struct free_task_list{
     uint32_t data[NUMPROCS];
     uint32_t tail;

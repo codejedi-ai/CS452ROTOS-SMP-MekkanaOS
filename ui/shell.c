@@ -83,7 +83,8 @@ void print_time_to_display(){
 The print server would be incharge of printing the recentlly triggered sensors and the activated switches
 it would also print the train states
 */
-void print_server(){
+// pseudo BFS, I would print all potential sensors that can be pushed
+void print_look_ahead(){
 
 
 }
