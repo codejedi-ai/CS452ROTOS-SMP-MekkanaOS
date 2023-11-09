@@ -1,4 +1,5 @@
 void reverse(char train_id, char speed);
-void sensor_stop(trainid, speed);
+void sensor_stop(trainid);
+void sensor_delay_stop(int trainid, int delay_since_interrupt);
 #define TC_ROW 9
 #define TC_COL 200

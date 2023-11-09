@@ -107,10 +107,7 @@ void sensor_stop_task(){
   // get the trainID and the speed to run at
   int tid;
   char train_id = 0x01;
-  char speed = 0x00;
   Receive(&tid, &train_id, 1);
-  Reply(tid, NULL, 0);
-  Receive(&tid, &speed, 1);
   Reply(tid, NULL, 0);
   // get the track server tid
   int track_server_tid = WhoIs("track_server");
@@ -147,10 +144,61 @@ void sensor_stop_task(){
   set_train_state(marklin_worker_tid, train_id, 0);
   Exit();
 }
-void sensor_stop(trainid, speed){
+void sensor_stop(trainid){
   // initialize the task
   int tid = Create(1, sensor_stop_task);
   // send the trainid and speed to the task
   Send(tid, &trainid, 1, NULL, 0);
-  Send(tid, &speed, 1, NULL, 0);
+}
+void sensor_delay_stop_task(){
+    // get the trainID and the speed to run at
+  int tid, delay_since_interrupt;
+  char train_id = 0x01;
+  Receive(&tid, &train_id, 1);
+  Reply(tid, NULL, 0);
+  Receive(&tid, &delay_since_interrupt, 4);
+  Reply(tid, NULL, 0);
+  // get the track server tid
+  int track_server_tid = WhoIs("track_server");
+  // get the clock server tid
+  int clock_server_tid = WhoIs("clock_server");
+  // get the marklin worker tid
+  int marklin_worker_tid = WhoIs("marklin_worker");
+  // get the sensor server tid
+  int sensor_server_tid = WhoIs("sensor_server");
+  // wait for a sensor to be triggered
+  char ret[4];
+  uint32_t time = await_sensor(track_server_tid, ret);
+  // get the sensor id
+  char s88_id = ret[0];
+  char sensor_no = ret[1];
+  char is_released = ret[2];
+  // must be a pressed sensor if it is released it does not count
+  while (!is_released)
+  {
+    /* code */
+    time = await_sensor(track_server_tid, ret);
+    s88_id = ret[0];
+    sensor_no = ret[1];
+    is_released = ret[2];
+  }
+  // move to TC_ROW and TC_COL
+  uart_printf(CONSOLE, "\033[%d;%dH", TC_ROW, TC_COL);
+  // clear the line
+  uart_printf(CONSOLE, "\033[K");
+  uart_printf(CONSOLE, "Sensor triggered: ");
+  uart_putc(CONSOLE, s88_id + 'A');
+  uart_printf(CONSOLE, "%d\r\n", sensor_no);
+  // now stop the train
+  delay_until_stop(delay_since_interrupt, train_id);
+  Exit();
+
+}
+// at this point we need to know the value of delay_since_interrupt
+void sensor_delay_stop(int trainid, int delay_since_interrupt){
+  // initialize the task
+  int tid = Create(1, sensor_delay_stop_task);
+  // send the trainid and speed to the task
+  Send(tid, &trainid, 1, NULL, 0);
+  Send(tid, &delay_since_interrupt, 4, NULL, 0);
 }

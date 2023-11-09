@@ -118,13 +118,24 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
   // add a stop at a sensor command
   if (strcmp_ret(command, "interruptstop")){
     int trainid = atoi_64(num[1]);
-    int speed = atoi_64(num[2]);
     if (trainid < 1 || trainid > 80){
       uart_printf(CONSOLE, "Invalid trainid\r\n");
       return 1;
     }
     uart_printf(CONSOLE, "Stopping train %d\r\n", trainid);
-    sensor_stop(trainid, speed);
+    sensor_stop(trainid);
+    return 0;
+  }
+  // add one for sensor_delay_stop
+  if (strcmp_ret(command, "sensordelaystop")){
+    int trainid = atoi_64(num[1]);
+    int delaytime = atoi_64(num[3]);
+    if (trainid < 1 || trainid > 80){
+      uart_printf(CONSOLE, "Invalid trainid\r\n");
+      return 1;
+    }
+    uart_printf(CONSOLE, "Stopping train %d\r\n", trainid);
+    sensor_delay_stop(trainid, delaytime);
     return 0;
   }
   return 2;

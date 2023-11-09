@@ -148,7 +148,15 @@ void helper_send_message_to_server(int my_tid, int track_server_tid, uint8_t s88
 }
 
 
-
+void uart_print_coulor(int color){
+  // if color is 1 print in green
+  // if color is 2 print in yellow
+  if (color == 1){
+    uart_printf(CONSOLE, "\033[32m");
+  }else if (color == 2){
+    uart_printf(CONSOLE, "\033[33m");
+  }
+}
 // this is the marklin_worker worker task,
 /*
 It keeps track of the trains and the sensors
@@ -171,7 +179,7 @@ void marklin_worker()
   // notify the track_server the most recent changes with the track sensors
   // if two sensors changed within the same reading, then return them in the order of the s88 lables
   // this also calls the display task
-
+  int col = 0;
   char prev_reta[s88_no];
   char prev_retb[s88_no];
   for (size_t i = 0; i < s88_no; i++)
@@ -212,6 +220,7 @@ void marklin_worker()
       // this is a function call
       // add the tid to the circular list
       // set the train speed
+      offset++;
       solonoid_command(io_TXIC_MARKLIN_server_pid, id, state);
       char send_msg[4];
       char switch_id = id;
@@ -233,6 +242,12 @@ void marklin_worker()
       uart_printf(CONSOLE, "Train %d speed changed to %d\r\n", id, state);
       uart_printf(CONSOLE, "\033[37m");
       offset++;
+      if(offset > 10){
+        offset = 0;
+        col++;
+        col = col % 2;
+        uart_print_coulor(col);
+      }
       execute_train_command(io_TXIC_MARKLIN_server_pid, id, state);
       char send_msg[4];
       char train_id = id;
