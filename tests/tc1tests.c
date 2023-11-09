@@ -146,5 +146,12 @@ int tc1ExecuteCommands(char *command, char **num, int command_part_count){
     path_switch(start_str, end_str);
     return 0;
   }
+  // stop_at void stop_at(int trainid, char *dest)
+  if (strcmp_ret(command, "stopa")){
+    int trainid = atoi_64(num[1]);
+    char* dest = num[2];
+    stop_at(trainid, dest);
+    return 0;
+  }
   return 2;
 }
