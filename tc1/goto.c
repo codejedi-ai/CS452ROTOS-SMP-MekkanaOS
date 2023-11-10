@@ -470,8 +470,16 @@ void stop_at_task(){
 }
 void stop_at(int trainid, char *dest){
   // initialize the task
-  int tid = Create(1, stop_at_task);
-  // send the trainid and speed to the task
-  Send(tid, &trainid, 1, NULL, 0);
-  Send(tid, &dest, 10, NULL, 0);
+  char msg[4];
+  int track_server_tid = WhoIs("track_server");
+  uint64_t time = await_sensor(track_server_tid, msg);
+  // print the sensor values
+  char s88_id = msg[0];
+  char sensor_no = msg[1];
+  char is_released = msg[2];
+  // print sensor triggered message
+  uart_printf(CONSOLE, "Sensor triggered: ");
+  uart_putc(CONSOLE, s88_id + 'A');
+  uart_printf(CONSOLE, "%d\r\n", sensor_no);
+
 }
