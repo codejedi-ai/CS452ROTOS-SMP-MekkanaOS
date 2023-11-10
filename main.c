@@ -87,7 +87,7 @@ int kmain(void *reg) {
   tid = KernelCreate(1, track_server, 0);
   uart_printf(CONSOLE, "track_server tid: %d\r\n", tid);
   
-  KernelCreate(-2, command_shell, 0);
+  // KernelCreate(-2, command_shell, 0);
   uart_printf(CONSOLE, "\033[2J");
   // switch worker
   Schedule();

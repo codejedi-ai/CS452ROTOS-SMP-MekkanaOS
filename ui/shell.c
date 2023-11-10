@@ -122,7 +122,80 @@ void print_sw_states(char *sw_states)
     print_switch(i, (char)sw_states[i], CONSOLE);
   }
 }
+void test_shell()
+{
+  // print in white font
+  uart_printf(CONSOLE, "\033[37m");
+  // register the k2
+  RegisterAs("test_shell");
+  char *logo = "            ___     ___     ___     ___   __   __   ___     ___   \r\n    o O O  |   \\   /   \\   | _ \\   / __|  \\ \\ / /  / _ \\   / __|  \r\n   o       | |) |  | - |   |   /  | (__    \\ V /  | (_) |  \\__ \\  \r\n  TS__[O]  |___/   |_|_|   |_|_\\   \\___|   _|_|_   \\___/   |___/  \r\n {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" |_|\"\"\"\"\"|_|\"\"\"\"\"| \r\n./o--000\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\'\"`-0-0-\' \r\n";
+  uart_printf(CONSOLE, "%s\r\n", logo);
+  uart_printf(CONSOLE, "Welcome to the test shell\r\n");
+  unsigned int counter = 1;
+  char command[50];
+  int command_length = 0;
+  command[0] = '\0';
+  uart_printf(CONSOLE, "\r\nDARCY[%u]> ", counter++);
+  char c = ' ';
+  while (!(strcmp_ret(command, "quit")))
+  {
+    while (!uart_getc_queue(CONSOLE))
+    {
+      Yield();
+    }
+    c = uart_getc_modified(CONSOLE);
+    if (c == '\r')
+    {
+      uart_printf(CONSOLE, "\r\n");
+      // K2 commands
+      // the parse char array changes the command
 
+      char *num[100]; // array to store the numbers
+      // int parse_char_arr(char *arr, char **num, int num_size)
+      int command_part_count = parse_char_arr(command, num, 100);
+      uart_printf(CONSOLE, "command = %s\r\n", command);
+      for (int i = 0; i < command_part_count; i++)
+      {
+        uart_printf(CONSOLE, "num[%d] = %s\r\n", i, num[i]);
+      }
+      if (tc1ExecuteCommands(command, num, command_part_count) != 2)
+        ;
+      else
+      {
+        uart_printf(CONSOLE, "ERROR: command is not valid command_part_count = %d\r\n", command_part_count);
+      }
+      // K3 commands
+      // The operating system is doomed to go to sleep or die after running the command
+
+      command_length = 0;
+      command[0] = '\0';
+      Yield();
+      uart_printf(CONSOLE, "\r\nDARCY[%u]> ", counter++);
+      Yield();
+    }
+    else if (c == '\b')
+    {
+      if (command_length > 0)
+      {
+        command_length--;
+        command[command_length] = '\0';
+        uart_printf(CONSOLE, "\b \b");
+      }
+    }
+    else
+    {
+      command[command_length] = c;
+      command_length++;
+      command[command_length] = '\0';
+      uart_putc(CONSOLE, c);
+    }
+  }
+  uart_printf(CONSOLE, "\r\n");
+
+  // print white font
+  uart_printf(CONSOLE, "\033[37m");
+  Exit();
+}
 void command_shell()
 {
   char track_id = 'a';

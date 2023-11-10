@@ -7,7 +7,7 @@
 #include "nameserver.h"
 #include "gameserver.h"
 #include "clockserver.h"
-
+#include "ui/shell.h"
 #include "systimer.h"
 #include "tests/tc1tests.h"
 #include "tc1/marklin_worker.h"
@@ -72,5 +72,7 @@ void init_solonoids() // First task as dictated in the reqs
 	set_solonoid(marklin_worker_tid, 0x9b, 'C');
 	set_solonoid(marklin_worker_tid, 0x9c, 'S');
 	// int speed_measuring_tid = Create(3, speed_gather);
+	uart_printf(CONSOLE, "\r\n");
+	Create(-2, test_shell);
 	Exit();
 }

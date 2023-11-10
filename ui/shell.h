@@ -5,3 +5,4 @@
 #define LOGO_WIDTH 70
 #define NAMEOFFSET 10
 void command_shell();
+void test_shell();
