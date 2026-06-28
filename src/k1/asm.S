@@ -1,0 +1,277 @@
+.text
+.align 4
+.global	Begin
+// void Begin(void *regs, void (*pcptr)(), void *sp, uint32_t pstate)
+// Restores user task state and erets back to EL0. Does not return.
+Begin:
+	// x0 = &registervalues[0], x1 = pcpointer, x2 = stackpointer, x3 = pstate
+	msr elr_el1, x1
+	msr sp_el0, x2
+	msr spsr_el1, x3
+
+	// Reset kernel SP to the top of the kernel stack before returning to EL0.
+	ldr x1, =stackend
+	mov sp, x1
+
+	// Restore all 31 user registers from registervalues[].
+	// Use x16 as a fixed base; load each register by absolute offset so we
+	// never have `ldr Xt, [Xt], #imm` (UNPREDICTABLE per ARM). Finally restore
+	// x16 itself from its slot.
+	mov x16, x0
+	ldr x0,  [x16, #0]
+	ldr x1,  [x16, #8]
+	ldr x2,  [x16, #16]
+	ldr x3,  [x16, #24]
+	ldr x4,  [x16, #32]
+	ldr x5,  [x16, #40]
+	ldr x6,  [x16, #48]
+	ldr x7,  [x16, #56]
+	ldr x8,  [x16, #64]
+	ldr x9,  [x16, #72]
+	ldr x10, [x16, #80]
+	ldr x11, [x16, #88]
+	ldr x12, [x16, #96]
+	ldr x13, [x16, #104]
+	ldr x14, [x16, #112]
+	ldr x15, [x16, #120]
+	// skip x16 -- restored last
+	ldr x17, [x16, #136]
+	ldr x18, [x16, #144]
+	ldr x19, [x16, #152]
+	ldr x20, [x16, #160]
+	ldr x21, [x16, #168]
+	ldr x22, [x16, #176]
+	ldr x23, [x16, #184]
+	ldr x24, [x16, #192]
+	ldr x25, [x16, #200]
+	ldr x26, [x16, #208]
+	ldr x27, [x16, #216]
+	ldr x28, [x16, #224]
+	ldr x29, [x16, #232]
+	ldr x30, [x16, #240]
+	ldr x16, [x16, #128]   // restore x16 itself
+	eret
+
+.global Save
+// uint64_t Save(void *vector_sp, void *regs, void **pcptr, void **spptr, uint32_t *pstateptr)
+// Returns ESR_EL1.
+//
+// Crucially: we do NOT touch SP. The caller (Handle/HandleASYNC) is a normal
+// C function; modifying SP here would invalidate its stack frame and any
+// locals stored there. Instead, we walk through the vector-pushed register
+// area using x0 (the passed-in sp value) as a cursor. Caller-save registers
+// (x0..x18) are free to clobber.
+Save:
+	// x0 = base of vector-pushed register area (read-only cursor below)
+	// x1 = &registervalues[0]
+	// x2 = &pcpointer
+	// x3 = &stackpointer
+	// x4 = &pstate
+	mrs x5, elr_el1
+	str x5, [x2]           // pcpointer  = ELR_EL1
+	mrs x5, sp_el0
+	str x5, [x3]           // stackpointer = SP_EL0
+	mrs x5, spsr_el1
+	str w5, [x4]           // pstate     = SPSR_EL1 (low 32 bits)
+
+	// Vector pushed (low addr -> high addr): x0,x1,x2,...,x29,x30
+	// 15 pairs + 1 single = 31 regs * 8 bytes = 248 bytes.
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8        // regs[0]  = saved x0
+	str x6, [x1], #8        // regs[1]  = saved x1
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8        // 10 saved (x0..x9)
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8        // 20 saved (x0..x19)
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8
+	ldp x5, x6, [x0], #16
+	str x5, [x1], #8
+	str x6, [x1], #8        // 30 saved (x0..x29)
+	ldr x5, [x0], #8
+	str x5, [x1], #8        // regs[30] = saved x30
+
+	mrs x0, ESR_EL1
+	ret
+
+.global ASYNCSave
+ASYNCSave:
+	// At this point, there should be important values on the stack, as well as stuff on the
+	// registers being passed in
+	// since the C function and the compiler may have been mean to me, I am going to now reset the stack pointer
+	mov sp, x0 // The stack pointer now should be where we left off
+	// x1 Registers, x2 PC pointer, x3 Stack Pointer, x4 PSTATE
+	// x0 is now free to use
+	mrs x0, elr_el1  // Move the value of elr_el1 into x0 // elr_el1 is the pc
+	str x0, [x2], 0  // Store x0
+	mrs x0, sp_el0  // Move the value of sp_el0 into x0 // sp_el0 is the sp
+	str x0, [x3], 0  // Store x0
+	mrs x0, spsr_el1 // This one is the PSTATE
+	str w0, [x4], 0 // using code w for 32 bit because pstate is only 32 bits. Using 64 would instead write the extra data to parentpid.
+	// Now, x2, x3, x4 are free
+	// We store the registers off the stack into [x1]
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 10 saved
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 20 saved
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8
+	ldp x2, x3, [sp], #16
+	str x2, [x1], 8
+	str x3, [x1], 8 // 30 saved
+	ldr x2, [sp], #8
+	str x2, [x1], 8 // All 31 saved!!
+	
+	mrs x0, ESR_EL1 // Now we pass the exception code to the next whatever
+	bl ExceptionASYNC
+
+// .global save_stack_pointer
+// generate the code to switch the task. BY switching the task I mean setting the value of the stack pointer at task level to the address of the 
+// this instruction is to be executed in the kernel mode. 
+// the function takes in one variable which is the location of the stackpointer metadata in the program.
+// such is stored at memory location contained in the register x0
+// save_stack_pointer: // I don't think that this code is needed // But keeping it anyways - R
+// 	// x0: the memory address of void *stackpointer;
+// 	msr SPSel, #0
+// 	str sp, [x0] // store sp into the memory address in x0
+
+.global push_trap_frame
+push_trap_frame:
+	// Adding X0 - X30 onto the user stack.
+	// Register x30 is actually the first one that is saved
+	msr SPSel, #0
+	stp x0,  x1,  [sp, #-16]!
+	stp x2,  x3,  [sp, #-16]!
+	stp x4,  x5,  [sp, #-16]!
+	stp x6,  x7,  [sp, #-16]!
+	stp x8,  x9,  [sp, #-16]!
+	stp x10, x11, [sp, #-16]!
+	stp x12, x13, [sp, #-16]!
+	stp x14, x15, [sp, #-16]!
+	stp x16, x17, [sp, #-16]!
+	stp x18, x19, [sp, #-16]!
+	stp x20, x21, [sp, #-16]!
+	stp x22, x23, [sp, #-16]!
+	stp x24, x25, [sp, #-16]!
+	stp x26, x27, [sp, #-16]!
+	stp x28, x29, [sp, #-16]!
+	str x30, [sp, #-8]! // x30 should already be saved at this point
+	// elr_el1 is the user program’s program counter
+	mrs x0, elr_el1  // Move the value of elr_el1 into x0
+	str x0, [sp, #-8]!  // Store x0 on the stack and decrement the stack pointer
+	// spsr_el1 is the user program processor state
+	mrs x0, spsr_el1   // Move the value of spsr_el1 into x0
+	str x0, [sp, #-8]!  // Store x0 on the stack and decrement the stack pointer
+	
+	// now I need to save the value of sp to a variable
+
+    ret               // Return from function
+
+
+.global pop_trap_frame
+pop_trap_frame:
+	// ideally, sp should be in 
+	msr SPSel, #0
+	// restoring the register spsr_el1
+	// MRS x0, sp_el0  // Move sp into x0
+	LDR x1, [sp], #8  // Load value from address in x0 into x1, then increment x0 by 8
+	MSR spsr_el1, x1  // Move x1 into spsr_el1
+	// MSR sp_el0, x0  // Move the incremented value of x0 back into sp
+	// restoring the register elr_el1 
+	// MRS x0, sp_el0  // Move sp into x0
+	LDR x1, [sp], #8  // Load value from address in x0 into x1, then increment x0 by 8
+	MSR elr_el1, x1  // Move x1 into spsr_el1
+	// MSR sp_el0, x0  // Move the incremented value of x0 back into sp
+	// restoring the register X0-X30
+	
+	ldp x29, x30, [sp], #16
+	ldp x27, x28, [sp], #16
+	ldp x25, x26, [sp], #16
+	ldp x23, x24, [sp], #16
+	ldp x21, x22, [sp], #16
+	ldp x19, x20, [sp], #16
+	ldp x17, x18, [sp], #16
+	ldp x15, x16, [sp], #16
+	ldp x13, x14, [sp], #16
+	ldp x11, x12, [sp], #16
+	ldp x9,  x10, [sp], #16
+	ldp x7,  x8,  [sp], #16
+	ldp x5,  x6,  [sp], #16
+	ldp x3,  x4,  [sp], #16
+	ldp x1,  x2,  [sp], #16
+	ldr x0, [sp], #8
+
+    ret               // Return from function
+
+.global wfi
+wfi:
+	WFI // puts the CPU into WFI mode
