@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
-# Dev wrapper — uses CS452ROTOS-PLATFORM image from Docker Hub (or local build).
+# Dev wrapper — mounts this kernel repo into the CS452ROTOS-PLATFORM container.
+# Terminal-only on the host TTY. Browser / ttyd remote dev is PLATFORM-only
+# (see CS452ROTOS-PLATFORM README); OS repos never start ttyd.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLATFORM="$(cd "${ROOT}/../github_codejedi-ai_CS452ROTOS-PLATFORM" && pwd)"
+PLATFORM_DEFAULT="${ROOT}/../github_codejedi-ai_CS452ROTOS-PLATFORM"
+if [ -d "${PLATFORM_DEFAULT}" ]; then
+	PLATFORM="$(cd "${PLATFORM_DEFAULT}" && pwd)"
+else
+	PLATFORM="${PLATFORM:-}"
+fi
 cd "$ROOT"
 
 DC=(docker compose)
@@ -14,23 +21,33 @@ Usage: ./dev.sh <command>
 
 Commands:
   build-image Pull/build the shared platform image (Docker Hub or local PLATFORM)
-  run         Build kernel and run in QEMU (raspi4b) — host terminal
+  run         Build kernel and run in QEMU — host terminal (Ctrl+A X to exit)
+  test        CI smoke test (timed QEMU boot)
   test-k1     Run K1 tests under QEMU
   test-k2     Run K2 tests under QEMU
   test-k3     Run K3 tests under QEMU
   test-k4     Run K4 tests under QEMU
   shell       Open a shell in the dev container
-  make [args] Run make inside the container (e.g. ./dev.sh make clean)
+  make [args] Run make inside the container (default: make all)
 
 Environment:
   DARCYOS_IMAGE   default: codejedi-ai/cs452rotos-platform:latest
+  PLATFORM        override path to CS452ROTOS-PLATFORM checkout (optional)
 EOF
 }
 
 ensure_image() {
 	DARCYOS_IMAGE="${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}"
-	# shellcheck source=/dev/null
-	source "${PLATFORM}/scripts/ensure-image.sh"
+	if [ -n "${PLATFORM}" ] && [ -f "${PLATFORM}/scripts/ensure-image.sh" ]; then
+		# shellcheck source=/dev/null
+		source "${PLATFORM}/scripts/ensure-image.sh"
+		return 0
+	fi
+	if docker image inspect "${DARCYOS_IMAGE}" >/dev/null 2>&1; then
+		return 0
+	fi
+	echo "Pulling ${DARCYOS_IMAGE} from Docker Hub..."
+	docker pull "${DARCYOS_IMAGE}"
 }
 
 kvm_args() {
@@ -62,14 +79,16 @@ case "${cmd}" in
 		ensure_image
 		;;
 	run)
-		# Foreground QEMU on stdio in THIS terminal. Use compose run -it (not up)
-		# so docker allocates a real TTY tied to the host shell.
 		ensure_image
 		compose_run run
 		;;
-	test-k1|test-k2|test-k3|test-k4|test)
+	test)
 		ensure_image
-		"${DC[@]}" run --rm -T $(kvm_args) "${cmd}"
+		"${DC[@]}" run --rm -T $(kvm_args) test
+		;;
+	test-k1|test-k2|test-k3|test-k4)
+		ensure_image
+		"${DC[@]}" run --rm -T $(kvm_args) shell "${cmd}"
 		;;
 	shell|bash)
 		ensure_image
@@ -77,7 +96,11 @@ case "${cmd}" in
 		;;
 	make)
 		ensure_image
-		"${DC[@]}" run --rm -T $(kvm_args) make make -j"$(nproc)" "$@"
+		if [ "$#" -eq 0 ]; then
+			"${DC[@]}" run --rm -T $(kvm_args) build
+		else
+			"${DC[@]}" run --rm -T $(kvm_args) shell make "$@"
+		fi
 		;;
 	help|-h|--help)
 		usage

@@ -21,7 +21,10 @@ case "${1:-run}" in
 	run)
 		run_os
 		;;
-	test-k1|test-k2|test-k3|test-k4|test)
+	test)
+		run_tests test-k1
+		;;
+	test-k1|test-k2|test-k3|test-k4)
 		run_tests "${1}"
 		;;
 	shell|bash)
