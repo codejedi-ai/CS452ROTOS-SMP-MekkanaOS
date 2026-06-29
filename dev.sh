@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLATFORM="$(cd "${ROOT}/../github_codejedi-ai_CS452ROTOS-PLATFORM" && pwd)"
-IMAGE="${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}"
+cd "$ROOT"
+
+DC=(docker compose)
 
 usage() {
 	cat <<'EOF'
@@ -12,7 +14,7 @@ Usage: ./dev.sh <command>
 
 Commands:
   build-image Pull/build the shared platform image (Docker Hub or local PLATFORM)
-  run         Build kernel and run in QEMU (raspi4b, virtual Marklin via vhw)
+  run         Build kernel and run in QEMU (raspi4b) — host terminal
   test-k1     Run K1 tests under QEMU
   test-k2     Run K2 tests under QEMU
   test-k3     Run K3 tests under QEMU
@@ -22,33 +24,34 @@ Commands:
 
 Environment:
   DARCYOS_IMAGE   default: codejedi-ai/cs452rotos-platform:latest
-  MARKLIN         passed to qemu/run.sh (vhw|marklinsim|custom)
-  START_VHW       set to 1 to auto-start tools/vhw.py when MARKLIN=vhw
 EOF
 }
 
 ensure_image() {
-	DARCYOS_IMAGE="${IMAGE}"
+	DARCYOS_IMAGE="${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}"
 	# shellcheck source=/dev/null
 	source "${PLATFORM}/scripts/ensure-image.sh"
 }
 
-docker_run() {
-	ensure_image
-	local -a args=(--rm -v "${ROOT}:/workspace" -w /workspace -e XDIR=/opt/toolchain -e IN_DOCKER=1)
-	if [ -t 0 ] && [ -t 1 ]; then
-		args+=(-it)
-	else
-		args+=(-i)
-	fi
+kvm_args() {
 	if [ -e /dev/kvm ]; then
-		args+=(--device /dev/kvm)
+		echo --device /dev/kvm
 		if command -v getent >/dev/null 2>&1 && getent group kvm >/dev/null 2>&1; then
-			args+=(--group-add "$(getent group kvm | cut -d: -f3)")
+			echo --group-add "$(getent group kvm | cut -d: -f3)"
 		fi
 	fi
-	args+=(--entrypoint bash "${IMAGE}")
-	docker run "${args[@]}" -lc 'exec /workspace/scripts/container-run.sh "$@"' -- "$@"
+}
+
+compose_run() {
+	local service="$1"
+	shift
+	local -a tty=(-i)
+	if [ -t 0 ] && [ -t 1 ]; then
+		tty=(-it)
+	fi
+	# shellcheck disable=SC2207
+	local -a kvm=( $(kvm_args) )
+	"${DC[@]}" run --rm "${tty[@]}" "${kvm[@]}" "$service" "$@"
 }
 
 cmd="${1:-run}"
@@ -56,20 +59,25 @@ shift || true
 
 case "${cmd}" in
 	build|build-image)
-		# shellcheck source=/dev/null
-		source "${PLATFORM}/scripts/ensure-image.sh"
+		ensure_image
 		;;
 	run)
-		docker_run run
+		# Foreground QEMU on stdio in THIS terminal. Use compose run -it (not up)
+		# so docker allocates a real TTY tied to the host shell.
+		ensure_image
+		compose_run run
 		;;
 	test-k1|test-k2|test-k3|test-k4|test)
-		docker_run "${cmd}"
+		ensure_image
+		"${DC[@]}" run --rm -T $(kvm_args) "${cmd}"
 		;;
 	shell|bash)
-		docker_run shell
+		ensure_image
+		compose_run shell
 		;;
 	make)
-		docker_run make -j"$(nproc)" "$@"
+		ensure_image
+		"${DC[@]}" run --rm -T $(kvm_args) make make -j"$(nproc)" "$@"
 		;;
 	help|-h|--help)
 		usage

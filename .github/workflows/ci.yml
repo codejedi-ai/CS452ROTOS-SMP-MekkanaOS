@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull platform image
+        run: docker pull codejedi-ai/cs452rotos-platform:latest
+
+      - name: Build kernel
+        run: docker compose run --rm -T make make -j"$(nproc)" all
+
+      - name: K1 tests
+        run: docker compose run --rm -T test-k1

@@ -1,30 +1,54 @@
 # Uses CS452ROTOS-PLATFORM from Docker Hub (see ../github_codejedi-ai_CS452ROTOS-PLATFORM)
+#
+#   docker compose run --rm -it run      # interactive QEMU OS terminal (./dev.sh run)
+#   docker compose run --rm shell        # bash in the container
+#   docker compose run --rm -T make make -j$(nproc) all
+
+x-dev: &dev
+  image: ${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}
+  pull_policy: missing
+  volumes:
+    - .:/workspace
+  working_dir: /workspace
+  environment:
+    - XDIR=/opt/toolchain
+    - IN_DOCKER=1
+
 services:
-  mekkanaos:
-    image: ${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}
-    pull_policy: missing
-    volumes:
-      - .:/workspace
-    working_dir: /workspace
-    environment:
-      - XDIR=/opt/toolchain
-      - IN_DOCKER=1
-      - MARKLIN=${MARKLIN:-vhw}
-      - START_VHW=${START_VHW:-1}
+  run:
+    <<: *dev
     stdin_open: true
     tty: true
     entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
     command: run
 
   shell:
-    image: ${DARCYOS_IMAGE:-codejedi-ai/cs452rotos-platform:latest}
-    pull_policy: missing
-    volumes:
-      - .:/workspace
-    working_dir: /workspace
-    environment:
-      - XDIR=/opt/toolchain
-      - IN_DOCKER=1
+    <<: *dev
     stdin_open: true
     tty: true
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
     command: shell
+
+  test-k1:
+    <<: *dev
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
+    command: test-k1
+
+  test-k2:
+    <<: *dev
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
+    command: test-k2
+
+  test-k3:
+    <<: *dev
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
+    command: test-k3
+
+  test-k4:
+    <<: *dev
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
+    command: test-k4
+
+  make:
+    <<: *dev
+    entrypoint: ["bash", "/workspace/scripts/container-run.sh"]
