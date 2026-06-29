@@ -22,4 +22,7 @@
 #define CONFIG_AUX_BASE    (CONFIG_MMIO_BASE + 0x215000)
 #define CONFIG_GPIO_BASE   (CONFIG_MMIO_BASE + 0x200000)
 
+/* ----- Scheduler priorities (uint8_t; lower number = runs sooner) ----- */
+#define SCHED_LOWEST_PRIORITY  255   /* idle — only scheduled when nothing else is ready */
+
 #endif /* _CONFIG_H_ */

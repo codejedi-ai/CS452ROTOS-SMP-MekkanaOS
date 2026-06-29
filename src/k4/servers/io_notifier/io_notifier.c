@@ -8,16 +8,25 @@
 
 void io_notifier(void)
 {
+	/* Register at entry — nameserver (tid 1) is created first in kmain and is
+	 * already in its Receive loop before this task runs. */
 	RegisterAs("io_notifier");
+
 	int uart2_marklin_tid = -1;
 	int uart1_console_tid = -1;
 
 	while (1)
 	{
-		uart2_marklin_tid = WhoIs(UART2_MARKLIN_SERVER);
-		uart1_console_tid = WhoIs(UART1_CONSOLE_SERVER);
 		uint64_t event = AwaitEvent(UARTINTER);
 		int ret;
+
+		/* Look up server TIDs AFTER AwaitEvent — those servers register later
+		 * than this notifier, so a pre-AwaitEvent lookup caches -1 and the
+		 * first UART RX event would be silently dropped. */
+		if (uart1_console_tid <= 0)
+			uart1_console_tid = WhoIs(UART1_CONSOLE_SERVER);
+		if (uart2_marklin_tid <= 0)
+			uart2_marklin_tid = WhoIs(UART2_MARKLIN_SERVER);
 
 		uint8_t type = event & 0xFF;
 		uint8_t channel = (event >> 8) & 0xFF;

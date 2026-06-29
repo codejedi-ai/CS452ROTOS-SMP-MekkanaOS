@@ -93,4 +93,4 @@ Primary uses today: parallel display canvas bands, screen-buffer diff (APU1–3 
 | `layer3-services/apu_client.{c,h}` | Client stubs |
 | `layer3-services/apu_messages.h` | Wire protocol |
 
-K-line ports would mirror under `src/k4/servers/apu/` (proposed).
+SMP-line ports would mirror under `src/k4/servers/apu/` (proposed).

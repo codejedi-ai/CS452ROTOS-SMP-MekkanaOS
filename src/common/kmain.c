@@ -20,6 +20,7 @@
 #include "shell.h"
 #include "display_server.h"
 #include "boot_tests.h"
+#include "idle.h"
 
 void command_shell();   /* declared in ui/shell.c */
 void* STACK_EL0_START; // Maybe delete this later
@@ -88,12 +89,14 @@ int kmain(void *reg) {
 
   gic_init();
 
+  /* Name server first among priority-0 tasks so RegisterAs/WhoIs succeed
+   * before io_notifier and UART servers start. */
   int tid = KernelCreate(0, nameserver, 0);
   /* display_server is launched right after nameserver so every other task
      can WhoIs("display") on first use. Priority 0 -- it must be responsive. */
   tid = KernelCreate(0, display_server, 0);
   uart_printf(CONSOLE, "display_server tid: %d\r\n", tid);
-  tid = KernelCreate(-1, idle, 0);
+  tid = KernelCreate(IDLE_PRIORITY, idle, 0);
 
   /* Layered boot self-tests. Priority 1 so it runs early and gets a chance
      to spawn its higher-priority children (priority 0 / 2 inside the runner)
@@ -131,7 +134,6 @@ int kmain(void *reg) {
 
   // tid = KernelCreate(0, switch_worker, 0);
 
-  uart_printf(CONSOLE, "idle tid: %d\r\n", tid);
   /* init_solonoids used to bulk-Send 22 switch commands at boot. Under the
      polling-clock kernel that blocks clock_notifier (prio 5) from running
      during the K3 self-test. The shell can recreate switch state on demand
