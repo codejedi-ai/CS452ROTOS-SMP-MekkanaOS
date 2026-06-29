@@ -27,9 +27,6 @@ case "${1:-run}" in
 	test-k1|test-k2|test-k3|test-k4)
 		run_tests "${1}"
 		;;
-	shell|bash)
-		exec bash
-		;;
 	build)
 		make -j"$(nproc)" all
 		;;

@@ -12,7 +12,6 @@ Formerly `cs452-trains-2`.
 
 ```bash
 ./dev.sh run       # build + QEMU with virtual Marklin (vhw)
-./dev.sh shell     # container shell
 ```
 
 ## Layout
