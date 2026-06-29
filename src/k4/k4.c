@@ -1,8 +1,8 @@
 #include "k4.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "../ui/display_server.h"
+#include "display_server.h"
 
 static int k4_test_display_server(void)
 {

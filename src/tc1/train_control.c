@@ -1,5 +1,8 @@
-#include "../rpi.h"
+#include "rpi.h"
+#include "syscall.h"
+#include "nameserver.h"
 #include "clockserver.h"
+#include "track_server.h"
 #include "track_data_new.h"
 #include "marklin_worker.h"
 #include "train_control.h"
@@ -145,7 +148,7 @@ void sensor_stop_task(){
   set_train_state(marklin_worker_tid, train_id, 0);
   Exit();
 }
-void sensor_stop(trainid){
+void sensor_stop(int trainid){
   // initialize the task
   int tid = Create(1, sensor_stop_task);
   // send the trainid and speed to the task

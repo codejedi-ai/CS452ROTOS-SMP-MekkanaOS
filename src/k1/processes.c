@@ -7,11 +7,11 @@
 #include "nameserver.h"
 #include "gameserver.h"
 #include "clockserver.h"
-#include "ui/shell.h"
+#include "shell.h"
 #include "systimer.h"
-#include "tests/tc1tests.h"
-#include "tc1/marklin_worker.h"
-#include "ioserver.h"
+#include "tc1tests.h"
+#include "marklin_worker.h"
+#include "io_api.h"
 
 #define DISPLAY 1
 /*

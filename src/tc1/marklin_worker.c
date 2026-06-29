@@ -1,15 +1,16 @@
 #include "processes.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "asm.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "../custstring.h"
+#include "custstring.h"
 #include "gameserver.h"
 #include "systimer.h"
 #include "clockserver.h"
-#include "../util.h"
+#include "util.h"
+#include "io_api.h"
 
-#include "../config.h"
+#include "config.h"
 #if !MARKLIN_HW_UART3
 #include "auxuart.h"
 #endif
@@ -232,8 +233,12 @@ void marklin_worker()
   while (1)
   {
     int track_server_tid = WhoIs("track_server");
-    io_TXIC_MARKLIN_server_pid = WhoIs("io_TXIC_MARKLIN_server");
-    io_RXIC_MARKLIN_server_pid = WhoIs("io_RXIC_MARKLIN_server");
+    {
+      int mk_tid = MarklinServerTid();
+      while (mk_tid < 0) { Yield(); mk_tid = MarklinServerTid(); }
+      io_TXIC_MARKLIN_server_pid = (uint32_t)mk_tid;
+      io_RXIC_MARKLIN_server_pid = (uint32_t)mk_tid;
+    }
       // send command format 4 bytes
       // first byte denote the type of command 0 read,
       // second byte -1 (id byte)

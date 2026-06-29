@@ -61,6 +61,14 @@ void init_gic(void)
     GICC_PMR = 0xff;
 }
 
+/* Full GIC bring-up — required for PL011 UART IRQ (SPI 121 / IRQ 153). */
+void gic_init(void)
+{
+	GICC_PMR = 0xff;
+	GICC_CTLR = 0x1;
+	GICD_CTLR = 0x1;
+}
+
 void route_interrupt(uint32_t interrupt_id, uint8_t cpu_target){
     if (cpu_target > 7){
         return;

@@ -1,4 +1,7 @@
-#include "../rpi.h"
+#include "rpi.h"
+#include "syscall.h"
+#include "nameserver.h"
+#include "clockserver.h"
 #include "track_server.h"
 #include "marklin_worker.h"
 #include "train_control.h"
@@ -308,7 +311,7 @@ int lookahead(char track_id, char* nodename, struct track_node *nodes[TRACK_MAX]
   // find_all_ahead_sensors
   // printf("find_all_ahead_sensors\n");
   
-  find_all_ahead_sensors(start, track, nodes, &nodes_len, distance);
+  find_all_ahead_sensors(start, track, (const struct track_node **)nodes, &nodes_len, distance);
   for (int i = 0; i < nodes_len; i++)
   {
     // printf("name:%s dist: %d\n", nodes[i]->name, distance[nodes[i]->type][nodes[i]->num]);
@@ -316,7 +319,7 @@ int lookahead(char track_id, char* nodename, struct track_node *nodes[TRACK_MAX]
   return 0;
 }
 
-int solonoid_switches_task(){
+void solonoid_switches_task(void){
   char start_str[10];
   char end_str[10];
   char track_id;
@@ -329,8 +332,6 @@ int solonoid_switches_task(){
   Reply(tid, end_str, 0);
 
   solonoid_switches_helper(track_id, start_str, end_str);
-
-  return 0;
 }
 // working on STOP AT
 // in which the train need to stop at a location. This requires delicate tuning of delay_until_stop and sensor stop

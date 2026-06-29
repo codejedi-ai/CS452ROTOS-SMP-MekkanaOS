@@ -25,7 +25,7 @@ extern uint32_t PID;
 // static const int NUMPROCS = 20; // Deprecated
 
 void InitSys(void* reg);
-void Handle();
+void Handle(void* sp);
 void Exception(uint64_t esr_el1);
 
 void Kill(int p);

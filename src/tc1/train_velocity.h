@@ -1,4 +1,4 @@
-#include "../tc1/train.h"
+#include "train.h"
 struct train_velocity {
   int dist;
   int time;

@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include <stdint.h>
 #include "processes.h"
 #include "nameserver.h"
 #include "asm.h"
@@ -7,10 +8,18 @@
 #include "custstring.h"
 # include "systimer.h"
 #include "gic.h"
-#define DEBUG 5
-#define DEBUG_EXIT 1
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+#ifndef DEBUG_EXIT
+#define DEBUG_EXIT 0
+#endif
 # define READY 0
 # define BLOCKED 1
+
+static void handlerExceptionHelper(uint64_t esr_el1);
+static void recieve_helper(int pid);
+static int min(int a, int b) { return a < b ? a : b; }
 
 /* Single definitions of the kernel globals previously duplicated via
    `static` in syscall.h (one private copy per .c file = ~4 MB wasted). */
@@ -121,7 +130,6 @@ void scrSchedule(int pid, uint64_t priority)
 	*/
 	// put the process into the heap
 	insertKey_state_heap(&READY_HEAP, currItem);
-	return 0;
 }
 
 // scrSchedule(pid, priority)
@@ -222,7 +230,6 @@ void InitSys(void* reg)
 		
 		
 	}
-	return 0;
 }
 
 void updateRunTimer(){
@@ -252,8 +259,8 @@ void HandleASYNC(void* sp) // A helper function to pull some c variables into as
 			uart_printf(CONSOLE, "PID: %u, State: %u, Priority: %u\r\n", READY_QUEUE[i].pid, READY_QUEUE[i].time, READY_QUEUE[i].priority);
 		}
 	uart_getc(1);
-	#endif
 	EXIT();
+	#endif
 }
 
 int unblock_return(uint32_t interruptid, uint64_t ret){
@@ -294,6 +301,9 @@ void ExceptionASYNC(uint64_t esr_el1){
 	// make switch case for the exception
 	// uart_printf(CONSOLE, "ESR is %x\n\r", esr_el1); // DEBUG PRINT
     uint32_t interruptid = readInterruptId();
+	if (interruptid >= 1020) {
+		return;
+	}
 	setActiveInterrupt(interruptid);
 	scrSchedule(PID, PROCS[p].priority);
 	
@@ -315,11 +325,25 @@ void ExceptionASYNC(uint64_t esr_el1){
 			uint32_t* RIS_MARKLIN = get_RIS(MARKLIN);
 			uint32_t* ICR_MARKLIN = get_ICR(MARKLIN);
 			if((*RIS_CONSOLE) & (0x01 << CTSMIM)){
-				// RXIC on the marklin
 				return_val[0] = CTSMIM;
 				return_val[1] = MARKLIN;
 				if (get_CTS(MARKLIN) == 1) return_val[2] = 1; else return_val[2] = 0;
 				*ICR_CONSOLE = (0x01 << CTSMIM);
+			} else if((*RIS_CONSOLE) & ((0x01 << RXIC) | (0x01 << 6))){
+				return_val[0] = RXIC;
+				return_val[1] = CONSOLE;
+				return_val[2] = uart_getc_modified(CONSOLE);
+				*ICR_CONSOLE = ((0x01 << RXIC) | (0x01 << 6));
+				while (uart_getc_queue(CONSOLE)) {
+					char extra[8] = {0};
+					extra[0] = RXIC;
+					extra[1] = CONSOLE;
+					extra[2] = uart_getc_modified(CONSOLE);
+					AWAIT_INTERRUPT[interruptid].event_q[AWAIT_INTERRUPT[interruptid].eventq_tail] = *(uint64_t*)extra;
+					AWAIT_INTERRUPT[interruptid].eventq_tail++;
+					AWAIT_INTERRUPT[interruptid].eventq_tail %= NUMPROCS;
+					AWAIT_INTERRUPT[interruptid].eventq_len++;
+				}
 			}else if((*RIS_MARKLIN) & (0x01 << TXIC)){
 				// uart_printf(CONSOLE, "TXIC Interrupt ON MARKLIN\n\r");
 				// TXIC on the marklin
@@ -436,10 +460,10 @@ void send_helper(){
 	# endif
 	// Debug
 	int p = PID - 1;
-	int tid = PROCS[p].registervalues[0];
-	char *msg = PROCS[p].registervalues[1];
+	int tid = (int)PROCS[p].registervalues[0];
+	char *msg = (char *)(uintptr_t)PROCS[p].registervalues[1];
 	uint64_t msglen = PROCS[p].registervalues[2];
-	char *reply = PROCS[p].registervalues[3];
+	char *reply = (char *)(uintptr_t)PROCS[p].registervalues[3];
 	uint64_t replylen = PROCS[p].registervalues[4];
 
 	// This puts the message into the messageDS of the target task
@@ -497,9 +521,9 @@ void recieve_helper(int PID){
 	// uart_printf(CONSOLE, "head is %u, tail is %u\r\n", head, tail);
 	# endif
 	
-	int *tid =  PROCS[p].registervalues[0]; // This is a memory address for the TID
-	char *msg = PROCS[p].registervalues[1]; // this is another memory address for the message
-	int msglen = PROCS[p].registervalues[2];
+	int *tid = (int *)(uintptr_t)PROCS[p].registervalues[0];
+	char *msg = (char *)(uintptr_t)PROCS[p].registervalues[1];
+	int msglen = (int)PROCS[p].registervalues[2];
 	# if DEBUG == 2
 	// print therefore blocked
 	
@@ -653,7 +677,8 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 2: // Create
 			scrSchedule(PID, PROCS[p].priority);
-			int ret = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
+			int ret = KernelCreate(PROCS[p].registervalues[0],
+				(void (*)(void))(uintptr_t)PROCS[p].registervalues[1], PID);
 			PROCS[p].registervalues[0] = ret;
 			break;
 		case 3: // mytid
@@ -741,7 +766,8 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			break;
 		case 9: // Create args
 			scrSchedule(PID, PROCS[p].priority);
-			uint64_t retd = KernelCreate(PROCS[p].registervalues[0], PROCS[p].registervalues[1], PID);
+			uint64_t retd = KernelCreate(PROCS[p].registervalues[0],
+				(void (*)(void))(uintptr_t)PROCS[p].registervalues[1], PID);
 			
 			if (PROCS[p].registervalues[2] > 0) {
 				// theis is create with arguments
@@ -761,7 +787,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 						for (int j = 0; j < stack_offset; j++) {
 							newsp[j] = ((int64_t *)PROCS[p].registervalues[3])[j + 8];
 						}
-						PROCS[retd - 1].stackpointer = (int64_t)newsp;
+						PROCS[retd - 1].stackpointer = (void *)newsp;
 					}
 				}
 			}
@@ -823,7 +849,7 @@ void handlerExceptionHelper(uint64_t esr_el1)
 void Schedule()
 {
 	PID = scrPick();
-	if (PID == -1) return 0;
+	if (PID == -1) return;
 
 	int p = PID - 1;
 	// We need to reset the EL1 stack pointer as well
@@ -843,7 +869,6 @@ void Schedule()
 	PROCS[p].waketime = get_timerLO();
 
 	Begin(&PROCS[p].registervalues[0], PROCS[p].pcpointer, PROCS[p].stackpointer, PROCS[p].pstate); // found in asm.h
-	return 0;
 }
 // MINHEAP===================================== GET THE SMALLEST AVAILABLE PID
 
@@ -988,20 +1013,20 @@ void Kill(int p) // p is the position of the process in the PROCS array
 // to put a specific message in the messageDS of the targeted task. 
 int Send(int tid, const char *msg, int msglen, char *reply, int replylen){
 	asm("svc 5");
-	return;
+	return 0;
 }
 
 int Receive(int *tid, char *msg, int msglen){
 	asm("svc 6");
-	return;
+	return 0;
 }
 int Reply( int tid, void *reply, int replylen ){
 	asm("svc 7");
-	return;
+	return 0;
 }
 int MyPriority(){
 	asm("svc 8");
-	return;
+	return 0;
 }
 // helper functions 
 // mailbox is meant to get the messageDS array of the process. 
@@ -1011,34 +1036,34 @@ int MyPriority(){
 int MyTid()
 {
 	asm("svc 3");
-	return;
+	return 0;
 }
 int MyParentTid()
 {
 	asm("svc 4");
-	return;
+	return 0;
 }
 
 int Create(uint64_t priority, void (*function)()) { // Returns to the Kernel, then calls KernelCreate
 	asm("svc 2"); // The Kernel needs to put the pid in x0
-	return;
+	return 0;
 }
 
 int CreateArgs(uint64_t priority, void (*function)(), uint64_t argsno, uint64_t *args) { // Returns to the Kernel, then calls KernelCreate
 	asm("svc 9"); // The Kernel needs to put the pid in x0
-	return;
+	return 0;
 }
 int AwaitEvent(int eventType){ // Returns to the Kernel, then calls KernelCreate
 	asm("svc 10"); // The Kernel needs to put the pid in x0
-	return;
+	return 0;
 }
 int GetRuntime(){ // Returns to the Kernel, then calls KernelCreate
 	asm("svc 11"); // The Kernel needs to put the pid in x0
-	return;
+	return 0;
 }
 int GetKernelRuntime(){ // Returns to the Kernel, then calls KernelCreate
 	asm("svc 12"); // The Kernel needs to put the pid in x0
-	return;
+	return 0;
 }
 // Why is exit SCV 0 
 // The difference between an exit and a Yield is Exit do not return back to the priority READY_QUEUE where Yield returns the program back into the priority READY_QUEUE to be ran again. 

@@ -1,15 +1,15 @@
 #include "tc1tests.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "../custstring.h"
+#include "custstring.h"
 #include "systimer.h"
 #include "clockserver.h"
-#include "../tc1/marklin_worker.h"
-#include "../tc1/train_control.h"
-#include "../tc1/track_data_new.h"
-#include "../tc1/goto.h"
-#include "ioserver.h"
+#include "marklin_worker.h"
+#include "train_control.h"
+#include "track_data_new.h"
+#include "goto.h"
+#include "io_api.h"
 #define delay 0
 #define DJIKSTRAS_ROW 1
 #define DJIKSTRAS_COL 1

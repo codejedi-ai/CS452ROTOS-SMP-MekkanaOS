@@ -1,5 +1,5 @@
 #include "k2.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "syscall.h"
 #include "nameserver.h"
 

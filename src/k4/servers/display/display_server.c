@@ -1,8 +1,8 @@
 #include "display_server.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "../util.h"
+#include "util.h"
 #include <stdarg.h>
 
 #define DISPLAY_BUF_MAX 256

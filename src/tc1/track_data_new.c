@@ -1,7 +1,7 @@
 /* THIS FILE IS GENERATED CODE -- DO NOT EDIT */
 
 #include "track_data_new.h"
-#include "../util.h"   /* memset() */
+#include "util.h"   /* memset() */
 
 void init_tracka(track_node *track) {
   memset(track, 0, TRACK_MAX*sizeof(track_node));

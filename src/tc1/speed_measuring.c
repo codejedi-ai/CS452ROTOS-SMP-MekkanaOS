@@ -1,10 +1,10 @@
 #include "train.h"
-#include "../rpi.h"
-#include "../util.h"
+#include "rpi.h"
+#include "util.h"
 #include "nameserver.h"
-#include "ioserver.h"
+#include "io_api.h"
 #include "speed_measuring.h"
-#include "../custstring.h"
+#include "custstring.h"
 #define SENSOR 0
 #define TRAIN 1
 #define SWITCH 2

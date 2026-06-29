@@ -1,10 +1,10 @@
 #include "boot_tests.h"
-#include "../rpi.h"
+#include "rpi.h"
 #include "syscall.h"
-#include "../k1/k1.h"
-#include "../k2/k2.h"
-#include "../k3/k3.h"
-#include "../k4/k4.h"
+#include "k1.h"
+#include "k2.h"
+#include "k3.h"
+#include "k4.h"
 
 void command_shell(void);  /* defined in ui/shell.c, spawned after tests pass */
 
