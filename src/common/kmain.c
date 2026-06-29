@@ -10,6 +10,7 @@
 #include "gameserver.h"
 
 #include "gic.h"
+#include "systimer.h"
 #include "config.h"
 #if !MARKLIN_HW_UART3
 #include "auxuart.h"

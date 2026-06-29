@@ -8,7 +8,7 @@
  * the wire, and each call busy-spins on the TX FIFO inside whichever task
  * is running. Centralizing through this server means a) output is always
  * coherent, b) sender tasks don't burn cycles waiting for UART TX, c) we
- * have one place to add buffering / log levels / ttyd routing later.
+ * have one place to add buffering / log levels later.
  *
  * Wire protocol over Send/Reply:
  *   client packs (DISPLAY_PRINT, payload bytes...) into the send buffer.

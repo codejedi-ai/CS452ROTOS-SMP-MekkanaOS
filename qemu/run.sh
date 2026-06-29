@@ -24,10 +24,10 @@
 set -euo pipefail
 
 IMG=${IMG:-0-d273liu.img}
-MARKLIN=${MARKLIN:-marklinsim}
+MARKLIN=${MARKLIN:-vhw}
 
 if [[ ! -f "$IMG" ]]; then
-    echo "run.sh: $IMG not found; run 'make MODE=qemu' first" >&2
+    echo "run.sh: $IMG not found; run 'make all' first" >&2
     exit 1
 fi
 

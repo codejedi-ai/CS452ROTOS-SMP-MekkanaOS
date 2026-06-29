@@ -11,8 +11,8 @@ Formerly `cs452-trains-2`.
 ## Quick start
 
 ```bash
-./dev.sh run       # build + QEMU with virtual Marklin
-./dev.sh shell     # container shell, make MODE=qemu
+./dev.sh run       # build + QEMU with virtual Marklin (vhw)
+./dev.sh shell     # container shell
 ```
 
 ## Layout
@@ -46,4 +46,4 @@ tools/             vhw.py Marklin simulator
 
 ## Source layout (LAYERED_K)
 
-Kernel sources live under `src/` (`k0`–`k4`, `common`, `common/custom`, `tc1`, `tests`). Build from the repo root: `make all` (delegates to `src/Makefile`). MekkanaOS also supports `make MODE=hw|qemu all`.
+Kernel sources live under `src/` (`k0`–`k4`, `common`, `common/custom`, `tc1`, `tests`). Build from the repo root: `make all` (delegates to `src/Makefile`).

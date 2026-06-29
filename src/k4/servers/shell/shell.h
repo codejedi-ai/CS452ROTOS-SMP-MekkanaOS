@@ -9,6 +9,9 @@
 #define LOGO_WIDTH  70      /* width of the logo block; for prompt offset   */
 #define NAMEOFFSET  10      /* "DARCY[%u]> " glyphs before the cursor       */
 
+/* Below servers (0); idle stays at SCHED_LOWEST_PRIORITY (255). */
+#define TERMINAL_SHELL_PRIORITY 20
+
 void command_shell();
 
 #endif /* shell.h */

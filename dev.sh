@@ -12,13 +12,17 @@ Usage: ./dev.sh <command>
 
 Commands:
   build-image Pull/build the shared platform image (Docker Hub or local PLATFORM)
-  run         Build kernel (MODE=qemu) and run in QEMU with virtual Marklin
+  run         Build kernel and run in QEMU (raspi4b, virtual Marklin via vhw)
+  test-k1     Run K1 tests under QEMU
+  test-k2     Run K2 tests under QEMU
+  test-k3     Run K3 tests under QEMU
+  test-k4     Run K4 tests under QEMU
   shell       Open a shell in the dev container
-  make [args] Run make inside the container (e.g. ./dev.sh make MODE=qemu all)
+  make [args] Run make inside the container (e.g. ./dev.sh make clean)
 
 Environment:
   DARCYOS_IMAGE   default: codejedi-ai/cs452rotos-platform:latest
-  MARKLIN         passed to qemu/run.sh (marklinsim|vhw|custom)
+  MARKLIN         passed to qemu/run.sh (vhw|marklinsim|custom)
   START_VHW       set to 1 to auto-start tools/vhw.py when MARKLIN=vhw
 EOF
 }
@@ -52,10 +56,14 @@ shift || true
 
 case "${cmd}" in
 	build|build-image)
-		ensure_image
+		# shellcheck source=/dev/null
+		source "${PLATFORM}/scripts/ensure-image.sh"
 		;;
 	run)
 		docker_run run
+		;;
+	test-k1|test-k2|test-k3|test-k4|test)
+		docker_run "${cmd}"
 		;;
 	shell|bash)
 		docker_run shell

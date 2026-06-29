@@ -13,10 +13,8 @@
 # define TXIC 5
 # define RXIC 4
 # define CTSMIM 1
-/* Kernel globals. Previously declared `static` in this header, which made
-   every .c file get its own private copy (19 PROCS arrays, ~4 MB wasted).
-   Now declared `extern` here and defined exactly once in syscall.c. */
 extern void *STACKSTART;
+// This is the PID of the currentlly running process
 extern uint32_t PID;
 
 
@@ -29,9 +27,9 @@ void Handle(void* sp);
 void Exception(uint64_t esr_el1);
 
 void Kill(int p);
-int KernelCreate(uint64_t priority, void (*function)(), int parent);
-int Create(uint64_t priority, void (*function)());
-int CreateArgs(uint64_t priority, void (*function)(), uint64_t argsno, uint64_t *args);
+int KernelCreate(uint8_t priority, void (*function)(), int parent);
+int Create(uint8_t priority, void (*function)());
+int CreateArgs(uint8_t priority, void (*function)(), uint64_t argsno, uint64_t *args);
 void Schedule();
 
 int MyTid();
@@ -60,7 +58,7 @@ struct process {
 	uint32_t pstate;
 	int parentpid;
 	int pid;
-	uint64_t priority;
+	uint8_t priority;
 	uint64_t registervalues[31];
 	// define an array of messages such would be held in memory for each process.
 	// A kernel call is needed to get the message array for the process.
@@ -78,7 +76,7 @@ struct process {
 };
 struct state {
 	int pid;
-	uint64_t priority;
+	uint8_t priority;
     uint64_t time;
 };
 struct interrupt {
@@ -94,13 +92,12 @@ struct MinHeapState
 	unsigned capacity;
 	struct state *harr;
 };
-/* Kernel state. Single definitions live in syscall.c. */
+
 extern struct process PROCS[NUMPROCS];
 extern struct state READY_QUEUE[NUMPROCS];
 extern struct state BLOCKED_LIST[NUMPROCS];
-extern struct MinHeapState READY_HEAP;
 extern struct interrupt AWAIT_INTERRUPT[MAXEVENT];
-void scrSchedule(int pid, uint64_t priority);
+void scrSchedule(int pid, uint8_t priority);
 int scrPick();
 void HandleASYNC(void* sp);
 void ExceptionASYNC(uint64_t esr_el1);

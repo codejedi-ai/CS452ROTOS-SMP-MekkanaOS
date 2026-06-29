@@ -73,6 +73,6 @@ void init_solonoids() // First task as dictated in the reqs
 	set_solonoid(marklin_worker_tid, 0x9c, 'S');
 	// int speed_measuring_tid = Create(3, speed_gather);
 	uart_printf(CONSOLE, "\r\n");
-	Create(-2, command_shell);
+	Create(TERMINAL_SHELL_PRIORITY, command_shell);
 	Exit();
 }

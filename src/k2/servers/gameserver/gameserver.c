@@ -4,7 +4,8 @@
 #include "syscall.h"
 #include "util.h"
 #include "nameserver.h"
-#include "custstring.h"
+#include "custstr.h"
+#include "gameserver.h"
 #include "systimer.h"
 /*
 These are the most essential terminal control sequences that you will need for your train program.
@@ -30,15 +31,6 @@ Code	Effect
 
 */
 // if program quits then the game would wait for another program to join
-struct game
-{
-	uint32_t tid1;
-	uint32_t tid2;
-	char tid1_move[10];
-	char tid2_move[10];
-	uint32_t tid1_score;
-	uint32_t tid2_score;
-};
 uint8_t full_game(struct game *cur_game)
 {
 	/* data */
@@ -48,11 +40,9 @@ uint8_t full_play(struct game *cur_game)
 {
 	/* data */
 	return (!is_empty(cur_game->tid1_move) && !is_empty(cur_game->tid2_move));
-};
+}
 
-int set_play(char* move, uint32_t tid, struct game *games){
-	int game_no = 0;
-
+int set_play(char* move, int tid, struct game *games){
 	for (int i = 0; i < 10; i++)
 	{
 		if (games[i].tid1 == tid){
@@ -66,6 +56,7 @@ int set_play(char* move, uint32_t tid, struct game *games){
 			return i;
 		}
 	}
+	return -1;
 }
 void reset_game(struct game *cur_game)
 {
@@ -81,31 +72,31 @@ int check_game(struct game *cur_game){
 	if (!full_play(cur_game)){
 		return -1;
 	}
-	if (strcmp_ret(cur_game->tid1_move, "rock") && strcmp_ret(cur_game->tid2_move, "scissors")){
+	if (strcmp_ret(cur_game->tid1_move, "rock", 0) && strcmp_ret(cur_game->tid2_move, "scissors", 0)){
 		cur_game->tid1_score++;
 		return 1;
-	} else if (strcmp_ret(cur_game->tid1_move, "scissors") && strcmp_ret(cur_game->tid2_move, "paper")){
+	} else if (strcmp_ret(cur_game->tid1_move, "scissors", 0) && strcmp_ret(cur_game->tid2_move, "paper", 0)){
 		cur_game->tid1_score++;
 		return 1;
-	} else if (strcmp_ret(cur_game->tid1_move, "paper") && strcmp_ret(cur_game->tid2_move, "rock")){
+	} else if (strcmp_ret(cur_game->tid1_move, "paper", 0) && strcmp_ret(cur_game->tid2_move, "rock", 0)){
 		cur_game->tid1_score++;
 		return 1;
-	} else if (strcmp_ret(cur_game->tid1_move, "rock") && strcmp_ret(cur_game->tid2_move, "paper")){
+	} else if (strcmp_ret(cur_game->tid1_move, "rock", 0) && strcmp_ret(cur_game->tid2_move, "paper", 0)){
 		cur_game->tid2_score++;
 		return 2;
-	} else if (strcmp_ret(cur_game->tid1_move, "scissors") && strcmp_ret(cur_game->tid2_move, "rock")){
+	} else if (strcmp_ret(cur_game->tid1_move, "scissors", 0) && strcmp_ret(cur_game->tid2_move, "rock", 0)){
 		cur_game->tid2_score++;
 		return 2;
-	} else if (strcmp_ret(cur_game->tid1_move, "paper") && strcmp_ret(cur_game->tid2_move, "scissors")){
+	} else if (strcmp_ret(cur_game->tid1_move, "paper", 0) && strcmp_ret(cur_game->tid2_move, "scissors", 0)){
 		cur_game->tid2_score++;
 		return 2;
 	}
-	if (strcmp_ret(cur_game->tid1_move, cur_game->tid2_move)){
+	if (strcmp_ret(cur_game->tid1_move, cur_game->tid2_move, 0)){
 		return 0;
 	}
-	
+	return -1;
 }
-int ingame(uint32_t tid, struct game *games){
+int ingame(int tid, struct game *games){
 	for (int i = 0; i < 10; i++)
 	{
 		if (games[i].tid1 == tid || games[i].tid2 == tid){
@@ -138,32 +129,32 @@ void gameserver(){
 				// if one of the PIDs equal to main's pid then we need to reply to main
 				
 				if (mainpid == games[i].tid2 || mainpid == games[i].tid1){
-					int repret = Reply(mainpid, "Q", 2);
+					(void)Reply(mainpid, "Q", 2);
 				}
 			}
 		}
-		int recret = Receive(&tid, msg, msglen);
+		(void)Receive(&tid, msg, msglen);
 		// // uart_printf(CONSOLE, "gameserver: Message recieved: [%s], recret = %d\r\n", msg, recret);
 		// the message would be signup, quit, rock paper or scissors
 		// if msg is signup
-		if (strcmp_ret(msg, "shutdown")){
+		if (strcmp_ret(msg, "shutdown", 0)){
 			// shutdown
 			for (int i = 0; i < 10; i++)
 			{
 				if (games[i].tid1 != 0){
-					int repret = Reply(games[i].tid1, "K", 9);
+					(void)Reply(games[i].tid1, "K", 9);
 				}
 				if (games[i].tid2 != 0){
-					int repret = Reply(games[i].tid2, "K", 9);
+					(void)Reply(games[i].tid2, "K", 9);
 				}
 			}
 			Reply(tid, "+", 9);
 			Exit();
 		}
-		else if (strcmp_ret(msg, "signup")){
+		else if (strcmp_ret(msg, "signup", 0)){
 			// find a game that is not full
 			// print welcome message
-			// uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player-%u\r\n", tid);
+			// uart_printf(CONSOLE, "Welcome to Rock Paper Scissors player-%u\r\n", tid, 0);
 
 			for (int i = 0; i < 10; i++)
 			{
@@ -185,14 +176,14 @@ void gameserver(){
 					break;
 				}
 			}
-			int repret = Reply(tid, "recieved", 25);
+			(void)Reply(tid, "recieved", 25);
 			continue;
-		} else if (strcmp_ret(msg, "quit")){
+		} else if (strcmp_ret(msg, "quit", 0)){
 			// find a game that is not full
 			if (!ingame(tid, games)){
 				// print error message
 				//// uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
-				int repret = Reply(tid, "E", 2);
+				(void)Reply(tid, "E", 2);
 				continue;
 			}
 			for (int i = 0; i < 10; i++)
@@ -208,18 +199,18 @@ void gameserver(){
 				// if one of them is the main then we also need to reply hte main with the letter Q
 				if (mainpid == games[i].tid2 || mainpid == games[i].tid1){
 					// uart_printf(CONSOLE, "Your friend has quit the game\r\n");
-					int repret = Reply(mainpid, "Q", 2);
+					(void)Reply(mainpid, "Q", 2);
 				}
 			}
-			int repret = Reply(tid, "recieved", 25);
+			(void)Reply(tid, "recieved", 25);
 			continue;
-		} else if (strcmp_ret(msg, "rock") || strcmp_ret(msg, "paper") || strcmp_ret(msg, "scissors")){
+		} else if (strcmp_ret(msg, "rock", 0) || strcmp_ret(msg, "paper", 0) || strcmp_ret(msg, "scissors", 0)){
 			// find a game that is not full
 			// check is the player is in a game
 			if (!ingame(tid, games)){
 				// print error message
 				//// uart_printf(CONSOLE, "You are not in a game %u\r\n", tid);
-				int repret = Reply(tid, "E", 2);
+				(void)Reply(tid, "E", 2);
 				continue;
 			}
 			
@@ -240,23 +231,22 @@ void gameserver(){
 
 				reset_game(&games[game_no]);
 
-				int repret1, repret2;
 				if (victor == 1){
 					// player 1 wins
-					repret1 = Reply(tid1, "W", 2);
-					repret2 = Reply(tid2, "L", 2);
+					(void)Reply(tid1, "W", 2);
+					(void)Reply(tid2, "L", 2);
 				} else if (victor == 2){
 					// player 2 wins
-					repret1 = Reply(tid1, "L", 2);
-					repret2 = Reply(tid2, "W", 2);
+					(void)Reply(tid1, "L", 2);
+					(void)Reply(tid2, "W", 2);
 				} else if (victor == 0){
 					// draw
-					repret1 = Reply(tid1, "D", 2);
-					repret2 = Reply(tid2, "D", 2);
+					(void)Reply(tid1, "D", 2);
+					(void)Reply(tid2, "D", 2);
 				}
 
 			}
-			//int repret = Reply(tid, "W", 2);
+			//(void)Reply(tid, "W", 2);
 		}
 		
 	}
@@ -278,7 +268,8 @@ char play(char* move){
 	int pid = WhoIs("gameserver");
 	char msg[25];
 	Send(pid, move, 9, msg, 25);
-	char retchar = (char* )msg[0];
+	char retchar = msg[0];
+	//strflush(msg, 25);
 	return retchar;
 }
 char RPCShutdown(){
@@ -286,7 +277,8 @@ char RPCShutdown(){
 	char msg[25] = "shutdown";
 	msg[8] = 0;
 	Send(pid, msg, 9, msg, 25);
-	char retchar = (char* )msg[0];
+	char retchar = msg[0];
 
+	//strflush(msg, 25);
 	return retchar;
 }

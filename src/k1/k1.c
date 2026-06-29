@@ -84,11 +84,3 @@ static int k1_test_my_tid(void)
     }
     return 0;
 }
-
-int k1_self_tests(void)
-{
-    int fails = 0;
-    fails += k1_test_create_and_yield();
-    fails += k1_test_my_tid();
-    return fails;
-}
