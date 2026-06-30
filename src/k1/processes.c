@@ -3,11 +3,11 @@
 #include "asm.h"
 #include "syscall.h"
 
-#include "custstring.h"
+#include "custstr.h"
 #include "nameserver.h"
 #include "gameserver.h"
 #include "clockserver.h"
-#include "shell.h"
+
 #include "systimer.h"
 #include "tc1tests.h"
 #include "marklin_worker.h"
@@ -48,9 +48,9 @@ void init_solonoids() // First task as dictated in the reqs
 {	// need to set the timer interrupt
 	RegisterAs("init_solonoids");
 	#define SWITCH_COUNT 18
-	int tid;
 	//void set_solonoid(int marklin_worker_tid, uint8_t sol_id, char state);
 	int marklin_worker_tid = WhoIs("marklin_worker");
+	(void)marklin_worker_tid;
   // set all the turnabouts to straight
 	for (uint8_t i = 1; i <= SWITCH_COUNT; i ++){
 		// set_solonoid(marklin_worker_tid, i, 'S');
@@ -72,7 +72,5 @@ void init_solonoids() // First task as dictated in the reqs
 	set_solonoid(marklin_worker_tid, 0x9b, 'C');
 	set_solonoid(marklin_worker_tid, 0x9c, 'S');
 	// int speed_measuring_tid = Create(3, speed_gather);
-	uart_printf(CONSOLE, "\r\n");
-	Create(TERMINAL_SHELL_PRIORITY, command_shell);
 	Exit();
 }

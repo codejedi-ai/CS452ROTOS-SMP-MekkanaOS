@@ -15,7 +15,11 @@
 #define TABLECOL 50
 #define SENSORROW 50
 #define SENSORCOL 0
-void get_sensor_pushed(int track_server_tid, struct track_node track[TRACK_MAX], int tracks_max);
+// Variable-length array param: the actual element count is the third
+// argument. Declaring `int track[TRACK_MAX]` triggered a stringop-overflow
+// warning at callers passing smaller buffers (e.g. the shell's 10-entry
+// sensor view).
+void get_sensor_pushed(int track_server_tid, int *track, int tracks_max);
 char get_track_id(int track_server_tid);
 void init_track(int track_server_tid, char track_id);
 int getspeed_train(int track_server_tid, char train_no);

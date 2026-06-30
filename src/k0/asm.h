@@ -14,4 +14,8 @@ void pop_trap_frame();
 void save_stack_pointer(void*);
 
 void wfi();
+
+/* Unmask EL1 IRQ (DAIF.I) then WFI — GIC SPIs are dropped while I=1. */
+void wfi_unmasked(void);
+
 #endif

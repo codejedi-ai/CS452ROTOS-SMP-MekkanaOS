@@ -4,7 +4,7 @@
 #include "syscall.h"
 #include "util.h"
 #include "nameserver.h"
-#include "custstring.h"
+#include "custstr.h"
 #define DEBUG 0
 void helper_parsestring( char *retarr, int size, char * str, int part) {
   int i = 1, j = 0;
@@ -48,7 +48,7 @@ Code	Effect
 */
 
 void nameserver(){
-	char* pid_names[NUMPROCS][50];
+	char pid_names[NUMPROCS][50];
 	int tid;
 	char msg[50];
 	int msglen = 49;
@@ -60,84 +60,40 @@ void nameserver(){
 	cust_strcpy(pid_names[0], 50, "kernel", 50);
 	while (1)
 	{
-
-		int recret = Receive(&tid, msg, msglen);
+		Receive(&tid, msg, msglen);
 
 		char command[50];
 		char name[50];
-
+		command[0] = 0;
+		name[0] = 0;
 
 		helper_parsestring(command, 50, msg, 1);
 		helper_parsestring(name, 50 , msg, 2);
+		// uart_printf(CONSOLE, "DBG recv: msg='%s' -> cmd='%s' name='%s'\r\n", msg, command, name);
 
-
-		// now print the compair
-		char *command_cand = "REGISTER";
-		int cmp;
-		cmp = strcmp_ret(command, command_cand);
-
-		if (cmp){
+		if (strcmp_ret(command, "REGISTER", 0)){
 			cust_strcpy(pid_names[tid], 50, name, 50);
-			// this registers a PID with a name
-			// change font to blue
-			# if DEBUG == 2
-			uart_printf(CONSOLE, "\033[32m");
-			uart_printf(CONSOLE, "REGISTERD PID: %u, Name: %s\r\n", tid, pid_names[tid]);
-			uart_printf(CONSOLE, "\033[37m");
-			# endif
-
-			// change font to white
+			// uart_printf(CONSOLE, "DBG REGISTER: tid=%d registered as '%s'\r\n", tid, pid_names[tid]);
 			int repret = 0;
-			int repret_2 = Reply(tid, &repret, 0);
-		}
-		command_cand = "WHOIS";
-		cmp = strcmp_ret(command, command_cand);
-
-		if (cmp){
-
-			// this registers a PID with a name
+			Reply(tid, &repret, 0);
+		} else if (strcmp_ret(command, "WHOIS", 0)){
 			int ret = 0;
-			while (ret < NUMPROCS)
-			{
-
-				if (strcmp_ret(pid_names[ret], name))
-				{
-					int repret = Reply(tid, &ret, 4);
-					break;
-				}
+			// uart_printf(CONSOLE, "DBG WHOIS from tid=%d: searching for '%s' (pid_names[3]='%s')\r\n", tid, name, pid_names[3]);
+			while (ret < NUMPROCS && !strcmp_ret(pid_names[ret], name, 0)){
 				ret++;
 			}
 			if(ret >= NUMPROCS){
+				// uart_printf(CONSOLE, "  -> Not found (checked all, returned -1)\r\n");
 				ret = -1;
-				int repret = Reply(tid, &ret, 4);
+			} else {
+				// uart_printf(CONSOLE, "  -> Found at %d\r\n", ret);
 			}
-		}
-		command_cand = "DEREGISTER";
-		cmp = strcmp_ret(command, command_cand);
-		if (cmp){
-			// this registers a PID with a name
-			// print the deregistered in red
-			# if DEBUG == 2
-			uart_printf(CONSOLE, "\033[31m");
-			uart_printf(CONSOLE, "DEREGISTERD PID: %u, Name: %s\r\n", tid, pid_names[tid]);
-			uart_printf(CONSOLE, "\033[37m");
-			# endif
+			Reply(tid, &ret, 4);
+		} else if (strcmp_ret(command, "DEREGISTER", 0)){
 			pid_names[tid][0] = 0;
 			int repret = 0;
-			int repret2 = Reply(tid, &repret, 0);
+			Reply(tid, &repret, 0);
 		}
-		command_cand = "GETNAME";
-		# if DEBUG == 2
-		// print the registered table in green
-		uart_printf(CONSOLE, "\033[34m");
-		uart_printf(CONSOLE, "Registered Table:\r\n");
-		for (int i = 0; i < NUMPROCS; i++)
-		{
-			
-			uart_printf(CONSOLE, "PID: %u, Name: %s\r\n", i, pid_names[i]);
-		}
-		uart_printf(CONSOLE, "\033[37m");
-		# endif
 	}
 	Exit();
 }
@@ -145,10 +101,9 @@ void nameserver(){
 int RegisterAs(const char *name){
 	int rep = 0;
 	char sendmsg[50] = "REGISTER ";
-	int msgsz = 50;
-	//msgsz = strcat_cust((char* )sendmsg, command_cand);
-	msgsz = strcat_cust((char* )sendmsg, name);
-	Send(1, sendmsg, 50, &rep, 4);
+	int msgsz = strcat_cust((char* )sendmsg, name);
+	msgsz++;  // Include null terminator
+	Send(1, sendmsg, msgsz, (char *)&rep, 4);
 	return rep;
 }
 int Deregister(){
@@ -157,19 +112,15 @@ int Deregister(){
 	char sendmsg[50] = "DEREGISTER ";
 	char tid_str[10] = "";
 	i2a(tid, tid_str);
-	int msgsz = 50;
-	msgsz = strcat_cust((char* )sendmsg, (char *)tid_str);
-	return Send(1, sendmsg, 50, rep, 50);
+	int msgsz = strcat_cust((char* )sendmsg, (char *)tid_str);
+	msgsz++;  // Include null terminator
+	return Send(1, sendmsg, msgsz, rep, 50);
 }
 int WhoIs(const char *name){
 	int rep = 0;
 	char sendmsg[50] = "WHOIS ";
-
-	int msgsz = 50;
-	// msgsz = strcat_cust((char* )sendmsg, command_cand);
-	msgsz = strcat_cust((char* )sendmsg, name);
-	
-	//int ret_code = Send(tid, msg, msglen, msgreply, 25);
-	Send(1, sendmsg, 50, &rep, 4);
+	int msgsz = strcat_cust((char* )sendmsg, name);
+	msgsz++;  // Include null terminator
+	Send(1, sendmsg, msgsz, (char *)&rep, 4);
 	return rep;
 }

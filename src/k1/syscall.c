@@ -7,6 +7,9 @@
 #include "custmath.h"
 #include "systimer.h"
 #include "gic.h"
+#include "smp.h"
+#include "mailbox.h"
+#include "mailbox_ipi.h"
 #include "kernel_state.h"
 #include "kernel_api.h"
 #include "sched_stubs.h"
@@ -42,35 +45,29 @@ void InitSys(void *reg)
 	sched_init(reg);
 }
 
+void HandleKernelIRQ(void)
+{
+	ExceptionASYNC(0);
+	Schedule();
+	for (;;)
+		wfi_unmasked();
+}
+
 void HandleASYNC(void *sp)
 {
-	int p = PID - 1;
+	int p = (int)PID - 1;
 	updateRunTimer();
 
 	uint64_t ASYNC = Save(sp, &PROCS[p].registervalues[0], &PROCS[p].pcpointer, &PROCS[p].stackpointer, &PROCS[p].pstate);
 	ExceptionASYNC(ASYNC);
 	Schedule();
-
-#if DEBUG >= 1
-	uart_printf(CONSOLE, "All Tasks Complete, Press Any Key to Exit\n\r");
-	uart_getc(1);
-#endif
-#if DEBUG_EXIT >= 1
-	EXIT();
-#else
-	while (1)
-	{
-		asm("wfi");
-	}
-#endif
 }
 
 int unblock_return(uint32_t interruptid, uint64_t ret)
 {
 #if DEBUG == 4
 	if (interruptid != CLOCKINTID)
-		uart_printf(CONSOLE, "KERNEL: unblock_return: interruptid = %u, ret = %u, len = %u
-", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
+		uart_printf(CONSOLE, "KERNEL: unblock_return: interruptid = %u, ret = %u, len = %u\r\n", interruptid, ret, AWAIT_INTERRUPT[interruptid].len);
 #endif
 	return sched_unblock_event(interruptid, ret);
 }
@@ -78,14 +75,15 @@ int unblock_return(uint32_t interruptid, uint64_t ret)
 void ExceptionASYNC(uint64_t esr_el1)
 {
 	(void)esr_el1;
-	int p = PID - 1;
+	int p = (int)PID - 1;
 
 	uint32_t interruptid = readInterruptId();
 	if (interruptid >= 1020)
 		return;
 
 	setActiveInterrupt(interruptid);
-	scrSchedule((int)PID, PROCS[p].priority);
+	if (p >= 0 && p < NUMPROCS && PROCS[p].pcpointer != NULL)
+		scrSchedule((int)PID, PROCS[p].priority);
 
 	switch (interruptid)
 	{
@@ -95,8 +93,10 @@ void ExceptionASYNC(uint64_t esr_el1)
 		unblock_return(CLOCKINTID, 1);
 		break;
 	case UARTINTER:
+		if (smp_get_core_id() != 0)
+			break;
 	{
-		char return_val[8];
+		char return_val[8] = {0};
 		volatile uint32_t *RIS_CONSOLE = get_RIS(CONSOLE);
 		volatile uint32_t *ICR_CONSOLE = get_ICR(CONSOLE);
 		volatile uint32_t *RIS_MARKLIN = get_RIS(MARKLIN);
@@ -161,8 +161,11 @@ void ExceptionASYNC(uint64_t esr_el1)
 		break;
 	}
 	default:
+		if (mailbox_ipi_handle_async(interruptid))
+			break;
 #if DEBUG == 4
-		uart_printf(CONSOLE, "Unknown Interrupt\n\r");
+		if (smp_get_core_id() == 0)
+			uart_printf(CONSOLE, "Unknown Interrupt\n\r");
 #endif
 		break;
 	}
@@ -284,6 +287,16 @@ void handlerExceptionHelper(uint64_t esr_el1)
 			scrSchedule((int)PID, PROCS[p].priority);
 			PROCS[p].registervalues[0] = get_timerLO() - kernelStartTime;
 			break;
+		case 13:
+		{
+			int dest_core = (int)PROCS[p].registervalues[0];
+			int dest_tid = (int)PROCS[p].registervalues[1];
+			const char *msg = (const char *)PROCS[p].registervalues[2];
+			int msglen = (int)PROCS[p].registervalues[3];
+			scrSchedule((int)PID, PROCS[p].priority);
+			PROCS[p].registervalues[0] = (uint64_t)CoreSend(dest_core, dest_tid, msg, msglen);
+			break;
+		}
 		default:
 			scrSchedule((int)PID, PROCS[p].priority);
 #if DEBUG == 3
@@ -386,4 +399,19 @@ void Exit(void)
 void Yield(void)
 {
 	asm("svc 1");
+}
+
+int CoreSend(int dest_core, int dest_tid, const void *msg, int len)
+{
+	return MailboxSend(dest_core, dest_tid, MyTid(), msg, len);
+}
+
+int CoreSendSyscall(int dest_core, int dest_tid, const char *msg, int msglen)
+{
+	(void)dest_core;
+	(void)dest_tid;
+	(void)msg;
+	(void)msglen;
+	asm("svc 13");
+	return 0;
 }

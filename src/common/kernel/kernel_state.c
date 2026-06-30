@@ -1,9 +1,9 @@
 #include "kernel_state.h"
 
-void *STACKSTART;
-uint32_t PID = 0;
-struct process PROCS[NUMPROCS];
-struct state READY_QUEUE[NUMPROCS];
-struct state BLOCKED_LIST[NUMPROCS];
-struct interrupt AWAIT_INTERRUPT[MAXEVENT];
+struct process PROCS_BANK[NUM_CORES][NUMPROCS];
+struct state READY_QUEUE_BANK[NUM_CORES][NUMPROCS];
+struct state BLOCKED_LIST_BANK[NUM_CORES][NUMPROCS];
+struct interrupt AWAIT_INTERRUPT_BANK[NUM_CORES][MAXEVENT];
+uint32_t PID_BANK[NUM_CORES];
+void *STACKSTART_BANK[NUM_CORES];
 uint32_t kernelStartTime = 0;

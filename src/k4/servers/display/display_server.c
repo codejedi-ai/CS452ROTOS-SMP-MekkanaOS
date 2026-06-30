@@ -1,106 +1,258 @@
 #include "display_server.h"
+#include "UART1_CONSOLE_server.h"
 #include "rpi.h"
+#include "util.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "util.h"
+#include "custstr.h"
 #include <stdarg.h>
 
-#define DISPLAY_BUF_MAX 256
+// DISPLAY_PAYLOAD_MAX comes from display_server.h ((2 << 20) = 2 MiB).
+// DISPLAY_PAYLOAD_OFF stays at 1 (one byte type tag at msg[0]).
+#define DISPLAY_PAYLOAD_OFF 1
+#define DISPLAY_ROWS 30
+#define DISPLAY_COLS 120
 
-/* All wire messages are: [len_lo][len_hi][bytes...]. The server writes the
-   bytes verbatim to UART0 and replies with a single 0 byte. */
-struct disp_msg {
-    uint16_t len;
-    char     bytes[DISPLAY_BUF_MAX];
-};
+static int display_tid = -1;
+static char display_buffer[DISPLAY_ROWS][DISPLAY_COLS];
+static int cursor_row = 0;
+static int cursor_col = 0;
 
-/* ------------------------- server task ------------------------------------ */
+static int resolve_display_tid(void)
+{
+	if (display_tid < 0)
+	{
+		display_tid = WhoIs("display_server");
+		while (display_tid < 0)
+		{
+			Yield();
+			display_tid = WhoIs("display_server");
+		}
+	}
+	return display_tid;
+}
+
+static void format_to_buffer(char *out, size_t cap, char *fmt, va_list va)
+{
+	char bf[12];
+	char ch;
+	size_t pos = 0;
+
+	if (cap == 0)
+		return;
+
+	while ((ch = *(fmt++)) && pos + 1 < cap)
+	{
+		if (ch != '%')
+		{
+			out[pos++] = ch;
+			continue;
+		}
+		ch = *(fmt++);
+		switch (ch)
+		{
+		case 'u':
+			ui2a(va_arg(va, unsigned int), 10, bf);
+			for (char *p = bf; *p && pos + 1 < cap; p++)
+				out[pos++] = *p;
+			break;
+		case 'd':
+			i2a(va_arg(va, int), bf);
+			for (char *p = bf; *p && pos + 1 < cap; p++)
+				out[pos++] = *p;
+			break;
+		case 'x':
+			ui2a(va_arg(va, unsigned int), 16, bf);
+			for (char *p = bf; *p && pos + 1 < cap; p++)
+				out[pos++] = *p;
+			break;
+		case 's':
+		{
+			char *s = va_arg(va, char *);
+			while (*s && pos + 1 < cap)
+				out[pos++] = *(s++);
+			break;
+		}
+		case 'b':
+			ui2a(va_arg(va, unsigned int), 2, bf);
+			for (char *p = bf; *p && pos + 1 < cap; p++)
+				out[pos++] = *p;
+			break;
+		case 'c':
+			out[pos++] = (char)va_arg(va, int);
+			break;
+		case '%':
+			out[pos++] = ch;
+			break;
+		case '\0':
+			out[pos] = '\0';
+			return;
+		default:
+			out[pos++] = ch;
+			break;
+		}
+	}
+	out[pos] = '\0';
+}
+
+static void server_print_sensors(int arr[], size_t alen, unsigned int column, unsigned int row)
+{
+	uart_printf(CONSOLE, "\033[33m");
+	for (uint32_t i = 0; i < alen; i++)
+	{
+		if (arr[i] != 0)
+		{
+			uart_printf(CONSOLE, "\033[%u;%uH", row + i, column);
+			char ch = 'A';
+			uart_putc(CONSOLE, ch + (arr[i] / 17));
+			uart_printf(CONSOLE, "%d", arr[i] % 17);
+			uart_putc(CONSOLE, ' ');
+		}
+	}
+	uart_printf(CONSOLE, "\033[0m");
+}
+
+static void server_puts(const char *s)
+{
+	while (*s) {
+		char ch = *(s++);
+		uart_putc(CONSOLE, (unsigned char)ch);
+
+		if (ch == '\n') {
+			cursor_row++;
+			cursor_col = 0;
+			if (cursor_row >= DISPLAY_ROWS)
+				cursor_row = DISPLAY_ROWS - 1;
+		} else if (ch == '\r') {
+			cursor_col = 0;
+		} else if (ch == '\b') {
+			if (cursor_col > 0)
+				cursor_col--;
+		} else {
+			if (cursor_col < DISPLAY_COLS) {
+				display_buffer[cursor_row][cursor_col] = ch;
+				cursor_col++;
+			}
+		}
+	}
+}
+
+int DisplayServerTid(void)
+{
+	return resolve_display_tid();
+}
+
+// DISPLAY_PAYLOAD_MAX is 2 MiB (from display_server.h). A stack array that
+// big would blow the per-task stack, so the puts/sends path uses a single
+// static buffer. The other DisplayPrintf / DisplayPrintSensors callers
+// have their own static buffers (defined below). All four are serialized
+// by the fact that there's exactly one display_server task — Send blocks
+// the caller until Reply, so the buffer ownership transfers cleanly.
+static char display_puts_buf[DISPLAY_MSG_LEN];
+
+int DisplayPuts(const char *s)
+{
+	int tid = resolve_display_tid();
+	char reply;
+	int rc = 0;
+
+	display_puts_buf[0] = DISPLAY_PUTS;
+	while (*s) {
+		unsigned int n = 0;
+		// Leave room for the NUL terminator.
+		while (s[n] && n < (unsigned int)(DISPLAY_PAYLOAD_MAX - 1))
+			n++;
+		for (unsigned int i = 0; i < n; i++)
+			display_puts_buf[DISPLAY_PAYLOAD_OFF + i] = s[i];
+		display_puts_buf[DISPLAY_PAYLOAD_OFF + n] = '\0';
+		rc = Send(tid, display_puts_buf, (int)(n + DISPLAY_PAYLOAD_OFF + 1), &reply, 0);
+		if (rc < 0)
+			return rc;
+		s += n;
+	}
+	return rc;
+}
+
+// With DISPLAY_MSG_LEN now 2 MiB, every `char msg[DISPLAY_MSG_LEN]` on the
+// stack would blow the 64 KiB per-task stack. Use one static buffer for
+// each caller path. They share the same single display_server so the
+// kernel's Send/Receive plumbing already serializes their use — a sender
+// can only be re-entered once display_server replies, and the receiver
+// loop reuses its own buffer.
+static char display_printf_buf[DISPLAY_MSG_LEN];
+static char display_sensors_buf[DISPLAY_MSG_LEN];
+static char display_server_buf[DISPLAY_MSG_LEN];
+
+void DisplayPrintf(char *fmt, ...)
+{
+	va_list va;
+	char reply;
+
+	va_start(va, fmt);
+	display_printf_buf[0] = DISPLAY_PUTS;
+	format_to_buffer(display_printf_buf + DISPLAY_PAYLOAD_OFF, DISPLAY_PAYLOAD_MAX, fmt, va);
+	va_end(va);
+	Send(resolve_display_tid(), display_printf_buf, DISPLAY_MSG_LEN, &reply, 0);
+}
+
+void DisplayPrintSensors(int arr[], size_t alen, unsigned int column, unsigned int row)
+{
+	char reply;
+	size_t count = alen > 10 ? 10 : alen;
+	size_t i;
+
+	display_sensors_buf[0] = DISPLAY_PRINT_SENSORS;
+	display_sensors_buf[1] = (uint8_t)row;
+	display_sensors_buf[2] = (uint8_t)column;
+	display_sensors_buf[3] = (uint8_t)count;
+	for (i = 0; i < count; i++)
+	{
+		int v = arr[i];
+		display_sensors_buf[4 + i * 4] = (char)(v & 0xff);
+		display_sensors_buf[5 + i * 4] = (char)((v >> 8) & 0xff);
+		display_sensors_buf[6 + i * 4] = (char)((v >> 16) & 0xff);
+		display_sensors_buf[7 + i * 4] = (char)((v >> 24) & 0xff);
+	}
+	Send(resolve_display_tid(), display_sensors_buf, DISPLAY_MSG_LEN, &reply, 0);
+}
+
 void display_server(void)
 {
-    RegisterAs("display");
+	char *msg = display_server_buf;
+	char reply;
+	int sender;
 
-    while (1) {
-        int tid;
-        struct disp_msg m;
-        Receive(&tid, (char *)&m, sizeof(m));
-        if (m.len > DISPLAY_BUF_MAX) m.len = DISPLAY_BUF_MAX;
-        uart_putl(CONSOLE, m.bytes, m.len);
-        char ack = 0;
-        Reply(tid, &ack, 1);
-    }
-}
+	RegisterAs("display_server");
 
-/* ------------------------- client helpers --------------------------------- */
-static int g_display_tid = -1;
-static int display_tid(void)
-{
-    if (g_display_tid < 0) g_display_tid = WhoIs("display");
-    return g_display_tid;
-}
+	while (1)
+	{
+		Receive(&sender, msg, DISPLAY_MSG_LEN);
+		switch (msg[0])
+		{
+		case DISPLAY_PUTS:
+			server_puts(msg + DISPLAY_PAYLOAD_OFF);
+			break;
+		case DISPLAY_PRINT_SENSORS:
+		{
+			int sensors[10];
+			uint8_t count = msg[3];
+			uint8_t row = msg[1];
+			uint8_t col = msg[2];
+			uint8_t i;
 
-static void send_buf(const char *buf, int len)
-{
-    if (len <= 0) return;
-    if (len > DISPLAY_BUF_MAX) len = DISPLAY_BUF_MAX;
-    struct disp_msg m;
-    m.len = (uint16_t)len;
-    for (int i = 0; i < len; i++) m.bytes[i] = buf[i];
-    char ack;
-    Send(display_tid(), (char *)&m, sizeof(uint16_t) + len, &ack, 1);
-}
-
-void display_puts(const char *s)
-{
-    int n = 0;
-    while (s[n]) n++;
-    send_buf(s, n);
-}
-
-/* Minimal printf: %d %u %x %s %c %%. Mirrors rpi.c's uart_format_print. */
-static int strput(char *dst, int dst_max, int *dst_len, const char *src)
-{
-    while (*src) {
-        if (*dst_len >= dst_max) return -1;
-        dst[(*dst_len)++] = *src++;
-    }
-    return 0;
-}
-
-void display_printf(const char *fmt, ...)
-{
-    char buf[DISPLAY_BUF_MAX];
-    int  len = 0;
-    char numbuf[24];
-
-    va_list va; va_start(va, fmt);
-    char ch;
-    while ((ch = *(fmt++)) && len < DISPLAY_BUF_MAX) {
-        if (ch != '%') {
-            buf[len++] = ch;
-            continue;
-        }
-        ch = *(fmt++);
-        switch (ch) {
-            case 'u': ui2a(va_arg(va, unsigned int), 10, numbuf); strput(buf, DISPLAY_BUF_MAX, &len, numbuf); break;
-            case 'd': i2a (va_arg(va, int),               numbuf); strput(buf, DISPLAY_BUF_MAX, &len, numbuf); break;
-            case 'x': ui2a(va_arg(va, unsigned int), 16, numbuf); strput(buf, DISPLAY_BUF_MAX, &len, numbuf); break;
-            case 'b': ui2a(va_arg(va, unsigned int),  2, numbuf); strput(buf, DISPLAY_BUF_MAX, &len, numbuf); break;
-            case 's': strput(buf, DISPLAY_BUF_MAX, &len, va_arg(va, char *)); break;
-            case 'c': if (len < DISPLAY_BUF_MAX) buf[len++] = (char)va_arg(va, int); break;
-            case '%': if (len < DISPLAY_BUF_MAX) buf[len++] = '%'; break;
-            case '\0': goto out;
-            default:  /* unknown specifier: emit literally */
-                if (len < DISPLAY_BUF_MAX) buf[len++] = '%';
-                if (len < DISPLAY_BUF_MAX) buf[len++] = ch;
-                break;
-        }
-    }
-out:
-    va_end(va);
-    send_buf(buf, len);
-}
-
-void display_at(int row, int col, const char *s)
-{
-    display_printf("\033[%d;%dH%s", row, col, s);
+			if (count > 10)
+				count = 10;
+			for (i = 0; i < count; i++)
+			{
+				sensors[i] = (int)(msg[4 + i * 4] | (msg[5 + i * 4] << 8) |
+						   (msg[6 + i * 4] << 16) | (msg[7 + i * 4] << 24));
+			}
+			server_print_sensors(sensors, count, col, row);
+			break;
+		}
+		default:
+			break;
+		}
+		Reply(sender, &reply, 0);
+	}
 }

@@ -1,8 +1,7 @@
 #ifndef TRAIN_H
 #define TRAIN_H
 #include "rpi.h"
-#include "rpi.h"
-#include "track_data_new.h"
+#include "track_data.h"
 #define TRAIN_MAX 80
 #define SPEED_MAX 16
 struct train

@@ -275,3 +275,10 @@ pop_trap_frame:
 .global wfi
 wfi:
 	WFI // puts the CPU into WFI mode
+
+/* Unmask EL1 IRQ (DAIF.I) then WFI — GIC SPIs (UART) are dropped while I=1. */
+.global wfi_unmasked
+wfi_unmasked:
+	msr DAIFClr, #0x4
+	wfi
+	ret

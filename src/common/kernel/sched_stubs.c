@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "sched_stubs.h"
 #include "kernel_state.h"
+#include "config.h"
 #include "asm.h"
 
 extern void kernel_init_extras(void *reg);
@@ -9,7 +10,15 @@ extern void kernel_init_extras(void *reg);
 extern uint32_t get_timerHI(void);
 extern uint32_t get_timerLO(void);
 
-static struct MinHeapState READY_HEAP;
+static struct MinHeapState READY_HEAP[NUM_CORES];
+
+static struct MinHeapState *ready_heap(void)
+{
+	int core = (int)smp_get_core_id();
+	if (core < 0 || core >= NUM_CORES)
+		core = 0;
+	return &READY_HEAP[core];
+}
 
 static uint8_t compare_state(struct state a, struct state b)
 {
@@ -111,10 +120,14 @@ static struct state extractMin_state_heap(struct MinHeapState *h)
 
 void sched_init(void *reg)
 {
+	int core = (int)smp_get_core_id();
+	if (core < 0 || core >= NUM_CORES)
+		core = 0;
+
 	kernelStartTime = get_timerLO();
-	READY_HEAP.size = 0;
-	READY_HEAP.capacity = NUMPROCS;
-	READY_HEAP.harr = READY_QUEUE;
+	READY_HEAP[core].size = 0;
+	READY_HEAP[core].capacity = NUMPROCS;
+	READY_HEAP[core].harr = READY_QUEUE;
 	STACKSTART = reg;
 	PID = 0;
 	for (int event = 0; event < MAXEVENT; event++)
@@ -152,7 +165,7 @@ void sched_init(void *reg)
 void scrSchedule(int pid, uint8_t priority)
 {
 	struct state currItem = {pid, priority, ((uint64_t)get_timerHI() << 32) + get_timerLO()};
-	insertKey_state_heap(&READY_HEAP, currItem);
+	insertKey_state_heap(ready_heap(), currItem);
 }
 
 int unblock_ind(int pid, uint8_t priority)
@@ -180,9 +193,9 @@ void unblock(struct state currItem)
 
 int scrPick(void)
 {
-	if (isEmpty_state_heap(&READY_HEAP))
+	if (isEmpty_state_heap(ready_heap()))
 		return -1;
-	struct state currItem = extractMin_state_heap(&READY_HEAP);
+	struct state currItem = extractMin_state_heap(ready_heap());
 	return currItem.pid;
 }
 
@@ -200,9 +213,9 @@ int8_t dead(int8_t p)
 
 static int heap_contains_pid(int pid)
 {
-	for (unsigned i = 0; i < READY_HEAP.size; i++)
+	for (unsigned i = 0; i < ready_heap()->size; i++)
 	{
-		if (READY_HEAP.harr[i].pid == pid)
+		if (ready_heap()->harr[i].pid == pid)
 			return 1;
 	}
 	return 0;
@@ -234,7 +247,9 @@ void Schedule(void)
 		}
 		if ((int)PID != -1)
 			break;
-		wfi();
+		/* No runnable task — mark kernel idle so IRQ handlers skip scrSchedule. */
+		PID = 0;
+		wfi_unmasked();
 	}
 	int p = (int)PID - 1;
 	PROCS[p].waketime = get_timerLO();

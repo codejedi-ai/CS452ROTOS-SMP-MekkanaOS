@@ -28,9 +28,7 @@
 .section ".text.boot"
 .global _start
 _start:
-    // Park secondary cores in low-power wfi forever. The kernel is single-
-    // core; CPUs 1..3 should not burn cycles. The `exit:` label below is
-    // `wfi; b exit` -- an interrupt-wait spin that draws minimal power.
+    // CPU 0 continues; CPUs 1–3 park until spin-table release (smp.c).
     mrs  x0, mpidr_el1
     and  x0, x0, #3
     cbnz x0, exit
@@ -53,6 +51,12 @@ _start:
     eret // -> el1_entry
 
 el1_entry:
+    // Cortex-A72 cluster coherency for shared mailbox spinlocks.
+    mrs x0, S3_1_c15_c2_1
+    orr x0, x0, #(1 << 6)
+    msr S3_1_c15_c2_1, x0
+    isb
+
     // configure processor and mmu
     ldr x2, =SCTLR_VALUE_MMU_DISABLED
     msr sctlr_el1, x2

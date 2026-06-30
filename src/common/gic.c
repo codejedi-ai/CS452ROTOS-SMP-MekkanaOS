@@ -52,7 +52,18 @@ void route_interrupt(uint32_t interrupt_id, uint8_t cpu_target){
     uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", &GICD_ITARGETSR(offset));
     uart_printf(CONSOLE, "&GICD_ITARGETSR(offset) = %x\r\n", GICD_ITARGETSRn + (4 * offset));
     # endif
-    GICD_ITARGETSR(offset) = target;
+    GICD_ITARGETSR(offset) |= target;
+}
+
+void route_interrupt_exclusive(uint32_t interrupt_id, uint8_t cpu_target)
+{
+	if (cpu_target > 7)
+		return;
+	uint32_t offset = interrupt_id / 4;
+	uint32_t remainder = interrupt_id % 4;
+	uint32_t target = ((0x01u << cpu_target) << (remainder << 3));
+	uint32_t mask = 0xFFu << (remainder << 3);
+	GICD_ITARGETSR(offset) = (GICD_ITARGETSR(offset) & ~mask) | target;
 }
 
 /*
@@ -86,10 +97,16 @@ void enable_interrupt(uint32_t interrupt_id){
 //   1. PMR = 0xFF: accept any priority.
 //   2. GICC_CTLR = 0x1: forward Group 0 IRQs to the CPU interface.
 //   3. GICD_CTLR = 0x1: enable distributor (Group 0 only).
-void gic_init(void) {
-    *(volatile uint32_t*)(GICC_BASE + 0x04) = 0xFF;
-    *(volatile uint32_t*)(GICC_BASE + 0x00) = 0x1;
-    *(volatile uint32_t*)(GICD_BASE + 0x00) = 0x1;
+void gic_cpu_iface_enable(void)
+{
+	*(volatile uint32_t *)(GICC_BASE + 0x04) = 0xFF;
+	*(volatile uint32_t *)(GICC_BASE + 0x00) = 0x1;
+}
+
+void gic_init(void)
+{
+	gic_cpu_iface_enable();
+	*(volatile uint32_t *)(GICD_BASE + 0x00) = 0x1;
 }
 
 // set active interrupt
@@ -114,6 +131,14 @@ void INTERRUPT_CLEAR_ACTIVE_REGS(uint32_t interrupt_id){
 uint32_t readInterruptId(){
     return GICC_IAR & 0x3FF;
 }
+void gic_send_sgi(uint32_t sgi_id, uint8_t cpu_target_mask)
+{
+	if (sgi_id > 15u)
+		return;
+	uint32_t val = ((uint32_t)cpu_target_mask << 16) | (sgi_id & 0xFu);
+	*(volatile uint32_t *)(GICD_BASE + 0xF00u) = val;
+}
+
 void clear_GICC_EOIR(uint16_t interrupt_id){
     if (interrupt_id > 1023){
         // print the error message mentioning the interrupt_id is out of range which is 0-1023

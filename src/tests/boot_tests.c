@@ -6,7 +6,7 @@
 #include "k3.h"
 #include "k4.h"
 
-void command_shell(void);  /* defined in ui/shell.c, spawned after tests pass */
+void commands_shell(void);  /* defined in k4/servers/shell/shell.c */
 
 /*
  * Boot self-test runner.
@@ -56,6 +56,6 @@ void boot_test_runner(void)
         total, total == 1 ? "" : "s");
 
     uart_printf(CONSOLE, "\033[36m==== launching shell ====\033[37m\r\n");
-    Create(4, command_shell);
+    Create(4, commands_shell);
     Exit();
 }

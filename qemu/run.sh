@@ -9,9 +9,7 @@
 #
 #   1) Martin1994/MarklinSim  (https://github.com/Martin1994/MarklinSim)
 #      Electron GUI; the canonical CS452 multi-train simulator. Run it on
-#      the HOST (it can't run inside this Linux container) — it listens on
-#      tcp://127.0.0.1:3018. From the container, reach the host via
-#      host.docker.internal. Pick this with:
+#      the host — it listens on tcp://127.0.0.1:3018. Pick this with:
 #          MARKLIN=marklinsim ./qemu/run.sh
 #
 #   2) tools/vhw.py  -- the bundled Python single/multi-train fallback.
@@ -33,7 +31,7 @@ fi
 
 case "$MARKLIN" in
     marklinsim)
-        MARKLIN_HOST=${MARKLIN_HOST:-host.docker.internal}
+        MARKLIN_HOST=${MARKLIN_HOST:-127.0.0.1}
         MARKLIN_PORT=${MARKLIN_PORT:-3018}
         # reconnect=1: if MarklinSim isn't up yet, QEMU retries every 1s
         # instead of failing immediately. Start MarklinSim before OR after
@@ -62,14 +60,13 @@ case "$MARKLIN" in
         ;;
 esac
 
-CONSOLE_SERIAL=${CONSOLE_SERIAL:-stdio}
+CONSOLE_SERIAL=${CONSOLE_SERIAL:-mon:stdio}
 
 exec qemu-system-aarch64 \
     -machine raspi4b \
     -cpu cortex-a72 \
     -m 2G \
     -display none \
-    -monitor none \
     -serial "$CONSOLE_SERIAL" \
     -serial "$MARKLIN_SERIAL" \
     -nic none \

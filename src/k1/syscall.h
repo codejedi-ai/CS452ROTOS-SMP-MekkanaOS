@@ -1,6 +1,7 @@
 #ifndef _syscall_h_
 #define _syscall_h_ 1
 #include "asm.h"
+#include "config.h"
 #define QUEUESIZE 255
 #define NUMPROCS 20
 #define MAXINT 2147483647
@@ -13,11 +14,6 @@
 # define TXIC 5
 # define RXIC 4
 # define CTSMIM 1
-extern void *STACKSTART;
-// This is the PID of the currentlly running process
-extern uint32_t PID;
-
-
 
 
 // static const int NUMPROCS = 20; // Deprecated
@@ -44,6 +40,8 @@ void Exit();
 int Send(int tid, const char *msg, int msglen, char *reply, int replylen);
 int Receive(int *tid, char *msg, int msglen);
 int Reply( int tid, void *reply, int replylen );
+int CoreSend(int dest_core, int dest_tid, const void *msg, int len);
+int CoreSendSyscall(int dest_core, int dest_tid, const char *msg, int msglen);
 struct message{
     int tid; // to which task
     char *msg;
@@ -93,14 +91,13 @@ struct MinHeapState
 	struct state *harr;
 };
 
-extern struct process PROCS[NUMPROCS];
-extern struct state READY_QUEUE[NUMPROCS];
-extern struct state BLOCKED_LIST[NUMPROCS];
-extern struct interrupt AWAIT_INTERRUPT[MAXEVENT];
+/* Per-core banks — include kernel_state.h for PROCS, PID, STACKSTART, etc. */
 void scrSchedule(int pid, uint8_t priority);
 int scrPick();
 void HandleASYNC(void* sp);
+void HandleKernelIRQ(void);
 void ExceptionASYNC(uint64_t esr_el1);
+int unblock_return(uint32_t interruptid, uint64_t ret);
 int AwaitEvent(int eventType);
 int GetRuntime();
 int GetKernelRuntime();

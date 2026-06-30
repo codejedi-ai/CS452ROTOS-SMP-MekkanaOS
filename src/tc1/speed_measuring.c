@@ -4,7 +4,7 @@
 #include "nameserver.h"
 #include "io_api.h"
 #include "speed_measuring.h"
-#include "custstring.h"
+#include "custstr.h"
 #define SENSOR 0
 #define TRAIN 1
 #define SWITCH 2
@@ -95,11 +95,11 @@ void get_track_node_map(struct track_node *track, struct track_node *trackmap[20
     if (track[i].type == NODE_SENSOR)
     {
       // get name
-      char *name = track[i].name;
+      const char *name = track[i].name;
       // get the s88_id the first character
-      char s88_id = name[0] - 'A';
+      int s88_id = (int)((unsigned char)name[0] - 'A');
       // get the sensor_no the number that is after the first character
-      int64_t sensor_no = atoi_64(&name[1]);
+      int sensor_no = (int)atoi_64((char *)&name[1]);
       // uart_printf(CONSOLE, "name:%s s88_id = %d, sensor_no = %d\r\n",name , s88_id, sensor_no);
       trackmap[s88_id][sensor_no] = &track[i];
     }
@@ -108,7 +108,7 @@ void get_track_node_map(struct track_node *track, struct track_node *trackmap[20
 // string -> node reverse name search
 struct track_node* get_track_node_by_name(struct track_node *track, char* name){
   for(int i = 0; i < TRACK_MAX; i++){
-    if(strcmp_ret(track[i].name, name)){
+    if(strcmp_ret((char *)track[i].name, name, 0)){
       return &track[i];
     }
   }
@@ -118,10 +118,8 @@ struct track_node *next_type_node(char *sw_states, int type, struct track_node *
 {
   // the current node is a sensor node then the for loop would not run
   struct track_node *current_node = start_node;
-  int offset = 0;
-  while ((current_node == start_node) || (current_node->type != type && current_node->type != NODE_EXIT))
+  while ((current_node == start_node) || ((int)current_node->type != type && current_node->type != NODE_EXIT))
   {
-    offset++;
     // if the current position is a switch then we need to consult the switch table. Which is managed by the switch worker
     // uart_printf(CONSOLE, "type: %d next_sensor_node: current_node->type = %d, current_node = %s\n",type, current_node->type, current_node->name);
     // uart_getc(CONSOLE);
