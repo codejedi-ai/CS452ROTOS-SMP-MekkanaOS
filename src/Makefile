@@ -1,4 +1,4 @@
-# DarcyOS — single build definition (run via `make` at repo root or `make -C src` here).
+# MekkanaOS — QEMU network kernel (synced from DarcyOS SMP).
 REPO_ROOT := ..
 OUT := $(REPO_ROOT)
 
@@ -10,11 +10,11 @@ CC := $(XBINDIR)/$(TRIPLE)-gcc
 OBJCOPY := $(XBINDIR)/$(TRIPLE)-objcopy
 OBJDUMP := $(XBINDIR)/$(TRIPLE)-objdump
 
-WARNINGS := -Wall -Wextra -Wpedantic -Wno-unused-const-variable -Wno-incompatible-pointer-types -Wno-int-conversion
+WARNINGS := -Wall -Wextra -Wpedantic -Wno-unused-const-variable
 SERVER_INCLUDES := $(addprefix -I,$(sort $(dir $(wildcard \
-	k2/servers/*/*.h k3/servers/*/*.h k4/servers/*/*.h tc1/servers/*/*.h))))
-INC := -Ik0 -Icommon/custom -Icommon/kernel -Icommon/smp -Ik1 -Ik1/test -Ik3 -Ik3/test -Ik4 -Ik4/test -Itc1 \
-	-Ik2 -Ik2/test $(SERVER_INCLUDES) -Icommon -Idata -Idata/track_data -I$(REPO_ROOT)/src/tests
+	k2/servers/*/*.h k3/servers/*/*.h k4/servers/*/*.h))))
+INC := -Ik0 -Icommon/custom -Icommon/kernel -Icommon/smp -Ik1 -Ik1/test -Ik3 -Ik3/test -Ik4 -Ik4/test \
+	-Ik2 -Ik2/test $(SERVER_INCLUDES) -Icommon -Idata -I$(REPO_ROOT)/tests
 
 CFLAGS := -g -pipe -static $(WARNINGS) -ffreestanding -nostartfiles \
 	-mcpu=$(ARCH) -static-pie -mstrict-align -fno-builtin -mgeneral-regs-only $(INC) \
@@ -26,33 +26,31 @@ LINKER := k0/linker.ld
 K3_DRIVER_SOURCES := k3/systimer.c
 K2_SERVER_SOURCES := $(wildcard k2/servers/*/*.c)
 K3_SERVER_SOURCES := $(wildcard k3/servers/*/*.c)
-K4_SERVER_SOURCES := $(wildcard k4/servers/*/*.c)
-TC1_SERVER_SOURCES := $(wildcard tc1/servers/*/*.c)
-ALL_SERVER_SOURCES := $(K2_SERVER_SOURCES) $(K3_SERVER_SOURCES) $(K4_SERVER_SOURCES) $(TC1_SERVER_SOURCES)
+K4_SERVER_SOURCES := $(filter-out $(wildcard k4/servers/UART2_MARKLIN_server/*.c),$(wildcard k4/servers/*/*.c))
+AUX_SOURCES := common/auxuart.c
+ALL_SERVER_SOURCES := $(K2_SERVER_SOURCES) $(K3_SERVER_SOURCES) $(K4_SERVER_SOURCES) $(AUX_SOURCES)
 COMMON_HW_SOURCES := common/rpi.c common/gic.c
 SMP_SOURCES := $(wildcard common/smp/*.c)
-DATA_SOURCES := data/track_data/track_data.c data/asciiart.c
-COMMON_CUSTOM_SOURCES := common/custom/custmath.c common/custom/custstr.c
-KERNEL_STUB_SOURCES := common/kernel/kernel_state.c common/kernel/sched_stubs.c common/kernel/ipc_stubs.c common/kernel/kernel_api.c common/kernel/ipc_dispatch.c
+DATA_SOURCES := data/asciiart.c
+COMMON_CUSTOM_SOURCES := $(wildcard common/custom/*.c)
+KERNEL_STUB_SOURCES := $(wildcard common/kernel/*.c)
+KERNEL_SOURCES := common/kernel/kernel_state.c common/kernel/sched_stubs.c \
+	common/kernel/ipc_stubs.c common/kernel/kernel_api.c common/kernel/ipc_dispatch.c
 K1_TEST_SUITE := k1/test/k1tests.c
 K2_TEST_SUITE := k2/test/k2tests.c
 K3_TEST_SUITE := k3/test/k3tests_suite.c
 K4_TEST_SUITE := k4/test/k4_smp_tests.c k4/test/k4tests.c
 
-K1_SOURCES := $(filter-out k1/k1.c,$(wildcard k1/*.c))
-
-SOURCES := $(wildcard tc1/*.c) \
-	$(REPO_ROOT)/src/tests/boot_tests.c \
-	$(REPO_ROOT)/src/tests/tc1tests.c \
-	k1/k1.c k1/int64voodoo.c $(K1_SOURCES) $(wildcard k0/*.S) \
-	$(K3_DRIVER_SOURCES) common/kmain.c $(COMMON_HW_SOURCES) $(SMP_SOURCES) $(KERNEL_STUB_SOURCES) $(DATA_SOURCES) \
-	$(ALL_SERVER_SOURCES) $(COMMON_CUSTOM_SOURCES) \
+SOURCES := $(wildcard k1/*.c) $(wildcard k0/*.S) \
+	$(K3_DRIVER_SOURCES) common/kmain.c $(COMMON_HW_SOURCES) $(SMP_SOURCES) $(KERNEL_SOURCES) $(DATA_SOURCES) \
+	$(ALL_SERVER_SOURCES) $(KERNEL_STUB_SOURCES) $(COMMON_CUSTOM_SOURCES) \
 	$(K1_TEST_SUITE) $(K2_TEST_SUITE) $(K3_TEST_SUITE) $(K4_TEST_SUITE)
+
 # K1 test kernel
 K1_TEST_C := $(filter-out k1/processes.c k1/syscall.c,$(wildcard k1/*.c)) \
 	$(K1_TEST_SUITE) k1/test/test_main.c \
 	k2/servers/nameserver/nameserver.c \
-	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_STUB_SOURCES) $(COMMON_CUSTOM_SOURCES)
+	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_SOURCES) $(COMMON_CUSTOM_SOURCES)
 K1_TEST_ASM := $(wildcard k0/*.S)
 K1_TEST_OBJECTS := $(patsubst %.c,%.o,$(K1_TEST_C)) $(patsubst %.S,%.o,$(K1_TEST_ASM)) k1/syscall_test.o
 
@@ -60,7 +58,7 @@ K1_TEST_OBJECTS := $(patsubst %.c,%.o,$(K1_TEST_C)) $(patsubst %.S,%.o,$(K1_TEST
 K2_TEST_C := $(filter-out k1/processes.c k1/syscall.c,$(wildcard k1/*.c)) \
 	$(K2_TEST_SUITE) k2/test/test_main.c \
 	$(K2_SERVER_SOURCES) \
-	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_STUB_SOURCES) $(COMMON_CUSTOM_SOURCES)
+	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_SOURCES) $(COMMON_CUSTOM_SOURCES)
 K2_TEST_ASM := $(wildcard k0/*.S)
 K2_TEST_OBJECTS := $(patsubst %.c,%.o,$(K2_TEST_C)) $(patsubst %.S,%.o,$(K2_TEST_ASM)) k1/syscall_test.o
 
@@ -68,7 +66,7 @@ K2_TEST_OBJECTS := $(patsubst %.c,%.o,$(K2_TEST_C)) $(patsubst %.S,%.o,$(K2_TEST
 K3_TEST_C := $(filter-out k1/processes.c k1/syscall.c,$(wildcard k1/*.c)) \
 	$(K3_TEST_SUITE) k3/test/test_main.c \
 	k2/servers/nameserver/nameserver.c $(K3_SERVER_SOURCES) \
-	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_STUB_SOURCES) $(COMMON_CUSTOM_SOURCES)
+	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_SOURCES) $(COMMON_CUSTOM_SOURCES)
 K3_TEST_ASM := $(wildcard k0/*.S)
 K3_TEST_OBJECTS := $(patsubst %.c,%.o,$(K3_TEST_C)) $(patsubst %.S,%.o,$(K3_TEST_ASM)) k1/syscall_test.o
 
@@ -76,9 +74,10 @@ K3_TEST_OBJECTS := $(patsubst %.c,%.o,$(K3_TEST_C)) $(patsubst %.S,%.o,$(K3_TEST
 K4_TEST_C := $(filter-out k1/processes.c k1/syscall.c,$(wildcard k1/*.c)) \
 	$(K4_TEST_SUITE) k4/test/test_main.c \
 	k2/servers/nameserver/nameserver.c $(K3_SERVER_SOURCES) \
-	$(wildcard k4/servers/UART*/*.c) \
+	k4/servers/UART1_CONSOLE_server/UART1_CONSOLE_server.c \
 	k4/servers/io_notifier/io_notifier.c k4/servers/io_api/io_api.c \
-	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_STUB_SOURCES) $(COMMON_CUSTOM_SOURCES)
+	k4/servers/rotos_link/rotos_link.c $(AUX_SOURCES) \
+	$(K3_DRIVER_SOURCES) $(COMMON_HW_SOURCES) $(KERNEL_SOURCES) $(COMMON_CUSTOM_SOURCES)
 K4_TEST_ASM := $(wildcard k0/*.S)
 K4_TEST_OBJECTS := $(patsubst %.c,%.o,$(K4_TEST_C)) $(patsubst %.S,%.o,$(K4_TEST_ASM)) k1/syscall_test.o
 
@@ -137,7 +136,7 @@ K4_TEST_IMG := $(OUT)/k4-test.img
 SMP_TEST_ELF := $(OUT)/smp-test.elf
 SMP_TEST_IMG := $(OUT)/smp-test.img
 
-.PHONY: all clean run test test-k1 test-k2 test-k3 test-k4 test-smp qemu-rpi4 \
+.PHONY: all clean run run-net test test-k1 test-k2 test-k3 test-k4 test-smp test-hub qemu-rpi4 \
 	clean-k1-test clean-k2-test clean-k3-test clean-k4-test clean-smp-test \
 	
 	0-d273liu.img 0-d273liu.elf k1-test.img k1-test.elf \
@@ -145,7 +144,7 @@ SMP_TEST_IMG := $(OUT)/smp-test.img
 
 all: 0-d273liu.img
 
-# Repo-root artifact names (dev.sh / make invoke these from repo root)
+# Repo-root artifact names (scripts/dev.sh invoke these from /workspace)
 0-d273liu.img: $(KERNEL_IMG)
 0-d273liu.elf: $(KERNEL_ELF)
 k1-test.img: $(K1_TEST_IMG)
@@ -239,6 +238,9 @@ run: $(KERNEL_IMG)
 	fi
 	$(QEMU) $(QEMU_FLAGS) -kernel $(KERNEL_IMG)
 
+run-net: $(KERNEL_IMG)
+	@bash $(REPO_ROOT)/qemu/run.sh
+
 test: test-k1
 
 test-k1: $(K1_TEST_IMG)
@@ -301,6 +303,10 @@ test-smp: $(SMP_TEST_IMG)
 	if grep -q SMP_ALL_PASS /tmp/smp-qemu.log; then exit 0; \
 	elif [ $$ec -eq 124 ]; then echo "SMP tests timed out after $(SMP_TEST_TIMEOUT)s"; exit 1; \
 	else echo "SMP tests did not report SMP_ALL_PASS"; exit 1; fi
+
+test-hub:
+	@echo "Running rotos_link_hub tests..."
+	@cd $(REPO_ROOT) && $(or $(UV),$(HOME)/.local/bin/uv,uv) run python3 -m unittest discover -s tools -p 'test_rotos_link_hub.py' -v
 
 data/asciiart.c: data/asciiart.txt Makefile
 	@{ \

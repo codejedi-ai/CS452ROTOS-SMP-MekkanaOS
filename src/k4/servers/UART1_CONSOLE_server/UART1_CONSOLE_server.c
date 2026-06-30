@@ -4,7 +4,7 @@
 #include "rpi.h"
 #include "syscall.h"
 #include "nameserver.h"
-#include "custstring.h"
+#include "custstr.h"
 
 #define DISPLAY 1
 #define QUEUELENGTH 100

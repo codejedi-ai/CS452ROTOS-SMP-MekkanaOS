@@ -59,11 +59,8 @@ static void print_help_commands(void)
 		"  k4whois                     List registered server task ids.\n",
 		"  k4test                      Run K4 test suite (background).\n",
 		"  k4smptest                   Run SMP hub/mailbox tests (background).\n",
-		"  link <cmd...>               Send a raw line on the ROTS LAN.\n",
-		"  linktest                    PING the LAN hub.\n",
-		"  peers                       Ask hub who is online (PEERS).\n",
-		"  msg <os> <text...>          Send MSG to another OS on the LAN.\n",
-		"  broadcast <text...>         Send to all other OS peers.\n",
+		"  link <cmd...>               Send a line on the ROTS network link.\n",
+		"  linktest                    PING the network hub.\n",
 	};
 	for (size_t i = 0; i < sizeof(lines) / sizeof(lines[0]); i++)
 		display_puts(lines[i]);
@@ -77,17 +74,6 @@ static void cmd_link(const char *args)
 	display_putc('\n');
 }
 
-static int l_put_shell(char *d, int max, const char *s)
-{
-	int n = 0;
-	while (s[n] && n < max - 1) {
-		d[n] = s[n];
-		n++;
-	}
-	d[n] = 0;
-	return n;
-}
-
 static void cmd_linktest(void)
 {
 	char reply[ROTOS_LINK_REPLY_MAX];
@@ -95,64 +81,6 @@ static void cmd_linktest(void)
 	display_puts("linktest PING -> ");
 	display_puts(reply);
 	display_putc('\n');
-}
-
-static void cmd_peers(void)
-{
-	char cached[ROTOS_LINK_REPLY_MAX];
-	char reply[ROTOS_LINK_REPLY_MAX];
-
-	LinkGetPeers(cached, (int)sizeof(cached));
-	if (cached[0]) {
-		display_puts("known peers: ");
-		display_puts(cached);
-		display_putc('\n');
-	}
-	LinkSend("PEERS", reply, (int)sizeof(reply));
-	display_puts(reply);
-	display_putc('\n');
-	if (!LinkHubUp())
-		display_puts("(hub offline — TCP hub not reachable)\n");
-}
-
-static void cmd_msg(char **num, int count)
-{
-	char cmd[ROTOS_LINK_CMD_MAX];
-	int n = 0;
-
-	if (count < 3) {
-		display_puts("usage: msg <os> <text>\n");
-		return;
-	}
-	n = l_put_shell(cmd, (int)sizeof(cmd), "MSG ");
-	n += l_put_shell(cmd + n, (int)sizeof(cmd) - n, num[1]);
-	cmd[n++] = ' ';
-	n += l_put_shell(cmd + n, (int)sizeof(cmd) - n, num[2]);
-	for (int i = 3; i < count && n < ROTOS_LINK_CMD_MAX - 1; i++) {
-		cmd[n++] = ' ';
-		n += l_put_shell(cmd + n, (int)sizeof(cmd) - n, num[i]);
-	}
-	cmd[n] = '\0';
-	cmd_link(cmd);
-}
-
-static void cmd_broadcast(char **num, int count)
-{
-	char cmd[ROTOS_LINK_CMD_MAX];
-	int n;
-
-	if (count < 2) {
-		display_puts("usage: broadcast <text>\n");
-		return;
-	}
-	n = l_put_shell(cmd, (int)sizeof(cmd), "BROADCAST ");
-	n += l_put_shell(cmd + n, (int)sizeof(cmd) - n, num[1]);
-	for (int i = 2; i < count && n < ROTOS_LINK_CMD_MAX - 1; i++) {
-		cmd[n++] = ' ';
-		n += l_put_shell(cmd + n, (int)sizeof(cmd) - n, num[i]);
-	}
-	cmd[n] = '\0';
-	cmd_link(cmd);
 }
 
 static int dispatch_commands(char *command, char **num, int command_part_count)
@@ -163,18 +91,6 @@ static int dispatch_commands(char *command, char **num, int command_part_count)
 	}
 	if (strcmp_ret(command, "linktest", 0)) {
 		cmd_linktest();
-		return 1;
-	}
-	if (strcmp_ret(command, "peers", 0)) {
-		cmd_peers();
-		return 1;
-	}
-	if (strcmp_ret(command, "msg", 0)) {
-		cmd_msg(num, command_part_count);
-		return 1;
-	}
-	if (strcmp_ret(command, "broadcast", 0)) {
-		cmd_broadcast(num, command_part_count);
 		return 1;
 	}
 	if (strcmp_ret(command, "link", 0)) {
@@ -272,7 +188,7 @@ void commands_shell(void)
 	RegisterAs("commands_shell");
 	print_logo(console_tid);
 	display_putc('\n');
-	display_puts(ROTOS_OS_NAME " on ROTS LAN (port 7100). Try linktest, peers, msg, broadcast.\n\n");
+	display_puts(ROTOS_OS_NAME " network shell. Type linktest or link <cmd>.\n\n");
 
 	shell_repl(console_tid, "NET");
 	Exit();

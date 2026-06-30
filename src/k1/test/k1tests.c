@@ -5,7 +5,6 @@
 #include "custstr.h"
 #include "custmath.h"
 #include "util.h"
-#include "int64voodoo.h"
 
 extern int malloctest(void);
 
@@ -227,10 +226,4 @@ void run_k1_tests(void) {
 
 void boot_k1_tests(void) {
 	run_k1_tests_core();
-}
-
-int k1_self_tests(void)
-{
-	run_k1_tests_core();
-	return k1_fail_count;
 }

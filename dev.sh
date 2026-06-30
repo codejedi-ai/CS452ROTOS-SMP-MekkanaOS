@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Host dev wrapper — MekkanaOS
+# Host dev wrapper — MekkanaOS (QEMU network kernel)
 set -euo pipefail
 
 OS_NAME="MekkanaOS"
+TEST_TARGET="test-k1"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
@@ -20,25 +21,26 @@ fi
 source "${PLATFORM}/scripts/setup-host-env.sh"
 
 usage() {
-	cat <<'EOF'
+	cat <<EOF
 Usage: ./dev.sh <command>
 
 Commands:
-  setup       Install/check host toolchain and QEMU (from CS452ROTOS-PLATFORM)
-  run         Build kernel and run in QEMU on the host (Ctrl+A X to exit)
-  test        Run test-k1 under QEMU
-  test-k1     Run K1 tests under QEMU
-  test-k2     Run K2 tests under QEMU
-  test-k3     Run K3 tests under QEMU
-  test-k4     Run K4 tests under QEMU
-  test-smp    Run SMP hub/mailbox tests under QEMU
-  make [args] Run make on the host (default: make all)
+  setup         Install/check host toolchain and QEMU (from CS452ROTOS-PLATFORM)
+  run           Build + QEMU with console + ROTS network link (serial1 → hub)
+  run-console   Build + QEMU console only (no network link)
+  hub           Start rotos_link_hub.py on :7100 (shared by all SMP OSes)
+  test-hub      Run rotos_link_hub Python tests (peer discovery, timeout)
+  test          Run ${TEST_TARGET} under QEMU
+  test-k1       Run K1 tests under QEMU
+  test-k2       Run K2 tests under QEMU
+  test-k3       Run K3 tests under QEMU
+  test-k4       Run K4 tests under QEMU
+  test-smp      Run SMP hub/mailbox tests under QEMU
+  make [args]   Run make on the host (default: make all)
 
 Environment:
-  XDIR        ARM GNU toolchain prefix (default: /opt/toolchain)
-  PLATFORM    Path to CS452ROTOS-PLATFORM checkout (optional)
-  MARKLIN     Marklin backend (default: vhw)
-  START_VHW   Start bundled vhw.py (default: 1)
+  HUB_PORT      ROTS link hub TCP port (default: 7100)
+  START_HUB=0   Do not auto-start hub in ./dev.sh run
 EOF
 }
 
@@ -49,11 +51,15 @@ setup_terminal() {
 	fi
 }
 
-run_os() {
+run_net() {
 	setup_terminal
-	echo "Starting ${OS_NAME} under QEMU (raspi4b). Ctrl+A then X to exit."
-	export MARKLIN="${MARKLIN:-vhw}"
-	export START_VHW="${START_VHW:-1}"
+	echo "Starting ${OS_NAME} under QEMU (console + ROTS network link)."
+	exec make run-net
+}
+
+run_console() {
+	setup_terminal
+	echo "Starting ${OS_NAME} under QEMU (console only). Ctrl+A then X to exit."
 	exec make run
 }
 
@@ -67,11 +73,27 @@ case "${cmd}" in
 		;;
 	run)
 		setup_host_env "${ROOT}"
-		run_os
+		make -j"$(nproc)" all
+		run_net
+		;;
+	run-console)
+		setup_host_env "${ROOT}"
+		make -j"$(nproc)" all
+		run_console
+		;;
+	hub)
+		exec python3 "${ROOT}/tools/rotos_link_hub.py" --port "${HUB_PORT:-7100}"
+		;;
+	lan)
+		exec bash "${ROOT}/tools/rotos_lan.sh" howto
+		;;
+	test-hub)
+		UV_BIN="${UV:-$(command -v uv 2>/dev/null || echo "${HOME}/.local/bin/uv")}"
+		exec "${UV_BIN}" run python3 -m unittest discover -s "${ROOT}/tools" -p 'test_rotos_link_hub.py' -v
 		;;
 	test)
 		setup_host_env "${ROOT}"
-		make -j"$(nproc)" test-k1
+		make -j"$(nproc)" "${TEST_TARGET}"
 		;;
 	test-k1|test-k2|test-k3|test-k4|test-smp)
 		setup_host_env "${ROOT}"

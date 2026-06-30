@@ -27,7 +27,7 @@
 #define CONFIG_AUX_BASE        0xFE215000u
 
 #ifndef ROTOS_OS_NAME
-#define ROTOS_OS_NAME          "MekkanaOS"
+#define ROTOS_OS_NAME          "DarcyOS"
 #endif
 
 #endif /* _CONFIG_H_ */

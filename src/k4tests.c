@@ -74,31 +74,6 @@ static void test_clock_delay_with_io(void)
 	k4_check(after >= before + 2, "clock_delay_io_advances_time");
 }
 
-static int reply_has_substr(const char *reply, const char *needle)
-{
-	for (int i = 0; reply[i]; i++) {
-		int j = 0;
-		while (needle[j] && reply[i + j] == needle[j])
-			j++;
-		if (needle[j] == '\0')
-			return 1;
-	}
-	return 0;
-}
-
-static void test_link_hub_timeout(void)
-{
-	char reply[ROTOS_LINK_REPLY_MAX];
-
-	wait_for_io_servers();
-	LinkSend("PING", reply, (int)sizeof(reply));
-	k4_check(
-		reply_has_substr(reply, "timeout") ||
-		reply_has_substr(reply, "offline") ||
-		reply_has_substr(reply, "no link"),
-		"link_hub_timeout_or_offline");
-}
-
 static void print_io_server_tids(void)
 {
 	wait_for_io_servers();
@@ -119,7 +94,6 @@ static void run_k4_tests_core(int clear_before)
 	test_io_server_registration();
 	test_io_server_unique_tids();
 	test_clock_delay_with_io();
-	test_link_hub_timeout();
 
 	uart_printf(CONSOLE, "K4: %d pass, %d fail\r\n", k4_pass_count, k4_fail_count);
 	if (k4_fail_count == 0)
